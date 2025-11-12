@@ -30,7 +30,7 @@ void Engine::Initialize(int argc, char** argv)
 void Engine::Run()
 {
 	//glutDisplayFunc(drawScene);
-	glutReshapeFunc(w->Resize()); 
+	glutReshapeFunc(w->Resize); 
 	/*glutKeyboardFunc(Keyboard);
 	glutMouseFunc(Mouse);
 	glutPassiveMotionFunc(PassiveMotion);
