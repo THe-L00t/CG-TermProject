@@ -127,6 +127,11 @@
   <ItemGroup>
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="window.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TotalHeader.h" />
+    <ClInclude Include="window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h" />
