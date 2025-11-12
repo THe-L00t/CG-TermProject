@@ -29,9 +29,9 @@ void Engine::Initialize(int argc, char** argv)
 
 void Engine::Run()
 {
-	/*glutDisplayFunc(drawScene);
-	glutReshapeFunc(Reshape);guswo 
-	glutKeyboardFunc(Keyboard);
+	//glutDisplayFunc(drawScene);
+	glutReshapeFunc(w->Resize()); 
+	/*glutKeyboardFunc(Keyboard);
 	glutMouseFunc(Mouse);
 	glutPassiveMotionFunc(PassiveMotion);
 	glutTimerFunc(1, loop, 1);*/
