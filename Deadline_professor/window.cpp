@@ -30,7 +30,9 @@ void window::Deactive()
 
 void window::Resize(int w, int h)
 {
-	width = w;
-	height = h;
+	activeInstance->width = w;
+	activeInstance->height = h;
 	glViewport(0, 0, w, h);
 }
+
+
