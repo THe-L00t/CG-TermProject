@@ -1,5 +1,6 @@
 #pragma once
 #include "TotalHeader.h"
+#include "window.h"
 class Engine
 {
 public:
