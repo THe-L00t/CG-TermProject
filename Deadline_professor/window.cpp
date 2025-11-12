@@ -8,7 +8,9 @@ window::~window()
 bool window::Create()
 {
 	Active();
-
+	
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+	glutInitWindowPosition(0, 0);
 	glutInitWindowSize(width, height);
 	glutCreateWindow(title.c_str());
 	return true;
