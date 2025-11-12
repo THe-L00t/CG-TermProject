@@ -1,8 +1,7 @@
-{
+﻿{
   "permissions": {
     "allow": [
-      "Bash(dir:*)",
-      "Bash(cmd /c \"dir /b *.vs *.fs 2>nul\")"
+      "Bash(cmd /c \"dir /b /s *.cpp *.h 2>nul\")"
     ],
     "deny": [],
     "ask": []
