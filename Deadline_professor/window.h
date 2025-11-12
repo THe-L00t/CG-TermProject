@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "TotalHeader.h"
 
 class window
@@ -14,7 +14,7 @@ public:
 	void Active();
 	void Deactive();
 
-	// Äİ¹é¿ë ÇÔ¼ö 
+	// ì½œë°±ìš© í•¨ìˆ˜ 
 	void Resize(int, int);
 
 private:
@@ -22,7 +22,7 @@ private:
 
 	int height{ 1080 };
 	int width{ 1920 };
-	std::string title{ "Deadline:±³¼ö´Ô" };
+	std::string title{ "Deadline:êµìˆ˜ë‹˜" };
 
 	int pWindowH{};
 	int pWindowW{};

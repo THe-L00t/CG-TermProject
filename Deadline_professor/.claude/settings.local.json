@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nul)",
+      "Bash(powershell:*)",
+      "Bash(cmd /c \"chcp 65001 >nul && powershell -Command \"\"$bytes = [System.IO.File]::ReadAllBytes(''main.cpp''); $bytes[0..3] -join '' ''\"\"\")",
+      "Bash(xxd:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

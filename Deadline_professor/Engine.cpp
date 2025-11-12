@@ -1,4 +1,4 @@
-#include "Engine.h"
+﻿#include "Engine.h"
 #include "window.h"
 
 Engine::Engine()
@@ -29,6 +29,13 @@ void Engine::Initialize(int argc, char** argv)
 
 void Engine::Run()
 {
+	/*glutDisplayFunc(drawScene);
+	glutReshapeFunc(Reshape);guswo 
+	glutKeyboardFunc(Keyboard);
+	glutMouseFunc(Mouse);
+	glutPassiveMotionFunc(PassiveMotion);
+	glutTimerFunc(1, loop, 1);*/
+	glutMainLoop();
 }
 
 void Engine::Update()
