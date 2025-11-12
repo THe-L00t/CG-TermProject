@@ -9,6 +9,7 @@ bool window::Create()
 {
 	Active();
 
+
 	glutInitWindowSize(width, height);
 	glutCreateWindow(title.c_str());
 	return true;
