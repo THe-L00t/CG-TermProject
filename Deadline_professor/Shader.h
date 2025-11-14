@@ -16,6 +16,9 @@ public:
 	GLuint AddShader(const std::string_view&, GLenum);
 	bool CompileShader(const std::filesystem::path&, const std::filesystem::path&);
 
+	void Use() const;
+	void Unuse() const;
+
 private:
 	GLuint program{};
 

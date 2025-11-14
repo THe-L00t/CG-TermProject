@@ -118,9 +118,21 @@ bool Shader::CompileShader(const std::filesystem::path& vsPath, const std::files
 	return true;
 }
 
+void Shader::Use() const
+{
+	if (program not_eq 0) {
+		glUseProgram(program);
+	}
+}
+
+void Shader::Unuse() const
+{
+	glUseProgram(0);
+}
+
 void Shader::deleteShader()
 {
-	if (program != 0) {
+	if (program not_eq 0) {
 		glDeleteProgram(program);
 		program = 0;
 	}
