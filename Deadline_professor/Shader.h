@@ -12,9 +12,12 @@ public:
 	Shader(Shader&& other) noexcept;
 	Shader& operator=(Shader&& other) noexcept;
 
-	std::optional<std::string> LoadShader(const std::filesystem::path&);
+	bool LoadShader(const std::filesystem::path&, const std::filesystem::path&);
 
 private:
+	GLuint program{};
 
+	void deleteShader();
+	std::optional<std::string> LoadFile(const std::filesystem::path&);
 };
 
