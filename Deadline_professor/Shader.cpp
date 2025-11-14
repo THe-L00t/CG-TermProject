@@ -130,6 +130,51 @@ void Shader::Unuse() const
 	glUseProgram(0);
 }
 
+void Shader::setUniform(const std::string_view& uniformName, int value)
+{
+	glUniform1i(glGetUniformLocation(program, uniformName.data()), value);
+}
+
+void Shader::setUniform(const std::string_view& uniformName, float value)
+{
+	glUniform1f(glGetUniformLocation(program, uniformName.data()), value);
+}
+
+void Shader::setUniform(const std::string_view& uniformName, float v1, float v2)
+{
+	glUniform2f(glGetUniformLocation(program, uniformName.data()), v1, v2);
+}
+
+void Shader::setUniform(const std::string_view& uniformName, float v1, float v2, float v3)
+{
+	glUniform3f(glGetUniformLocation(program, uniformName.data()), v1, v2, v3);
+}
+
+void Shader::setUniform(const std::string_view& uniformName, float v1, float v2, float v3, float v4)
+{
+	glUniform4f(glGetUniformLocation(program, uniformName.data()), v1, v2, v3, v4);
+}
+
+void Shader::setUniform(const std::string_view& uniformName, glm::vec2& value)
+{
+	glUniform2f(glGetUniformLocation(program, uniformName.data()), value.x, value.y);
+}
+
+void Shader::setUniform(const std::string_view& uniformName, glm::vec3& value)
+{
+	glUniform3f(glGetUniformLocation(program, uniformName.data()), value.x, value.y, value.z);
+}
+
+void Shader::setUniform(const std::string_view& uniformName, glm::vec4& value)
+{
+	glUniform4f(glGetUniformLocation(program, uniformName.data()), value.x, value.y, value.z, value.w );
+}
+
+void Shader::setUniform(const std::string_view& uniformName, glm::mat4& value)
+{
+	glUniformMatrix4fv(glGetUniformLocation(program, uniformName.data()), 1, GL_FALSE, glm::value_ptr(value));
+}
+
 void Shader::deleteShader()
 {
 	if (program not_eq 0) {
