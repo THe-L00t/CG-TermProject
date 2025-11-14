@@ -1,5 +1,8 @@
 ﻿#pragma once
-#include "TotalHeader.h"
+
+#include <filesystem>
+#include <gl/freeglut.h>
+
 class Shader
 {
 public:

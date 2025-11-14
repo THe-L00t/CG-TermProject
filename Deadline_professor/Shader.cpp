@@ -1,4 +1,5 @@
 ﻿#include "Shader.h"
+import TotalHeader
 
 Shader::~Shader()
 {
