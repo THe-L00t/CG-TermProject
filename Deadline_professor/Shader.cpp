@@ -93,6 +93,7 @@ bool Shader::CompileShader(const std::filesystem::path& vsPath, const std::files
 		return false;
 	}
 
+	program = glCreateProgram();
 	glAttachShader(program, vs);
 	glAttachShader(program, fs);
 	
