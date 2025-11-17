@@ -29,6 +29,8 @@ public:
 	void setUniform(const std::string_view&, glm::vec4&);
 	void setUniform(const std::string_view&, glm::mat4&);
 
+	int getAttrib(const std::string_view&);
+
 private:
 	GLuint program{};
 

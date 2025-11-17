@@ -176,6 +176,11 @@ void Shader::setUniform(const std::string_view& uniformName, glm::mat4& value)
 	glUniformMatrix4fv(glGetUniformLocation(program, uniformName.data()), 1, GL_FALSE, glm::value_ptr(value));
 }
 
+int Shader::getAttrib(const std::string_view& attribName)
+{
+	return glGetAttribLocation(program, attribName.data());
+}
+
 void Shader::deleteShader()
 {
 	if (program not_eq 0) {
