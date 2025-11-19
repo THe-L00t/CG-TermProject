@@ -2,19 +2,21 @@
 #include "TotalHeader.h"
 
 struct Vertex {
-	glm::vec3 pos;
+	glm::vec3 position;
 	glm::vec2 texcoord;
 	glm::vec3 normal;
 };
 
 struct ObjData {
-	std::vector<Vertex> vertices;
-	std::vector<unsigned int> indices;
+	std::string_view name;
+	GLuint VBO{};
+	GLuint EBO{};
 };
 
 class ResourceManager
 {
 public:
+	ResourceManager();
 
 	ResourceManager(const ResourceManager&) = delete;
 	ResourceManager& operator=(const ResourceManager&) = delete;
@@ -23,8 +25,11 @@ public:
 	void Active();
 	void Deactive();
 
+	bool LoadObj(const std::string_view&, const std::filesystem::path&);
+
 private:
 	static ResourceManager* onceInstance;
-
+	GLuint VAO{};
+	std::vector<ObjData> dataList;
 };
 
