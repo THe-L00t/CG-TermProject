@@ -1,4 +1,17 @@
 #pragma once
+#include "TotalHeader.h"
+
+struct Vertex {
+	glm::vec3 pos;
+	glm::vec2 texcoord;
+	glm::vec3 normal;
+};
+
+struct ObjData {
+	std::vector<Vertex> vertices;
+	std::vector<unsigned int> indices;
+};
+
 class ResourceManager
 {
 public:
