@@ -1,4 +1,4 @@
-#include "ResourceManager.h"
+ï»¿#include "ResourceManager.h"
 
 ResourceManager::ResourceManager()
 {
@@ -55,7 +55,7 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
             temp_normals.push_back(normal);
         }
         else if (type == "f") {
-            // f 1/1/1 2/2/2 3/3/3 Çü½Ä Ã³¸®
+            // f 1/1/1 2/2/2 3/3/3 í˜•ì‹ ì²˜ë¦¬
             std::string v1, v2, v3;
             ss >> v1 >> v2 >> v3;
             std::vector<std::string> face = { v1, v2, v3 };
@@ -86,7 +86,7 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, temp.EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-    //ÃßÈÄ ¼ÎÀÌ´õ Çü½Ä Á¤ÇÏ¸é¼­ ¼öÁ¤ÇÏ±â --------------
+    //ì¶”í›„ ì…°ì´ë” í˜•ì‹ ì •í•˜ë©´ì„œ ìˆ˜ì •í•˜ê¸° --------------
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), (void*)0);
@@ -101,10 +101,17 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), (void*)offsetof(Vertex, normal));
 
-    // Á¤¸®
+    // ì •ë¦¬
     glBindVertexArray(0);
     //-----------------------------------------------
 
     dataList.push_back(temp);
 	return true;
+}
+
+void ResourceManager::SortData()
+{
+    sort(dataList.begin(), dataList.end(), [](const ObjData& a, const ObjData& b) {
+        return std::lexicographical_compare(a.name.begin(), a.name.end(), b.name.begin(), b.name.end());
+        });
 }
