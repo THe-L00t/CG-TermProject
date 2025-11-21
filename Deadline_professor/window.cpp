@@ -28,6 +28,16 @@ void window::Deactive()
 	}
 }
 
+int window::GetWidth() const
+{
+	return width;
+}
+
+int window::GetHeight() const
+{
+	return height;
+}
+
 void window::Resize(int w, int h)
 {
 	activeInstance->width = w;
