@@ -29,7 +29,7 @@ void Engine::Initialize(int argc, char** argv)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	w->onReseize = [this](int w, int h) {
+	w->onResize = [this](int w, int h) {
 		r->OnWindowResize(w, h);
 		};
 }
