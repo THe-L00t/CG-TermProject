@@ -14,7 +14,7 @@ void Engine::Initialize(int argc, char** argv)
 {
 	glutInit(&argc, argv);
 	w = std::make_unique<Window>();
-	r = std::make_unique<Renderer>();
+	
 	
 	w->Create();
 
@@ -25,7 +25,7 @@ void Engine::Initialize(int argc, char** argv)
 	else {
 		std::cout << "GLEW Initialized\n";
 	}
-
+	r = std::make_unique<Renderer>();
 	r->Init();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
