@@ -8,7 +8,7 @@ struct Vertex {
 };
 
 struct ObjData {
-	std::string_view name;
+	std::string name;
 	GLuint VBO{};
 	GLuint EBO{};
 };

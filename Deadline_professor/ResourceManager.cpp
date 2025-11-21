@@ -70,7 +70,7 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
                 vertex.normal = temp_normals[norIdx - 1];
 
                 vertices.push_back(vertex);
-                indices.push_back(indices.size());
+                indices.push_back(vertices.size()-1);
             }
         }
     }
