@@ -42,6 +42,10 @@ void window::Resize(int w, int h)
 {
 	activeInstance->width = w;
 	activeInstance->height = h;
+
+	if (activeInstance->onResize) {
+		activeInstance->onResize(w, h);
+	}
 }
 
 
