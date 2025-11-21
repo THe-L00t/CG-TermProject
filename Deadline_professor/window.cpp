@@ -28,11 +28,24 @@ void window::Deactive()
 	}
 }
 
+int window::GetWidth() const
+{
+	return width;
+}
+
+int window::GetHeight() const
+{
+	return height;
+}
+
 void window::Resize(int w, int h)
 {
 	activeInstance->width = w;
 	activeInstance->height = h;
-	glViewport(0, 0, w, h);
+
+	if (activeInstance->onResize) {
+		activeInstance->onResize(w, h);
+	}
 }
 
 

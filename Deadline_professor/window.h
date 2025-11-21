@@ -13,8 +13,11 @@ public:
 	bool Create();
 	void Active();
 	void Deactive();
+	int GetWidth() const;
+	int GetHeight() const;
 
 	// 콜백용 함수 
+	std::function<void(int, int)> onReseize;
 	static void Resize(int, int);
 
 private:
