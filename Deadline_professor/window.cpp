@@ -1,11 +1,11 @@
 ﻿#include "Window.h"
 
-window::~window()
+Window::~Window()
 {
 	Deactive();
 }
 
-bool window::Create()
+bool Window::Create()
 {
 	Active();
 	
@@ -16,29 +16,29 @@ bool window::Create()
 	return true;
 }
 
-void window::Active()
+void Window::Active()
 {
 	activeInstance = this;
 }
 
-void window::Deactive()
+void Window::Deactive()
 {
 	if (activeInstance == this) {
 		activeInstance = nullptr;
 	}
 }
 
-int window::GetWidth() const
+int Window::GetWidth() const
 {
 	return width;
 }
 
-int window::GetHeight() const
+int Window::GetHeight() const
 {
 	return height;
 }
 
-void window::Resize(int w, int h)
+void Window::Resize(int w, int h)
 {
 	activeInstance->width = w;
 	activeInstance->height = h;

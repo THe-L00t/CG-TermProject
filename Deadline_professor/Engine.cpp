@@ -1,5 +1,6 @@
 ﻿#include "Engine.h"
-#include "window.h"
+#include "Window.h"
+#include "Renderer.h"
 
 Engine::Engine()
 {
@@ -12,7 +13,9 @@ Engine::~Engine()
 void Engine::Initialize(int argc, char** argv)
 {
 	glutInit(&argc, argv);
-	w = std::make_unique<window>();
+	w = std::make_unique<Window>();
+	r = std::make_unique<Renderer>();
+	r->Init();
 	w->Create();
 
 	if (glewInit() != GLEW_OK) {
@@ -25,6 +28,10 @@ void Engine::Initialize(int argc, char** argv)
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+
+	w->onReseize = [this](int w, int h) {
+		r->OnWindowResize(w, h);
+		};
 }
 
 void Engine::Run()

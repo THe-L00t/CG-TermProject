@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include "TotalHeader.h"
 
-class window;
+class Window;
+class Renderer;
 
 class Engine
 {
@@ -19,7 +20,7 @@ public:
 private:
 	static Engine* instance;
 
-
-	std::unique_ptr<window> w;
+	std::unique_ptr<Window> w;
+	std::unique_ptr<Renderer> r;
 };
 
