@@ -15,7 +15,7 @@ void Engine::Initialize(int argc, char** argv)
 	glutInit(&argc, argv);
 	w = std::make_unique<Window>();
 	r = std::make_unique<Renderer>();
-	r->Init();
+	
 	w->Create();
 
 	if (glewInit() != GLEW_OK) {
@@ -26,22 +26,25 @@ void Engine::Initialize(int argc, char** argv)
 		std::cout << "GLEW Initialized\n";
 	}
 
+	r->Init();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
 	w->onResize = [this](int w, int h) {
 		r->OnWindowResize(w, h);
 		};
-}
 
-void Engine::Run()
-{
 	//glutDisplayFunc(drawScene);
-	glutReshapeFunc(w->Resize); 
+	glutReshapeFunc(w->Resize);
 	/*glutKeyboardFunc(Keyboard);
 	glutMouseFunc(Mouse);
 	glutPassiveMotionFunc(PassiveMotion);
 	glutTimerFunc(1, loop, 1);*/
+}
+
+void Engine::Run()
+{
+	
 	glutMainLoop();
 }
 
