@@ -3,6 +3,10 @@
 #include <fstream>
 #include <string>
 #include <functional>
+#include <optional>
+#include <sstream>
+#include <filesystem>
+#include <unordered_map>
 #include <gl/glew.h> 
 #include <gl/freeglut.h>
 #include <gl/freeglut_ext.h>
