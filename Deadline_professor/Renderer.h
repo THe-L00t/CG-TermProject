@@ -12,7 +12,6 @@ public:
 
 	void Init();
 
-	void SetViewport(int, int, int, int);
 	void OnWindowResize(int, int);
 
 private:
