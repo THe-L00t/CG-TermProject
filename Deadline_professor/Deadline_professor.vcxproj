@@ -151,6 +151,12 @@
     <None Include="basic.frag" />
     <None Include="cube.obj" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GameTimer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GameTimer.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -89,5 +89,18 @@
     <None Include="cube.obj">
       <Filter>리소스 파일</Filter>
     </None>
+    <Filter Include="소스 파일\GameTimer">
+      <UniqueIdentifier>{9bf98e59-2f13-4bee-aa2c-0f746bafdb87}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GameTimer.cpp">
+      <Filter>소스 파일\GameTimer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GameTimer.h">
+      <Filter>소스 파일\GameTimer</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
