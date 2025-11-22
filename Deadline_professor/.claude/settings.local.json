@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /b \"C:\\Users\\sigun\\University\\2-2\\Computer Graphics\\CG-TermProject\\Deadline_professor\")",
+      "Bash(findstr:*)",
+      "Bash(git mv:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

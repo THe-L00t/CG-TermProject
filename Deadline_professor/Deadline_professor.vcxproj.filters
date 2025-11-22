@@ -21,12 +21,12 @@
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="window.cpp">
+    <ClCompile Include="Window.cpp">
       <Filter>소스 파일\window</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="window.h">
+    <ClInclude Include="Window.h">
       <Filter>소스 파일\window</Filter>
     </ClInclude>
     <ClInclude Include="TotalHeader.h">

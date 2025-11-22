@@ -1,14 +1,14 @@
 ﻿#pragma once
 #include "TotalHeader.h"
 
-class window
+class Window
 {
 public:
-	window() = default;
-	~window();
+	Window() = default;
+	~Window();
 
-	window(const window&) = delete;
-	window& operator=(const window&) = delete;
+	Window(const Window&) = delete;
+	Window& operator=(const Window&) = delete;
 
 	bool Create();
 	void Active();
@@ -16,12 +16,12 @@ public:
 	int GetWidth() const;
 	int GetHeight() const;
 
-	// 콜백용 함수 
+	// 콜백용 함수
 	std::function<void(int, int)> onResize;
 	static void Resize(int, int);
 
 private:
-	static window* activeInstance;
+	static Window* activeInstance;
 
 	int height{ 1080 };
 	int width{ 1920 };
