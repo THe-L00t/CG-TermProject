@@ -3,6 +3,7 @@
 
 class Window;
 class Renderer;
+class GameTimer;
 
 class Engine
 {
@@ -24,5 +25,6 @@ private:
 
 	std::unique_ptr<Window> w;
 	std::unique_ptr<Renderer> r;
+	std::unique_ptr<GameTimer> gameTimer;
 };
 

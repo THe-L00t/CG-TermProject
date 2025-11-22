@@ -1,6 +1,7 @@
 ﻿#include "Engine.h"
 #include "Window.h"
 #include "Renderer.h"
+#include "GameTimer.h"
 
 Engine* Engine::instance = nullptr;
 
@@ -20,8 +21,8 @@ void Engine::Initialize(int argc, char** argv)
 {
 	glutInit(&argc, argv);
 	w = std::make_unique<Window>();
-	
-	
+
+
 	w->Create();
 
 	if (glewInit() != GLEW_OK) {
@@ -36,6 +37,8 @@ void Engine::Initialize(int argc, char** argv)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
+	gameTimer = std::make_unique<GameTimer>();
+
 	w->onResize = [this](int w, int h) {
 		r->OnWindowResize(w, h);
 		};
@@ -46,7 +49,7 @@ void Engine::Initialize(int argc, char** argv)
 
 	glutDisplayFunc(Renderer::DrawScene);
 	glutReshapeFunc(Window::Resize);
-	glutTimerFunc(16, TimerCallback, 0);
+	glutTimerFunc(1, TimerCallback, 0);
 }
 
 void Engine::Run()
@@ -57,6 +60,7 @@ void Engine::Run()
 
 void Engine::Update()
 {
+	gameTimer->Update();
 	glutPostRedisplay();
 }
 
@@ -64,6 +68,6 @@ void Engine::TimerCallback(int value)
 {
 	if (instance) {
 		instance->Update();
+		glutTimerFunc(1, TimerCallback, 0);
 	}
-	glutTimerFunc(16, TimerCallback, 0);
 }
