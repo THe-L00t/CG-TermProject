@@ -11,6 +11,7 @@ struct ObjData {
 	std::string name;
 	GLuint VBO{};
 	GLuint EBO{};
+	size_t indexCount{};
 };
 
 class ResourceManager
@@ -26,7 +27,8 @@ public:
 	void Deactive();
 
 	bool LoadObj(const std::string_view&, const std::filesystem::path&);
-
+	GLuint GetVAO() const { return VAO; }
+	const ObjData* GetObjData(const std::string_view&) const;
 
 private:
 	void SortData();

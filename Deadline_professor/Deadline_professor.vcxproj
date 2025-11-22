@@ -143,6 +143,11 @@
     <ClInclude Include="TotalHeader.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="basic.vert" />
+    <None Include="basic.frag" />
+    <None Include="cube.obj" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

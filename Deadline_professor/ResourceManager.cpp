@@ -1,5 +1,7 @@
 ﻿#include "ResourceManager.h"
 
+ResourceManager* ResourceManager::onceInstance = nullptr;
+
 ResourceManager::ResourceManager()
 {
 	glGenVertexArrays(1, &VAO);
@@ -77,9 +79,13 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
 
     ObjData temp{};
     temp.name = name;
+    temp.indexCount = indices.size();
+
     glGenBuffers(1, &(temp.VBO));
     glGenBuffers(1, &(temp.EBO));
-    
+
+    glBindVertexArray(VAO);
+
     glBindBuffer(GL_ARRAY_BUFFER, temp.VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
@@ -106,6 +112,9 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
     //-----------------------------------------------
 
     dataList.push_back(temp);
+
+    std::cout << "Loaded OBJ '" << name << "' with " << vertices.size() << " vertices, " << indices.size() << " indices" << std::endl;
+
 	return true;
 }
 
@@ -114,4 +123,14 @@ void ResourceManager::SortData()
     sort(dataList.begin(), dataList.end(), [](const ObjData& a, const ObjData& b) {
         return std::lexicographical_compare(a.name.begin(), a.name.end(), b.name.begin(), b.name.end());
         });
+}
+
+const ObjData* ResourceManager::GetObjData(const std::string_view& name) const
+{
+    for (const auto& obj : dataList) {
+        if (obj.name == name) {
+            return &obj;
+        }
+    }
+    return nullptr;
 }

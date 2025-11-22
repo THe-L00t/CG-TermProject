@@ -17,6 +17,8 @@ public:
 	void Run();
 	void Update();
 
+	static void TimerCallback(int value);
+
 private:
 	static Engine* instance;
 

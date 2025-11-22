@@ -2,12 +2,18 @@
 #include "Window.h"
 #include "Renderer.h"
 
+Engine* Engine::instance = nullptr;
+
 Engine::Engine()
 {
+	instance = this;
 }
 
 Engine::~Engine()
 {
+	if (instance == this) {
+		instance = nullptr;
+	}
 }
 
 void Engine::Initialize(int argc, char** argv)
@@ -34,12 +40,13 @@ void Engine::Initialize(int argc, char** argv)
 		r->OnWindowResize(w, h);
 		};
 
-	//glutDisplayFunc(drawScene);
-	glutReshapeFunc(w->Resize);
-	/*glutKeyboardFunc(Keyboard);
-	glutMouseFunc(Mouse);
-	glutPassiveMotionFunc(PassiveMotion);
-	glutTimerFunc(1, loop, 1);*/
+	r->onDrawScene = [this]() {
+		r->RenderTestCube();
+		};
+
+	glutDisplayFunc(Renderer::DrawScene);
+	glutReshapeFunc(Window::Resize);
+	glutTimerFunc(16, TimerCallback, 0);
 }
 
 void Engine::Run()
@@ -50,4 +57,13 @@ void Engine::Run()
 
 void Engine::Update()
 {
+	glutPostRedisplay();
+}
+
+void Engine::TimerCallback(int value)
+{
+	if (instance) {
+		instance->Update();
+	}
+	glutTimerFunc(16, TimerCallback, 0);
 }

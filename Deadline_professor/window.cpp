@@ -1,5 +1,7 @@
 ﻿#include "Window.h"
 
+Window* Window::activeInstance = nullptr;
+
 Window::~Window()
 {
 	Deactive();
