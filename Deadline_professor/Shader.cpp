@@ -163,22 +163,22 @@ void Shader::setUniform(const std::string_view& uniformName, float v1, float v2,
 	glUniform4f(glGetUniformLocation(program, uniformName.data()), v1, v2, v3, v4);
 }
 
-void Shader::setUniform(const std::string_view& uniformName, glm::vec2& value)
+void Shader::setUniform(const std::string_view& uniformName, const glm::vec2& value)
 {
 	glUniform2f(glGetUniformLocation(program, uniformName.data()), value.x, value.y);
 }
 
-void Shader::setUniform(const std::string_view& uniformName, glm::vec3& value)
+void Shader::setUniform(const std::string_view& uniformName, const glm::vec3& value)
 {
 	glUniform3f(glGetUniformLocation(program, uniformName.data()), value.x, value.y, value.z);
 }
 
-void Shader::setUniform(const std::string_view& uniformName, glm::vec4& value)
+void Shader::setUniform(const std::string_view& uniformName, const glm::vec4& value)
 {
 	glUniform4f(glGetUniformLocation(program, uniformName.data()), value.x, value.y, value.z, value.w );
 }
 
-void Shader::setUniform(const std::string_view& uniformName, glm::mat4& value)
+void Shader::setUniform(const std::string_view& uniformName, cosnt glm::mat4& value)
 {
 	glUniformMatrix4fv(glGetUniformLocation(program, uniformName.data()), 1, GL_FALSE, glm::value_ptr(value));
 }

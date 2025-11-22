@@ -24,10 +24,10 @@ public:
 	void setUniform(const std::string_view&, float, float);
 	void setUniform(const std::string_view&, float, float, float);
 	void setUniform(const std::string_view&, float, float, float, float);
-	void setUniform(const std::string_view&, glm::vec2&);
-	void setUniform(const std::string_view&, glm::vec3&);
-	void setUniform(const std::string_view&, glm::vec4&);
-	void setUniform(const std::string_view&, glm::mat4&);
+	void setUniform(const std::string_view&, const glm::vec2&);
+	void setUniform(const std::string_view&, const glm::vec3&);
+	void setUniform(const std::string_view&, const glm::vec4&);
+	void setUniform(const std::string_view&, const glm::mat4&);
 
 	int getAttrib(const std::string_view&);
 
