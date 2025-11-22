@@ -64,7 +64,11 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
 
             for (auto& f : face) {
                 int posIdx, uvIdx, norIdx;
-                sscanf(f.c_str(), "%d/%d/%d", &posIdx, &uvIdx, &norIdx);
+
+                // sscanf 대신 std::stringstream 사용
+                std::stringstream faceStream(f);
+                char slash;
+                faceStream >> posIdx >> slash >> uvIdx >> slash >> norIdx;
 
                 Vertex vertex;
                 vertex.position = temp_positions[posIdx - 1];
