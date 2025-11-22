@@ -31,7 +31,11 @@ void Renderer::OnWindowResize(int w, int h)
 	glViewport(0, 0, w, h);
 }
 
-void Renderer::Display(GLvoid)
+void Renderer::DrawScene(GLvoid)
 {
-
+	if (activeInstance->onDrawScene) {
+		activeInstance->onDrawScene();
+	}
+		
 }
+
