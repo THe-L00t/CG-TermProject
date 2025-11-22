@@ -17,6 +17,8 @@ public:
 	void Run();
 	void Update();
 
+	static void UpdateCallback(int);
+
 private:
 	static Engine* instance;
 

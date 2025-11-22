@@ -51,3 +51,8 @@ void Engine::Run()
 void Engine::Update()
 {
 }
+
+void Engine::UpdateCallback(int)
+{
+
+}
