@@ -28,3 +28,13 @@ Scene* SceneManager::GetCurrentScene() const
 {
 	return currentScene.get();
 }
+
+//---------------------------------------------------------------------Scene
+
+void Scene::Enter()
+{
+}
+
+void Scene::Exit()
+{
+}

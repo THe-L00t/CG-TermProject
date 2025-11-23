@@ -24,3 +24,15 @@ private:
 	std::unordered_map<std::string, std::function<std::unique_ptr<Scene>()>> sceneFactory;
 };
 
+class Scene
+{
+public:
+	virtual ~Scene() = default;
+
+	virtual void Enter();
+	virtual void Exit();
+	virtual void Update(float) = 0;
+	virtual void Draw() = 0;
+private:
+
+};
