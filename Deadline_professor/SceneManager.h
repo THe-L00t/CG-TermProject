@@ -36,3 +36,25 @@ public:
 private:
 
 };
+
+class TitleScene : public Scene
+{
+public:
+	void Enter() override;
+	void Exit() override;
+	void Update(float) override;
+	void Draw() override;
+private:
+
+};
+
+class GameScene : public Scene
+{
+public:
+	void Enter() override;
+	void Exit() override;
+	void Update(float) override;
+	void Draw() override;
+private:
+
+};

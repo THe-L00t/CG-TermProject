@@ -38,3 +38,39 @@ void Scene::Enter()
 void Scene::Exit()
 {
 }
+
+//-----------------------------------------------------------------TitleScene
+
+void TitleScene::Enter()
+{
+}
+
+void TitleScene::Exit()
+{
+}
+
+void TitleScene::Update(float)
+{
+}
+
+void TitleScene::Draw()
+{
+}
+
+//-----------------------------------------------------------------GameScene
+
+void GameScene::Enter()
+{
+}
+
+void GameScene::Exit()
+{
+}
+
+void GameScene::Update(float)
+{
+}
+
+void GameScene::Draw()
+{
+}
