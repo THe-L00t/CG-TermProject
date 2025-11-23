@@ -58,3 +58,14 @@ public:
 private:
 
 };
+
+class TestScene : public Scene
+{
+public:
+	void Enter() override;
+	void Exit() override;
+	void Update(float) override;
+	void Draw() override;
+private:
+
+};
