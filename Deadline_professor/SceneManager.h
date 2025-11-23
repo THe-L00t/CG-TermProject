@@ -9,8 +9,18 @@ class TestScene;
 class SceneManager
 {
 public:
+	SceneManager();
+	~SceneManager() = default;
+
+	SceneManager(const SceneManager&) = delete;
+	SceneManager& operator=(const SceneManager&) = delete;
+
+	void update(float);
+	void ChangeScene(const std::string&);
+	Scene* GetCurrentScene() const;
 
 private:
-
+	std::unique_ptr<Scene> currentScene;
+	std::unordered_map<std::string, std::function<std::unique_ptr<Scene>()>> sceneFactory;
 };
 
