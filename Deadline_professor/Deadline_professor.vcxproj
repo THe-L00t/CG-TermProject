@@ -143,6 +143,12 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="SceneManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SceneManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="TotalHeader.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>

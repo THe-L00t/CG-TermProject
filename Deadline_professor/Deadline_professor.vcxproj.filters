@@ -102,5 +102,18 @@
     <ClInclude Include="GameTimer.h">
       <Filter>소스 파일\GameTimer</Filter>
     </ClInclude>
+    <Filter Include="소스 파일\SceneManager">
+      <UniqueIdentifier>{ee819243-8581-45e6-a9bb-f42c4368feb7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SceneManager.cpp">
+      <Filter>소스 파일\SceneManager</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SceneManager.h">
+      <Filter>소스 파일\SceneManager</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
