@@ -1,4 +1,7 @@
 ﻿#include "Renderer.h"
+
+Renderer* Renderer::activeInstance = nullptr;
+
 Renderer::Renderer()
 {
 
