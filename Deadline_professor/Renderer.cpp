@@ -2,7 +2,7 @@
 
 Renderer* Renderer::activeInstance = nullptr;
 
-Renderer::Renderer()
+Renderer::Renderer(ResourceManager* resMgr) : resourceManager(resMgr)
 {
 
 }
@@ -15,7 +15,6 @@ Renderer::~Renderer()
 void Renderer::Init()
 {
 	Active();
-	reManager.Active();
 
 	// 배경색 설정
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -23,18 +22,18 @@ void Renderer::Init()
 	// 셰이더 로드
 	LoadShader("basic", "basic.vert", "basic.frag");
 
-	// 테스트 OBJ 로드
-	LoadTestObj("cube", "cube.obj");
-
-	// OBJ 데이터 가져오기
-	const ObjData* cubeData = reManager.GetObjData("cube");
+	// OBJ 데이터 가져오기 (이미 Engine에서 로드됨)
+	const ObjData* cubeData = resourceManager->GetObjData("bugatti");
 	if (cubeData) {
-		testVAO = reManager.GetVAO();
+		testVAO = resourceManager->GetVAO();
 		testVBO = cubeData->VBO;
 		testEBO = cubeData->EBO;
 		testIndexCount = cubeData->indexCount;
 
-		std::cout << "Test cube ready with " << testIndexCount << " indices" << std::endl;
+		std::cout << "Test object ready with " << testIndexCount << " indices" << std::endl;
+	}
+	else {
+		std::cerr << "Failed to get bugatti data from ResourceManager" << std::endl;
 	}
 }
 
@@ -84,11 +83,6 @@ Shader* Renderer::GetShader(const std::string& name)
 	return nullptr;
 }
 
-bool Renderer::LoadTestObj(const std::string& name, const std::filesystem::path& path)
-{
-	return reManager.LoadObj(name, path);
-}
-
 void Renderer::RenderTestCube()
 {
 	Shader* shader = GetShader("basic");
@@ -101,10 +95,11 @@ void Renderer::RenderTestCube()
 
 	// 변환 행렬 설정
 	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::scale(model, glm::vec3(0.3f, 0.3f, 0.3f));
 	model = glm::rotate(model, (float)glutGet(GLUT_ELAPSED_TIME) * 0.001f, glm::vec3(0.5f, 1.0f, 0.0f));
 
 	glm::mat4 view = glm::mat4(1.0f);
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));
+	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -10.0f));
 
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
 

@@ -2,6 +2,7 @@
 #include "Window.h"
 #include "Renderer.h"
 #include "GameTimer.h"
+#include "ResourceManager.h"
 
 Engine* Engine::instance = nullptr;
 
@@ -22,7 +23,6 @@ void Engine::Initialize(int argc, char** argv)
 	glutInit(&argc, argv);
 	w = std::make_unique<Window>();
 
-
 	w->Create();
 
 	if (glewInit() != GLEW_OK) {
@@ -32,7 +32,14 @@ void Engine::Initialize(int argc, char** argv)
 	else {
 		std::cout << "GLEW Initialized\n";
 	}
-	r = std::make_unique<Renderer>();
+
+	// 리소스 매니저 초기화 및 에셋 미리 로드
+	resourceManager = std::make_unique<ResourceManager>();
+	resourceManager->Active();
+	LoadAssets();
+
+	// 렌더러 초기화
+	r = std::make_unique<Renderer>(resourceManager.get());
 	r->Init();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -50,6 +57,16 @@ void Engine::Initialize(int argc, char** argv)
 	glutDisplayFunc(Renderer::DrawScene);
 	glutReshapeFunc(Window::Resize);
 	glutTimerFunc(1, TimerCallback, 0);
+}
+
+void Engine::LoadAssets()
+{
+	std::cout << "=== Loading Assets ===" << std::endl;
+
+	// OBJ 파일 로드
+	resourceManager->LoadObj("bugatti", "bugatti.obj");
+
+	std::cout << "=== Assets Loaded ===" << std::endl;
 }
 
 void Engine::Run()
