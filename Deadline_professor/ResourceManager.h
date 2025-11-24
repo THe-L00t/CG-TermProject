@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "TotalHeader.h"
 
 struct Vertex {
@@ -8,7 +8,7 @@ struct Vertex {
 };
 
 struct ObjData {
-	std::string_view name;
+	std::string name;
 	GLuint VBO{};
 	GLuint EBO{};
 };
@@ -27,7 +27,10 @@ public:
 
 	bool LoadObj(const std::string_view&, const std::filesystem::path&);
 
+
 private:
+	void SortData();
+
 	static ResourceManager* onceInstance;
 	GLuint VAO{};
 	std::vector<ObjData> dataList;

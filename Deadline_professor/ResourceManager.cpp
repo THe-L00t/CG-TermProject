@@ -1,4 +1,4 @@
-#include "ResourceManager.h"
+ï»¿#include "ResourceManager.h"
 
 ResourceManager* ResourceManager::onceInstance = nullptr;
 
@@ -57,21 +57,21 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
             temp_normals.push_back(normal);
         }
         else if (type == "f") {
-            // f 1/1/1 2/2/2 3/3/3 ¶Ç´Â f 1//1 2//1 3//1 Çü½Ä Ã³¸®
+            // f 1/1/1 2/2/2 3/3/3 ë˜ëŠ” f 1//1 2//1 3//1 í˜•ì‹ ì²˜ë¦¬
             std::vector<std::string> faceVertices;
             std::string faceVertex;
             while (ss >> faceVertex) {
                 faceVertices.push_back(faceVertex);
             }
 
-            // Á¤Á¡ ÆÄ½Ì ¶÷´Ù ÇÔ¼ö
+            // ì •ì  íŒŒì‹± ëŒë‹¤ í•¨ìˆ˜
             auto parseVertex = [&](const std::string& f) -> Vertex {
                 int posIdx = 0, uvIdx = 0, norIdx = 0;
 
-                // f Çü½Ä ÆÄ½Ì: v, v/vt, v/vt/vn, v//vn
+                // f í˜•ì‹ íŒŒì‹±: v, v/vt, v/vt/vn, v//vn
                 size_t firstSlash = f.find('/');
                 if (firstSlash == std::string::npos) {
-                    // v Çü½Ä
+                    // v í˜•ì‹
                     posIdx = std::stoi(f);
                 }
                 else {
@@ -79,54 +79,54 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
                     posIdx = std::stoi(f.substr(0, firstSlash));
 
                     if (secondSlash != std::string::npos) {
-                        // v/vt/vn ¶Ç´Â v//vn Çü½Ä
+                        // v/vt/vn ë˜ëŠ” v//vn í˜•ì‹
                         if (secondSlash != firstSlash + 1) {
-                            // v/vt/vn Çü½Ä
+                            // v/vt/vn í˜•ì‹
                             uvIdx = std::stoi(f.substr(firstSlash + 1, secondSlash - firstSlash - 1));
                         }
-                        // v//vn ¶Ç´Â v/vt/vn Çü½ÄÀÇ normal ÆÄ½Ì
+                        // v//vn ë˜ëŠ” v/vt/vn í˜•ì‹ì˜ normal íŒŒì‹±
                         if (secondSlash + 1 < f.length()) {
                             norIdx = std::stoi(f.substr(secondSlash + 1));
                         }
                     }
                     else {
-                        // v/vt Çü½Ä
+                        // v/vt í˜•ì‹
                         uvIdx = std::stoi(f.substr(firstSlash + 1));
                     }
                 }
 
                 Vertex vertex;
-                // position (ÇÊ¼ö)
+                // position (í•„ìˆ˜)
                 if (posIdx > 0 && posIdx <= temp_positions.size()) {
                     vertex.position = temp_positions[posIdx - 1];
                 }
-                // texcoord (¼±ÅÃ)
+                // texcoord (ì„ íƒ)
                 if (uvIdx > 0 && uvIdx <= temp_texcoords.size()) {
                     vertex.texcoord = temp_texcoords[uvIdx - 1];
                 }
                 else {
-                    vertex.texcoord = glm::vec2(0.0f, 0.0f); // ±âº»°ª
+                    vertex.texcoord = glm::vec2(0.0f, 0.0f); // ê¸°ë³¸ê°’
                 }
-                // normal (¼±ÅÃ)
+                // normal (ì„ íƒ)
                 if (norIdx > 0 && norIdx <= temp_normals.size()) {
                     vertex.normal = temp_normals[norIdx - 1];
                 }
                 else {
-                    vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f); // ±âº»°ª
+                    vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f); // ê¸°ë³¸ê°’
                 }
                 return vertex;
                 };
 
-            // »ï°¢ÇüÀÌ¸é ¹Ù·Î Ã³¸®, ¾Æ´Ï¸é fan triangulation
+            // ì‚¼ê°í˜•ì´ë©´ ë°”ë¡œ ì²˜ë¦¬, ì•„ë‹ˆë©´ fan triangulation
             if (faceVertices.size() == 3) {
-                // »ï°¢Çü - ¹Ù·Î Ã³¸® (ÃÖÀûÈ­)
+                // ì‚¼ê°í˜• - ë°”ë¡œ ì²˜ë¦¬ (ìµœì í™”)
                 for (const auto& fv : faceVertices) {
                     vertices.push_back(parseVertex(fv));
                     indices.push_back(vertices.size() - 1);
                 }
             }
             else if (faceVertices.size() > 3) {
-                // Quad ÀÌ»ó - fan triangulation
+                // Quad ì´ìƒ - fan triangulation
                 for (size_t i = 1; i < faceVertices.size() - 1; ++i) {
                     vertices.push_back(parseVertex(faceVertices[0]));
                     indices.push_back(vertices.size() - 1);
@@ -152,7 +152,7 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, temp.EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-    //ÃßÈÄ ¼ÎÀÌ´õ Çü½Ä Á¤ÇÏ¸é¼­ ¼öÁ¤ÇÏ±â --------------
+    //ì¶”í›„ ì…°ì´ë” í˜•ì‹ ì •í•˜ë©´ì„œ ìˆ˜ì •í•˜ê¸° --------------
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), (void*)0);
@@ -167,10 +167,17 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), (void*)offsetof(Vertex, normal));
 
-    // Á¤¸®
+    // ì •ë¦¬
     glBindVertexArray(0);
     //-----------------------------------------------
 
     dataList.push_back(temp);
 	return true;
+}
+
+void ResourceManager::SortData()
+{
+    sort(dataList.begin(), dataList.end(), [](const ObjData& a, const ObjData& b) {
+        return std::lexicographical_compare(a.name.begin(), a.name.end(), b.name.begin(), b.name.end());
+        });
 }
