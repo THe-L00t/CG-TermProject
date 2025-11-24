@@ -1,5 +1,7 @@
 #include "ResourceManager.h"
 
+ResourceManager* ResourceManager::onceInstance = nullptr;
+
 ResourceManager::ResourceManager()
 {
 	glGenVertexArrays(1, &VAO);
@@ -55,22 +57,86 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
             temp_normals.push_back(normal);
         }
         else if (type == "f") {
-            // f 1/1/1 2/2/2 3/3/3 형식 처리
-            std::string v1, v2, v3;
-            ss >> v1 >> v2 >> v3;
-            std::vector<std::string> face = { v1, v2, v3 };
+            // f 1/1/1 2/2/2 3/3/3 또는 f 1//1 2//1 3//1 형식 처리
+            std::vector<std::string> faceVertices;
+            std::string faceVertex;
+            while (ss >> faceVertex) {
+                faceVertices.push_back(faceVertex);
+            }
 
-            for (auto& f : face) {
-                int posIdx, uvIdx, norIdx;
-                sscanf(f.c_str(), "%d/%d/%d", &posIdx, &uvIdx, &norIdx);
+            // 정점 파싱 람다 함수
+            auto parseVertex = [&](const std::string& f) -> Vertex {
+                int posIdx = 0, uvIdx = 0, norIdx = 0;
+
+                // f 형식 파싱: v, v/vt, v/vt/vn, v//vn
+                size_t firstSlash = f.find('/');
+                if (firstSlash == std::string::npos) {
+                    // v 형식
+                    posIdx = std::stoi(f);
+                }
+                else {
+                    size_t secondSlash = f.find('/', firstSlash + 1);
+                    posIdx = std::stoi(f.substr(0, firstSlash));
+
+                    if (secondSlash != std::string::npos) {
+                        // v/vt/vn 또는 v//vn 형식
+                        if (secondSlash != firstSlash + 1) {
+                            // v/vt/vn 형식
+                            uvIdx = std::stoi(f.substr(firstSlash + 1, secondSlash - firstSlash - 1));
+                        }
+                        // v//vn 또는 v/vt/vn 형식의 normal 파싱
+                        if (secondSlash + 1 < f.length()) {
+                            norIdx = std::stoi(f.substr(secondSlash + 1));
+                        }
+                    }
+                    else {
+                        // v/vt 형식
+                        uvIdx = std::stoi(f.substr(firstSlash + 1));
+                    }
+                }
 
                 Vertex vertex;
-                vertex.position = temp_positions[posIdx - 1];
-                vertex.texcoord = temp_texcoords[uvIdx - 1];
-                vertex.normal = temp_normals[norIdx - 1];
+                // position (필수)
+                if (posIdx > 0 && posIdx <= temp_positions.size()) {
+                    vertex.position = temp_positions[posIdx - 1];
+                }
+                // texcoord (선택)
+                if (uvIdx > 0 && uvIdx <= temp_texcoords.size()) {
+                    vertex.texcoord = temp_texcoords[uvIdx - 1];
+                }
+                else {
+                    vertex.texcoord = glm::vec2(0.0f, 0.0f); // 기본값
+                }
+                // normal (선택)
+                if (norIdx > 0 && norIdx <= temp_normals.size()) {
+                    vertex.normal = temp_normals[norIdx - 1];
+                }
+                else {
+                    vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f); // 기본값
+                }
+                return vertex;
+                };
 
-                vertices.push_back(vertex);
-                indices.push_back(indices.size());
+            // 삼각형이면 바로 처리, 아니면 fan triangulation
+            if (faceVertices.size() == 3) {
+                // 삼각형 - 바로 처리 (최적화)
+                for (const auto& fv : faceVertices) {
+                    vertices.push_back(parseVertex(fv));
+                    indices.push_back(vertices.size() - 1);
+                }
+            }
+            else if (faceVertices.size() > 3) {
+                // Quad 이상 - fan triangulation
+                for (size_t i = 1; i < faceVertices.size() - 1; ++i) {
+                    vertices.push_back(parseVertex(faceVertices[0]));
+                    indices.push_back(vertices.size() - 1);
+
+                    vertices.push_back(parseVertex(faceVertices[i]));
+                    indices.push_back(vertices.size() - 1);
+
+                    vertices.push_back(parseVertex(faceVertices[i + 1]));
+                    indices.push_back(vertices.size() - 1);
+                }
             }
         }
     }
