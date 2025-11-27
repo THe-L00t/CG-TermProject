@@ -115,5 +115,18 @@
     <ClInclude Include="SceneManager.h">
       <Filter>소스 파일\SceneManager</Filter>
     </ClInclude>
+    <Filter Include="소스 파일\Camera">
+      <UniqueIdentifier>{028b0b36-9bfc-4143-8680-ee4b2f0deab1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Camera.h">
+      <Filter>소스 파일\Camera</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Camera.cpp">
+      <Filter>소스 파일\Camera</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

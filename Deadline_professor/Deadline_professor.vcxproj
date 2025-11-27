@@ -149,6 +149,12 @@
     <ClCompile Include="SceneManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="TotalHeader.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
