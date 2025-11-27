@@ -20,6 +20,8 @@ public:
 	std::function<void()> ActionA;
 	std::function<void()> ActionS;
 	std::function<void()> ActionD;
+	std::function<void()> ActionWheelUp;
+	std::function<void()> ActionWheelDown;
 
 private:
 	static InputManager* onceInstance;

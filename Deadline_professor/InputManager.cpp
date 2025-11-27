@@ -45,6 +45,13 @@ void InputManager::SKeyboard(int, int, int)
 {
 }
 
-void InputManager::Mouse(int, int, int, int)
+void InputManager::Mouse(int button, int state, int x, int y)
 {
+	if (button == 3) {
+		onceInstance->ActionWheelUp();
+	}
+	if (button == 4) {
+		onceInstance->ActionWheelDown();
+	}
+	
 }
