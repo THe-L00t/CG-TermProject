@@ -2,12 +2,14 @@
 #include "TotalHeader.h"
 
 class Camera;
+class Window;
 
 class InputManager
 {
 public:
 	void init();
-
+	void SetCamera(Camera* camera);
+	void SetWindow(Window* window);
 	void SetMouseControlActive(bool);
 
 	//콜백용 함수 
@@ -26,6 +28,7 @@ public:
 private:
 	static InputManager* onceInstance;
 	Camera* cmr;
+	Window* window;
 	bool mouseControl{ false };
 };
 

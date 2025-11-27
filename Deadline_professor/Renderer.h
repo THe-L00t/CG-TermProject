@@ -2,6 +2,9 @@
 #include "TotalHeader.h"
 #include "Shader.h"
 #include "ResourceManager.h"
+
+class Camera;
+
 class Renderer
 {
 public:
@@ -14,6 +17,7 @@ public:
 	void Init();
 	void Active();
 	void Deactive();
+	void SetCamera(Camera* cam);
 
 	void OnWindowResize(int, int);
 
@@ -31,6 +35,7 @@ private:
 
 	std::unordered_map<std::string, Shader> shaders;
 	ResourceManager* resourceManager;
+	Camera* camera;
 
 	// 테스트용 변수
 	GLuint testVAO{};

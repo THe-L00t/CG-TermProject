@@ -3,7 +3,11 @@
 class Camera
 {
 public:
-	// 생성자 코딩하기
+	Camera(glm::vec3 pos = glm::vec3(0.0f, 0.0f, 3.0f),
+		   glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f),
+		   glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f),
+		   float fov = 45.0f,
+		   float aspect = 16.0f / 9.0f);
 
 	glm::mat4 GetViewMat() const;
 	glm::mat4 GetProjMat() const;

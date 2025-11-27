@@ -1,4 +1,5 @@
 ﻿#include "InputManager.h"
+#include "Window.h"
 
 InputManager* InputManager::onceInstance = nullptr;
 
@@ -7,12 +8,27 @@ void InputManager::init()
 	onceInstance = this;
 }
 
+void InputManager::SetCamera(Camera* camera)
+{
+	cmr = camera;
+}
+
+void InputManager::SetWindow(Window* win)
+{
+	window = win;
+}
+
 void InputManager::SetMouseControlActive(bool active)
 {
 	mouseControl = active;
 	if (active) {
 		glutSetCursor(GLUT_CURSOR_NONE);
-		glutWarpPointer();	// 윈도우 객체에서 창 크기 받아오기
+		// 윈도우 중앙으로 마우스 커서 이동
+		if (window) {
+			int centerX = window->GetWidth() / 2;
+			int centerY = window->GetHeight() / 2;
+			glutWarpPointer(centerX, centerY);
+		}
 	}
 	else {
 		glutSetCursor(GLUT_CURSOR_INHERIT);
@@ -36,6 +52,8 @@ void InputManager::Keyboard(unsigned char key, int x, int y)
 		break;
 	case'D':case'd':
 		if (not onceInstance->ActionD) onceInstance->ActionD();
+	case'1':
+		onceInstance->SetMouseControlActive(true);
 		break;
 	}
 

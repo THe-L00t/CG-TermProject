@@ -1,8 +1,9 @@
 ﻿#include "Renderer.h"
+#include "Camera.h"
 
 Renderer* Renderer::activeInstance = nullptr;
 
-Renderer::Renderer(ResourceManager* resMgr) : resourceManager(resMgr)
+Renderer::Renderer(ResourceManager* resMgr) : resourceManager(resMgr), camera(nullptr)
 {
 
 }
@@ -47,6 +48,11 @@ void Renderer::Deactive()
 	if (activeInstance == this) {
 		activeInstance = nullptr;
 	}
+}
+
+void Renderer::SetCamera(Camera* cam)
+{
+	camera = cam;
 }
 
 void Renderer::OnWindowResize(int w, int h)
@@ -98,10 +104,14 @@ void Renderer::RenderTestCube()
 	model = glm::scale(model, glm::vec3(0.3f, 0.3f, 0.3f));
 	model = glm::rotate(model, (float)glutGet(GLUT_ELAPSED_TIME) * 0.001f, glm::vec3(0.5f, 1.0f, 0.0f));
 
+	// Camera에서 view, projection 행렬 가져오기
 	glm::mat4 view = glm::mat4(1.0f);
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -10.0f));
-
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+
+	if (camera) {
+		view = camera->GetViewMat();
+		projection = camera->GetProjMat();
+	}
 
 	shader->setUniform("uModel", model);
 	shader->setUniform("uView", view);
