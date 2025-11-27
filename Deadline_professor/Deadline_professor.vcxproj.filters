@@ -128,5 +128,18 @@
     <ClCompile Include="Camera.cpp">
       <Filter>소스 파일\Camera</Filter>
     </ClCompile>
+    <Filter Include="소스 파일\InputManager">
+      <UniqueIdentifier>{a9460595-e02c-4fa0-9bf1-715e9027021f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="InputManager.cpp">
+      <Filter>소스 파일\InputManager</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="InputManager.h">
+      <Filter>소스 파일\InputManager</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
