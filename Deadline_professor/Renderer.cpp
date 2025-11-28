@@ -62,10 +62,16 @@ void Renderer::OnWindowResize(int w, int h)
 
 void Renderer::DrawScene(GLvoid)
 {
-	if (activeInstance->onDrawScene) {
+	// 화면 클리어
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	if (activeInstance && activeInstance->onDrawScene) {
 		activeInstance->onDrawScene();
+	} else {
+		std::cerr << "DrawScene: No active instance or callback" << std::endl;
 	}
 
+	glutSwapBuffers();
 }
 
 bool Renderer::LoadShader(const std::string& name, const std::filesystem::path& vsPath, const std::filesystem::path& fsPath)
@@ -91,6 +97,8 @@ Shader* Renderer::GetShader(const std::string& name)
 
 void Renderer::RenderTestCube()
 {
+	std::cout << "RenderTestCube called" << std::endl;
+
 	Shader* shader = GetShader("basic");
 	if (!shader) {
 		std::cerr << "Shader 'basic' not found" << std::endl;
@@ -129,16 +137,16 @@ void Renderer::RenderTestCube()
 	shader->setUniform("uLightColor", lightColor);
 
 	// 렌더링
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	if (testVAO != 0) {
+		std::cout << "Drawing cube with " << testIndexCount << " indices" << std::endl;
 		glBindVertexArray(testVAO);
 		glDrawElements(GL_TRIANGLES, testIndexCount, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+	} else {
+		std::cerr << "testVAO is 0" << std::endl;
 	}
 
 	shader->Unuse();
-	glutSwapBuffers();
 }
 
 void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& modelMatrix)
@@ -158,6 +166,8 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 		std::cerr << "XMesh '" << meshName << "' has no vertex streams" << std::endl;
 		return;
 	}
+
+	std::cout << "Rendering XMesh '" << meshName << "' with " << meshData->index_count << " indices" << std::endl;
 
 	Shader* shader = GetShader("basic");
 	if (!shader) {

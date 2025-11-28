@@ -87,21 +87,36 @@ void Engine::Initialize(int argc, char** argv)
 		};
 
 	r->onDrawScene = [this]() {
+		static int frameCount = 0;
+		if (frameCount % 60 == 0) {
+			std::cout << "Frame " << frameCount << ": Rendering..." << std::endl;
+		}
+		frameCount++;
+
 		// RunLee 애니메이션 렌더링
 		const XMeshData* meshData = resourceManager->GetXMeshData("RunLee");
 		if (meshData && meshData->has_skeleton && animPlayer->IsPlaying()) {
+			if (frameCount % 60 == 0) {
+				std::cout << "Rendering animated RunLee" << std::endl;
+			}
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f)); // 스케일 조정
 			r->RenderAnimatedMesh("RunLee", animPlayer->GetFinalTransforms(), model);
 		}
 		else if (meshData) {
 			// 애니메이션이 없으면 정적 메시로 렌더링
+			if (frameCount % 60 == 0) {
+				std::cout << "Rendering static RunLee" << std::endl;
+			}
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
 			r->RenderXMesh("RunLee", model);
 		}
 		else {
 			// RunLee 로드 실패 시 기본 큐브 렌더링
+			if (frameCount % 60 == 0) {
+				std::cout << "Rendering fallback cube" << std::endl;
+			}
 			r->RenderTestCube();
 		}
 		};
