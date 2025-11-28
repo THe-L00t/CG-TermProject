@@ -7,7 +7,11 @@
 #include <sstream>
 #include <filesystem>
 #include <unordered_map>
-#include <gl/glew.h> 
+#include <vector>
+#include <memory>
+#include <cstring>
+#include <cmath>
+#include <gl/glew.h>
 #include <gl/freeglut.h>
 #include <gl/freeglut_ext.h>
 

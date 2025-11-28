@@ -8,6 +8,7 @@ class ResourceManager;
 class Camera;
 class InputManager;
 class SceneManager;
+class AnimationPlayer;
 
 class Engine
 {
@@ -23,7 +24,9 @@ public:
 	void Update();
 
 	ResourceManager* GetResourceManager() const { return resourceManager.get(); }
+	Renderer* GetRenderer() const { return r.get(); }
 	Camera* GetCamera() const { return camera.get(); }
+	AnimationPlayer* GetAnimationPlayer() const { return animPlayer.get(); }
 
 	static void TimerCallback(int value);
 
@@ -39,5 +42,9 @@ private:
 	std::unique_ptr<Camera> camera;
 	std::unique_ptr<InputManager> inputManager;
 	std::unique_ptr<SceneManager> sceneManager;
+	std::unique_ptr<AnimationPlayer> animPlayer;
 };
+
+// 전역 엔진 포인터 (Scene에서 접근용)
+extern Engine* g_engine;
 

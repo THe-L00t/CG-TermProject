@@ -6,12 +6,15 @@
 #include "Camera.h"
 #include "InputManager.h"
 #include "SceneManager.h"
+#include "AnimationPlayer.h"
 
 Engine* Engine::instance = nullptr;
+Engine* g_engine = nullptr;
 
 Engine::Engine()
 {
 	instance = this;
+	g_engine = this;
 }
 
 Engine::~Engine()
@@ -70,6 +73,10 @@ void Engine::Initialize(int argc, char** argv)
 	inputManager->SetWindow(w.get());
 	std::cout << "InputManager Initialized and Connected to Camera & Window" << std::endl;
 
+	// AnimationPlayer 초기화
+	animPlayer = std::make_unique<AnimationPlayer>();
+	std::cout << "AnimationPlayer Initialized" << std::endl;
+
 	// SceneManager 초기화
 	sceneManager = std::make_unique<SceneManager>();
 	sceneManager->ChangeScene("Test");
@@ -80,7 +87,23 @@ void Engine::Initialize(int argc, char** argv)
 		};
 
 	r->onDrawScene = [this]() {
-		r->RenderTestCube();
+		// RunLee 애니메이션 렌더링
+		const XMeshData* meshData = resourceManager->GetXMeshData("RunLee");
+		if (meshData && meshData->has_skeleton && animPlayer->IsPlaying()) {
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f)); // 스케일 조정
+			r->RenderAnimatedMesh("RunLee", animPlayer->GetFinalTransforms(), model);
+		}
+		else if (meshData) {
+			// 애니메이션이 없으면 정적 메시로 렌더링
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
+			r->RenderXMesh("RunLee", model);
+		}
+		else {
+			// RunLee 로드 실패 시 기본 큐브 렌더링
+			r->RenderTestCube();
+		}
 		};
 
 	// GLUT 콜백 등록
@@ -99,7 +122,14 @@ void Engine::LoadAssets()
 	std::cout << "=== Loading Assets ===" << std::endl;
 
 	// OBJ 파일 로드
-	resourceManager->LoadObj("cube", "cube.obj");
+	if (!resourceManager->LoadObj("cube", "cube.obj")) {
+		std::cerr << "Warning: Failed to load cube.obj" << std::endl;
+	}
+
+	// XMesh 파일 로드
+	if (!resourceManager->LoadXMesh("RunLee", "RunLee.xmesh")) {
+		std::cerr << "Warning: Failed to load RunLee.xmesh" << std::endl;
+	}
 
 	std::cout << "=== Assets Loaded ===" << std::endl;
 }

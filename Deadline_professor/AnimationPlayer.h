@@ -17,6 +17,9 @@ public:
 	void Resume();
 	void SetPlaybackSpeed(float speed);
 
+	// 본 인덱스 조회
+	int GetBoneIndex(const std::string& boneName) const;
+
 	// 업데이트 (deltaTime: 초 단위)
 	void Update(float deltaTime);
 

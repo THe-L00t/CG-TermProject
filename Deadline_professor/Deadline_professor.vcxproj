@@ -137,6 +137,7 @@
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="window.cpp" />
+    <ClCompile Include="AnimationPlayer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h" />
@@ -144,6 +145,7 @@
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="AnimationPlayer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SceneManager.cpp" />

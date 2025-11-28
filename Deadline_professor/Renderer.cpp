@@ -149,6 +149,16 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 		return;
 	}
 
+	if (meshData->index_count == 0) {
+		std::cerr << "XMesh '" << meshName << "' has no indices" << std::endl;
+		return;
+	}
+
+	if (meshData->streams.empty()) {
+		std::cerr << "XMesh '" << meshName << "' has no vertex streams" << std::endl;
+		return;
+	}
+
 	Shader* shader = GetShader("basic");
 	if (!shader) {
 		std::cerr << "Shader 'basic' not found" << std::endl;
@@ -276,6 +286,16 @@ void Renderer::RenderAnimatedMesh(const std::string_view& meshName, const std::v
 
 	if (!meshData->has_skeleton) {
 		std::cerr << "Mesh '" << meshName << "' has no skeleton" << std::endl;
+		return;
+	}
+
+	if (boneTransforms.empty()) {
+		std::cerr << "Bone transforms are empty" << std::endl;
+		return;
+	}
+
+	if (meshData->index_count == 0) {
+		std::cerr << "Mesh has no indices" << std::endl;
 		return;
 	}
 
