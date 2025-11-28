@@ -198,3 +198,209 @@ const ObjData* ResourceManager::GetObjData(const std::string_view& name) const
     }
     return nullptr;
 }
+
+bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesystem::path& path)
+{
+    // 파일 열기
+    std::ifstream ifs(path, std::ios::binary | std::ios::ate);
+    if (!ifs) {
+        std::cerr << "f-LoadXMesh failed: " << path << std::endl;
+        return false;
+    }
+
+    // 파일 크기 확인 및 전체 읽기
+    size_t fileSize = ifs.tellg();
+    ifs.seekg(0);
+
+    XMeshData meshData;
+    meshData.name = name;
+    meshData.file_buffer.resize(fileSize);
+    ifs.read(reinterpret_cast<char*>(meshData.file_buffer.data()), fileSize);
+    ifs.close();
+
+    // 헤더 검증
+    const XMeshHeader* header = reinterpret_cast<const XMeshHeader*>(meshData.file_buffer.data());
+    if (std::memcmp(header->magic, "XMESH\0", 6) != 0) {
+        std::cerr << "Invalid XMesh file: magic mismatch" << std::endl;
+        return false;
+    }
+
+    std::cout << "Loading XMesh '" << name << "' version " << header->version
+              << " with " << header->chunk_count << " chunks" << std::endl;
+
+    // 청크 테이블 읽기
+    const ChunkEntry* chunkTable = reinterpret_cast<const ChunkEntry*>(
+        meshData.file_buffer.data() + header->chunk_table_offset);
+
+    // 청크 처리
+    for (uint32_t i = 0; i < header->chunk_count; ++i) {
+        const ChunkEntry& chunk = chunkTable[i];
+        const uint8_t* payload = meshData.file_buffer.data() + chunk.chunk_offset;
+
+        switch (chunk.chunk_type) {
+        case CHUNK_VERTEX_STREAM: {
+            const VertexStreamHeader* streamHeader =
+                reinterpret_cast<const VertexStreamHeader*>(payload);
+            const void* streamData = payload + sizeof(VertexStreamHeader);
+
+            XMeshData::StreamInfo streamInfo;
+            streamInfo.data = streamData;
+            streamInfo.size = chunk.decompressed_size - sizeof(VertexStreamHeader);
+            streamInfo.element_size = streamHeader->element_size;
+            streamInfo.count = streamHeader->count;
+            streamInfo.stream_id = streamHeader->stream_id;
+
+            meshData.streams.push_back(streamInfo);
+
+            std::cout << "  Stream " << streamHeader->stream_id
+                      << ": " << streamHeader->count << " elements, "
+                      << streamHeader->element_size << " bytes each" << std::endl;
+            break;
+        }
+
+        case CHUNK_INDEX_STREAM: {
+            const IndexStreamHeader* indexHeader =
+                reinterpret_cast<const IndexStreamHeader*>(payload);
+            meshData.index_data = payload + sizeof(IndexStreamHeader);
+            meshData.index_size = chunk.decompressed_size - sizeof(IndexStreamHeader);
+            meshData.index_count = indexHeader->index_count;
+            meshData.index_type = (indexHeader->index_type == 16) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+
+            std::cout << "  Indices: " << indexHeader->index_count
+                      << " (" << indexHeader->index_type << " bit)" << std::endl;
+            break;
+        }
+
+        case CHUNK_MESH_SECTIONS: {
+            size_t sectionCount = chunk.decompressed_size / sizeof(MeshSection);
+            meshData.sections.resize(sectionCount);
+            std::memcpy(meshData.sections.data(), payload, chunk.decompressed_size);
+
+            std::cout << "  Mesh sections: " << sectionCount << std::endl;
+            break;
+        }
+
+        case CHUNK_SKELETON: {
+            const SkeletonHeader* skelHeader =
+                reinterpret_cast<const SkeletonHeader*>(payload);
+            const BoneInfo* bonesData = reinterpret_cast<const BoneInfo*>(
+                payload + sizeof(SkeletonHeader));
+
+            meshData.bones.resize(skelHeader->bone_count);
+            std::memcpy(meshData.bones.data(), bonesData,
+                       skelHeader->bone_count * sizeof(BoneInfo));
+            meshData.has_skeleton = true;
+
+            std::cout << "  Skeleton: " << skelHeader->bone_count << " bones" << std::endl;
+            break;
+        }
+
+        case CHUNK_ANIMATIONS: {
+            // 애니메이션 헤더 읽기
+            const AnimationHeader* animHeader =
+                reinterpret_cast<const AnimationHeader*>(payload);
+
+            AnimationClip clip;
+            std::memcpy(clip.name, animHeader->name, 64);
+            clip.duration = animHeader->duration;
+            clip.ticks_per_second = animHeader->ticks_per_second;
+
+            // 트랙 데이터 읽기
+            const uint8_t* trackData = payload + sizeof(AnimationHeader);
+            for (uint32_t t = 0; t < animHeader->track_count; ++t) {
+                const TrackHeader* trackHeader =
+                    reinterpret_cast<const TrackHeader*>(trackData);
+
+                AnimationTrack track;
+                track.bone_index = trackHeader->bone_index;
+                track.keyframe_count = trackHeader->keyframe_count;
+
+                // 키프레임 데이터 읽기
+                const AnimationKeyframe* keyframes =
+                    reinterpret_cast<const AnimationKeyframe*>(
+                        trackData + sizeof(TrackHeader));
+
+                track.keyframes.resize(trackHeader->keyframe_count);
+                std::memcpy(track.keyframes.data(), keyframes,
+                           trackHeader->keyframe_count * sizeof(AnimationKeyframe));
+
+                clip.tracks.push_back(std::move(track));
+
+                // 다음 트랙으로 이동
+                trackData += sizeof(TrackHeader) +
+                            trackHeader->keyframe_count * sizeof(AnimationKeyframe);
+            }
+
+            meshData.animations.push_back(std::move(clip));
+
+            std::cout << "  Animation '" << animHeader->name << "': "
+                      << animHeader->duration << "s, "
+                      << animHeader->track_count << " tracks" << std::endl;
+            break;
+        }
+
+        case CHUNK_META:
+        case CHUNK_MATERIALS:
+        case CHUNK_BOUNDING:
+        case CHUNK_CUSTOM:
+            // 향후 지원 예정
+            std::cout << "  Chunk type 0x" << std::hex << chunk.chunk_type
+                      << std::dec << " (not implemented yet)" << std::endl;
+            break;
+
+        default:
+            std::cerr << "  Unknown chunk type: 0x" << std::hex << chunk.chunk_type << std::dec << std::endl;
+            break;
+        }
+    }
+
+    // GPU 업로드
+    glBindVertexArray(VAO);
+
+    // VBO 생성 및 업로드 (스트림별)
+    meshData.vbos.resize(meshData.streams.size());
+    glGenBuffers(static_cast<GLsizei>(meshData.vbos.size()), meshData.vbos.data());
+
+    for (size_t s = 0; s < meshData.streams.size(); ++s) {
+        const auto& stream = meshData.streams[s];
+        glBindBuffer(GL_ARRAY_BUFFER, meshData.vbos[s]);
+        glBufferData(GL_ARRAY_BUFFER, stream.size, stream.data, GL_STATIC_DRAW);
+
+        // 스트림 ID에 따라 vertex attribute 설정
+        // stream 0: position (vec3)
+        // stream 1: normal (vec3)
+        // stream 2: uv0 (vec2)
+        GLuint attribIndex = stream.stream_id;
+        GLint componentCount = stream.element_size / sizeof(float);
+
+        glEnableVertexAttribArray(attribIndex);
+        glVertexAttribPointer(attribIndex, componentCount, GL_FLOAT, GL_FALSE,
+                              stream.element_size, (void*)0);
+    }
+
+    // EBO 생성 및 업로드
+    if (meshData.index_data) {
+        glGenBuffers(1, &meshData.ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshData.ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, meshData.index_size,
+                     meshData.index_data, GL_STATIC_DRAW);
+    }
+
+    glBindVertexArray(0);
+
+    std::cout << "XMesh '" << name << "' loaded successfully with "
+              << meshData.index_count << " indices" << std::endl;
+
+    xmeshList.push_back(std::move(meshData));
+    return true;
+}
+
+const XMeshData* ResourceManager::GetXMeshData(const std::string_view& name) const
+{
+    for (const auto& mesh : xmeshList) {
+        if (mesh.name == name) {
+            return &mesh;
+        }
+    }
+    return nullptr;
+}
