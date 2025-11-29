@@ -282,6 +282,18 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
         case CHUNK_VERTEX_STREAM: {
             const VertexStreamHeader* streamHeader =
                 reinterpret_cast<const VertexStreamHeader*>(payload);
+
+            // 헤더 검증
+            std::cout << "  [VERTEX_STREAM Header]:" << std::endl;
+            std::cout << "    stream_id: " << streamHeader->stream_id << std::endl;
+            std::cout << "    element_size: " << streamHeader->element_size << std::endl;
+            std::cout << "    count: " << streamHeader->count << std::endl;
+            std::cout << "    stride: " << streamHeader->stride << std::endl;
+            std::cout << "    format_flags: 0x" << std::hex << streamHeader->format_flags << std::dec << std::endl;
+            std::cout << "    chunk size: " << chunk.decompressed_size << std::endl;
+            std::cout << "    header size: " << sizeof(VertexStreamHeader) << std::endl;
+            std::cout << "    expected data size: " << (streamHeader->count * streamHeader->element_size) << std::endl;
+
             const void* streamData = payload + sizeof(VertexStreamHeader);
 
             XMeshData::StreamInfo streamInfo;
@@ -303,32 +315,39 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
             const IndexStreamHeader* indexHeader =
                 reinterpret_cast<const IndexStreamHeader*>(payload);
 
-            std::cout << "  [DEBUG] IndexStreamHeader raw values:" << std::endl;
+            // v2.2 스펙 검증
+            if (indexHeader->header_size != 32) {
+                std::cerr << "ERROR: Invalid INDEX_STREAM header_size: " << indexHeader->header_size
+                          << " (expected 32)" << std::endl;
+                break;
+            }
+
+            std::cout << "  [DEBUG] IndexStreamHeader (v2.2):" << std::endl;
+            std::cout << "    header_size: " << indexHeader->header_size << std::endl;
             std::cout << "    index_count: " << indexHeader->index_count << std::endl;
-            std::cout << "    index_size: " << indexHeader->index_size << std::endl;
+            std::cout << "    index_type: " << indexHeader->index_type
+                      << " (" << (indexHeader->index_type == 0 ? "uint32" : "uint16") << ")" << std::endl;
             std::cout << "    primitive_type: " << indexHeader->primitive_type << std::endl;
-            std::cout << "    chunk.decompressed_size: " << chunk.decompressed_size << std::endl;
 
             meshData.index_data = payload + sizeof(IndexStreamHeader);
             meshData.index_size = chunk.decompressed_size - sizeof(IndexStreamHeader);
+            meshData.index_count = indexHeader->index_count;
 
-            // 실제 파일 데이터로부터 인덱스 개수 계산
-            // index_size 필드가 실제로는 인덱스 개수를 의미할 수 있음
-            uint32_t bytesPerIndex = indexHeader->index_size;
-            if (bytesPerIndex == 2 || bytesPerIndex == 4) {
-                // index_size가 실제 바이트 크기를 의미
-                meshData.index_count = indexHeader->index_count;
-                meshData.index_type = (bytesPerIndex == 2) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
-            } else {
-                // 필드 순서가 바뀌었을 가능성 - 데이터 크기로 역산
-                bytesPerIndex = 4; // 일단 uint32로 가정
-                meshData.index_count = meshData.index_size / bytesPerIndex;
-                meshData.index_type = GL_UNSIGNED_INT;
-                std::cout << "    [FALLBACK] Calculated index_count from size: " << meshData.index_count << std::endl;
-            }
+            // index_type: 0=uint32 (4 bytes), 1=uint16 (2 bytes)
+            meshData.index_type = (indexHeader->index_type == 1) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+
+            size_t bytesPerIndex = (indexHeader->index_type == 1) ? 2 : 4;
+            size_t expectedSize = meshData.index_count * bytesPerIndex;
 
             std::cout << "  Indices: " << meshData.index_count
-                      << " (" << bytesPerIndex << " bytes per index)" << std::endl;
+                      << " (" << bytesPerIndex << " bytes per index)"
+                      << ", payload size: " << meshData.index_size
+                      << " bytes (expected: " << expectedSize << ")" << std::endl;
+
+            // 크기 검증
+            if (meshData.index_size != expectedSize) {
+                std::cerr << "WARNING: Index payload size mismatch!" << std::endl;
+            }
             break;
         }
 
@@ -467,7 +486,7 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
         }
     }
 
-    // GPU 업로드
+    // GPU 업로드 - 각 XMesh는 자체 VAO를 가짐
     std::cout << "Starting GPU upload..." << std::endl;
 
     if (meshData.streams.empty()) {
@@ -478,7 +497,9 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
         std::cerr << "Warning: No index data found" << std::endl;
     }
 
-    glBindVertexArray(VAO);
+    // XMesh 전용 VAO 생성
+    glGenVertexArrays(1, &meshData.vao);
+    glBindVertexArray(meshData.vao);
 
     // VBO 생성 및 업로드 (스트림별)
     if (!meshData.streams.empty()) {
@@ -501,67 +522,123 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
             glBindBuffer(GL_ARRAY_BUFFER, meshData.vbos[s]);
             glBufferData(GL_ARRAY_BUFFER, stream.size, stream.data, GL_STATIC_DRAW);
 
-            // 스트림 ID에 따라 vertex attribute 설정
-            // Stream ID 매핑: 0=position, 1=normal, 2=tangent, 3=uv0, 4=uv1, 5=color, 6=weights, 7=bones
-            GLuint attribIndex = stream.stream_id;
+            // 첫 몇 개 정점 데이터 출력 (디버깅)
+            if (s == 0 && stream.stream_id == 0 && stream.element_size == 6) {
+                // position stream (int16x3)
+                const int16_t* posData = reinterpret_cast<const int16_t*>(stream.data);
+                std::cout << "  [DEBUG] First 3 position vertices (int16x3):" << std::endl;
+                for (int v = 0; v < 3 && v * 3 < static_cast<int>(stream.count); ++v) {
+                    std::cout << "    v" << v << ": ("
+                              << posData[v*3+0] << ", "
+                              << posData[v*3+1] << ", "
+                              << posData[v*3+2] << ")" << std::endl;
+                }
+            }
+
+            // XMESH 스펙에 따른 스트림 ID → attribute location 매핑
+            // stream_id    attribute_location    format
+            // 0            0                     pos (float3 or int16x3)
+            // 1            1                     normal (float3 or int16x3)
+            // 2            2                     tangent (float4 or int16x4)
+            // 3            3                     uv (float2 or half2)
+            // 4            4                     color (u8x4 normalized)
+            // 6            5                     weights (u8x4 or half4 normalized)
+            // 7            6                     bone indices (u8x4)
+
+            GLuint attribIndex = 0;
             GLint componentCount = 0;
             GLenum dataType = GL_FLOAT;
             GLboolean normalized = GL_FALSE;
 
-            // element_size로 데이터 타입 추론
-            if (stream.stream_id == 0) { // position
-                attribIndex = 0; // shader location 0
-                if (stream.element_size == 12) {
-                    // float32 x 3
-                    componentCount = 3;
-                    dataType = GL_FLOAT;
-                } else if (stream.element_size == 6) {
-                    // int16 x 3 (quantized)
-                    componentCount = 3;
-                    dataType = GL_SHORT;
-                    normalized = GL_TRUE; // normalize to [-1, 1]
-                }
-            } else if (stream.stream_id == 1) { // normal
-                attribIndex = 2; // shader location 2
+            switch (stream.stream_id) {
+            case 0: // position
+                attribIndex = 0;
                 if (stream.element_size == 12) {
                     componentCount = 3;
                     dataType = GL_FLOAT;
                 } else if (stream.element_size == 6) {
-                    // int16 x 3 (quantized)
                     componentCount = 3;
                     dataType = GL_SHORT;
-                    normalized = GL_TRUE;
+                    normalized = GL_FALSE; // raw int16, 셰이더에서 변환
                 }
-            } else if (stream.stream_id == 2) { // tangent
-                attribIndex = 3; // shader location 3
+                break;
+
+            case 1: // normal
+                attribIndex = 1;
+                if (stream.element_size == 12) {
+                    componentCount = 3;
+                    dataType = GL_FLOAT;
+                } else if (stream.element_size == 6) {
+                    componentCount = 3;
+                    dataType = GL_SHORT;
+                    normalized = GL_TRUE; // 노말은 정규화
+                }
+                break;
+
+            case 2: // tangent OR uv (파일에 따라 다름 - element_size로 구분)
                 if (stream.element_size == 16) {
+                    // tangent (float4)
+                    attribIndex = 2;
                     componentCount = 4;
                     dataType = GL_FLOAT;
                 } else if (stream.element_size == 8) {
-                    componentCount = 4;
-                    dataType = GL_SHORT;
-                    normalized = GL_TRUE;
+                    // tangent (int16x4) or uv (float2)
+                    if (stream.count > 100000) {
+                        // 많은 버텍스 → UV 추측
+                        attribIndex = 3;
+                        componentCount = 2;
+                        dataType = GL_FLOAT;
+                    } else {
+                        attribIndex = 2;
+                        componentCount = 4;
+                        dataType = GL_SHORT;
+                        normalized = GL_TRUE;
+                    }
+                } else if (stream.element_size == 4) {
+                    // uv (half2)
+                    attribIndex = 3;
+                    componentCount = 2;
+                    dataType = GL_HALF_FLOAT;
                 }
-            } else if (stream.stream_id == 3) { // uv0
-                attribIndex = 1; // shader location 1
+                break;
+
+            case 3: // uv
+                attribIndex = 3;
                 if (stream.element_size == 8) {
                     componentCount = 2;
                     dataType = GL_FLOAT;
                 } else if (stream.element_size == 4) {
-                    // half-float or int16 x 2
                     componentCount = 2;
                     dataType = GL_HALF_FLOAT;
                 }
-            } else if (stream.stream_id == 6) { // bone weights
-                componentCount = 4;
-                dataType = GL_FLOAT;
+                break;
+
+            case 4: // color
                 attribIndex = 4;
-            } else if (stream.stream_id == 7) { // bone indices
                 componentCount = 4;
                 dataType = GL_UNSIGNED_BYTE;
+                normalized = GL_TRUE;
+                break;
+
+            case 6: // bone weights
                 attribIndex = 5;
-            } else {
-                // 기본 매핑
+                if (stream.element_size == 16) {
+                    componentCount = 4;
+                    dataType = GL_FLOAT;
+                } else if (stream.element_size == 4) {
+                    componentCount = 4;
+                    dataType = GL_UNSIGNED_BYTE;
+                    normalized = GL_TRUE;
+                }
+                break;
+
+            case 7: // bone indices
+                attribIndex = 6;
+                componentCount = 4;
+                dataType = GL_UNSIGNED_BYTE;
+                break;
+
+            default:
                 std::cerr << "Warning: Unknown stream ID " << stream.stream_id << std::endl;
                 continue;
             }

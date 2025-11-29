@@ -48,7 +48,11 @@ void Engine::Initialize(int argc, char** argv)
 	r = std::make_unique<Renderer>(resourceManager.get());
 	r->Init();
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE);  // Face culling 일시적으로 비활성화 (winding order 확인용)
+
+	std::cout << "OpenGL settings:" << std::endl;
+	std::cout << "  DEPTH_TEST: enabled" << std::endl;
+	std::cout << "  CULL_FACE: disabled (for debugging)" << std::endl;
 
 	gameTimer = std::make_unique<GameTimer>();
 
@@ -122,6 +126,13 @@ void Engine::Initialize(int argc, char** argv)
 		// 첫 프레임에만 상세 정보 출력
 		if (!printedOnce) {
 			std::cout << "\n=== XMesh Rendering Debug Info ===" << std::endl;
+
+			// 카메라 정보 출력
+			glm::vec3 camPos = camera->GetPosition();
+			glm::vec3 camDir = camera->GetDirection();
+			std::cout << "Camera Position: (" << camPos.x << ", " << camPos.y << ", " << camPos.z << ")" << std::endl;
+			std::cout << "Camera Direction: (" << camDir.x << ", " << camDir.y << ", " << camDir.z << ")" << std::endl;
+
 			if (meshData) {
 				std::cout << "RunLee mesh found!" << std::endl;
 				std::cout << "  Index count: " << meshData->index_count << std::endl;
@@ -144,7 +155,7 @@ void Engine::Initialize(int argc, char** argv)
 				std::cout << "Rendering animated RunLee" << std::endl;
 			}
 			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
+			// 스케일은 셰이더에서 처리
 			r->RenderAnimatedMesh("RunLee", animPlayer->GetFinalTransforms(), model);
 		}
 		else if (meshData) {
@@ -153,15 +164,8 @@ void Engine::Initialize(int argc, char** argv)
 				std::cout << "Rendering static RunLee (index_count=" << meshData->index_count << ")" << std::endl;
 			}
 			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
+			// 스케일은 셰이더에서 처리
 			r->RenderXMesh("RunLee", model);
-		}
-		else {
-			// RunLee 로드 실패 시 기본 큐브 렌더링
-			if (frameCount % 60 == 0) {
-				std::cout << "Rendering fallback cube" << std::endl;
-			}
-			r->RenderTestCube();
 		}
 		};
 

@@ -49,11 +49,12 @@ struct VertexStreamHeader {
 };
 
 struct IndexStreamHeader {
+	uint32_t header_size;      // 헤더 크기 (32 bytes, 버전/검증용)
 	uint32_t index_count;      // 총 인덱스 개수
-	uint32_t index_size;       // 인덱스당 크기 (2=uint16, 4=uint32)
+	uint32_t index_type;       // 0=uint32, 1=uint16
 	uint32_t primitive_type;   // 0=triangles, 1=lines, 2=points
-	uint32_t reserved;         // 예약됨
-	// 총 크기: 16 bytes
+	uint32_t reserved[4];      // 예약됨 (확장성)
+	// 총 크기: 32 bytes
 };
 
 struct MeshSection {
@@ -176,6 +177,9 @@ struct AnimationClip {
 struct XMeshData {
 	std::string name;
 
+	// VAO (로드 시 1회만 설정)
+	GLuint vao{};
+
 	// 스트림별 VBO
 	std::vector<GLuint> vbos;
 	GLuint ebo{};
@@ -241,10 +245,12 @@ public:
 
 	bool LoadObj(const std::string_view&, const std::filesystem::path&);
 	bool LoadXMesh(const std::string_view&, const std::filesystem::path&);
+	bool LoadTexture(const std::string_view&, const std::filesystem::path&);
 
 	GLuint GetVAO() const { return VAO; }
 	const ObjData* GetObjData(const std::string_view&) const;
 	const XMeshData* GetXMeshData(const std::string_view&) const;
+	GLuint GetTexture(const std::string_view&) const;
 
 	// 애니메이션 트랙 디코딩 헬퍼
 	bool DecodeAnimationTrack(const XMeshData* mesh, uint32_t clipIndex, uint32_t trackIndex, AnimationTrack& outTrack);
@@ -256,5 +262,6 @@ private:
 	GLuint VAO{};
 	std::vector<ObjData> dataList;
 	std::vector<XMeshData> xmeshList;
+	std::unordered_map<std::string, GLuint> textureMap;
 };
 

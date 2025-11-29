@@ -176,8 +176,38 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 		std::cout << "Index type: " << (meshData->index_type == GL_UNSIGNED_SHORT ? "UNSIGNED_SHORT" : "UNSIGNED_INT") << std::endl;
 		std::cout << "VBOs: " << meshData->vbos.size() << std::endl;
 		std::cout << "EBO: " << meshData->ebo << std::endl;
-		std::cout << "VAO: " << resourceManager->GetVAO() << std::endl;
+		std::cout << "VAO: " << meshData->vao << std::endl;
 		std::cout << "Sections: " << meshData->sections.size() << std::endl;
+
+		// VBO/EBO가 실제로 생성되었는지 확인
+		for (size_t i = 0; i < meshData->vbos.size(); ++i) {
+			std::cout << "  VBO[" << i << "]: " << meshData->vbos[i] << std::endl;
+		}
+
+		// 스트림 정보 상세 출력
+		std::cout << "Streams detail:" << std::endl;
+		for (size_t i = 0; i < meshData->streams.size(); ++i) {
+			const auto& s = meshData->streams[i];
+			std::cout << "  Stream " << i << " (id=" << s.stream_id << "): "
+			          << "count=" << s.count << ", element_size=" << s.element_size
+			          << ", total_size=" << s.size << std::endl;
+		}
+
+		// OpenGL 상태 확인
+		GLboolean depthTest, cullFace;
+		glGetBooleanv(GL_DEPTH_TEST, &depthTest);
+		glGetBooleanv(GL_CULL_FACE, &cullFace);
+		std::cout << "GL_DEPTH_TEST: " << (depthTest ? "enabled" : "disabled") << std::endl;
+		std::cout << "GL_CULL_FACE: " << (cullFace ? "enabled" : "disabled") << std::endl;
+
+		// 카메라 정보
+		if (camera) {
+			glm::vec3 pos = camera->GetPosition();
+			glm::vec3 dir = camera->GetDirection();
+			std::cout << "Camera pos: (" << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
+			std::cout << "Camera dir: (" << dir.x << ", " << dir.y << ", " << dir.z << ")" << std::endl;
+		}
+
 		std::cout << "========================\n" << std::endl;
 		printedDebug = true;
 	}
@@ -214,15 +244,12 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 	shader->setUniform("uViewPos", viewPos);
 	shader->setUniform("uLightColor", lightColor);
 
-	// VAO 바인드 및 렌더링
-	GLuint vao = resourceManager->GetVAO();
-	glBindVertexArray(vao);
+	// XMesh 전용 VAO 바인드 (로드 시 이미 설정됨)
+	glBindVertexArray(meshData->vao);
 
-	if (!printedDebug) {
-		GLenum err = glGetError();
-		if (err != GL_NO_ERROR) {
-			std::cerr << "OpenGL error before draw: " << err << std::endl;
-		}
+	GLenum err = glGetError();
+	if (err != GL_NO_ERROR) {
+		std::cerr << "OpenGL error after VAO bind: " << err << std::endl;
 	}
 
 	// 섹션별로 렌더링 (섹션이 있는 경우)
@@ -234,7 +261,8 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 			const auto& section = meshData->sections[i];
 			if (!printedDebug) {
 				std::cout << "  Section " << i << ": start=" << section.index_start
-				          << ", count=" << section.index_count << std::endl;
+				          << ", count=" << section.index_count
+				          << ", vertex_start=" << section.vertex_start << std::endl;
 			}
 			glDrawElementsBaseVertex(
 				GL_TRIANGLES,
@@ -243,6 +271,11 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 				(void*)(section.index_start * (meshData->index_type == GL_UNSIGNED_SHORT ? 2 : 4)),
 				section.vertex_start
 			);
+
+			err = glGetError();
+			if (err != GL_NO_ERROR) {
+				std::cerr << "OpenGL error after drawing section " << i << ": " << err << std::endl;
+			}
 		}
 	}
 	else {
@@ -251,10 +284,8 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 			std::cout << "Drawing entire mesh: " << meshData->index_count << " indices" << std::endl;
 		}
 		glDrawElements(GL_TRIANGLES, meshData->index_count, meshData->index_type, 0);
-	}
 
-	if (!printedDebug) {
-		GLenum err = glGetError();
+		err = glGetError();
 		if (err != GL_NO_ERROR) {
 			std::cerr << "OpenGL error after draw: " << err << std::endl;
 		}
@@ -309,8 +340,8 @@ void Renderer::RenderXMeshSection(const std::string_view& meshName, size_t secti
 	shader->setUniform("uViewPos", viewPos);
 	shader->setUniform("uLightColor", lightColor);
 
-	// VAO 바인드 및 특정 섹션만 렌더링
-	glBindVertexArray(resourceManager->GetVAO());
+	// XMesh 전용 VAO 바인드 및 특정 섹션만 렌더링
+	glBindVertexArray(meshData->vao);
 
 	const MeshSection& section = meshData->sections[sectionIndex];
 	glDrawElementsBaseVertex(
@@ -392,8 +423,8 @@ void Renderer::RenderAnimatedMesh(const std::string_view& meshName, const std::v
 	shader->setUniform("uViewPos", viewPos);
 	shader->setUniform("uLightColor", lightColor);
 
-	// VAO 바인드 및 렌더링
-	glBindVertexArray(resourceManager->GetVAO());
+	// XMesh 전용 VAO 바인드
+	glBindVertexArray(meshData->vao);
 
 	// 섹션별로 렌더링
 	if (!meshData->sections.empty()) {
