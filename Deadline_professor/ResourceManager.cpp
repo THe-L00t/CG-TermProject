@@ -142,7 +142,7 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
     }
 
     ObjData temp{};
-    temp.name = name;
+    temp.name = std::string(name);
     temp.indexCount = indices.size();
 
     glGenBuffers(1, &(temp.VBO));
@@ -191,8 +191,9 @@ void ResourceManager::SortData()
 
 const ObjData* ResourceManager::GetObjData(const std::string_view& name) const
 {
+    std::string nameStr(name);
     for (const auto& obj : dataList) {
-        if (obj.name == name) {
+        if (obj.name == nameStr) {
             return &obj;
         }
     }
@@ -218,7 +219,7 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
     ifs.seekg(0);
 
     XMeshData meshData;
-    meshData.name = name;
+    meshData.name = std::string(name);
     meshData.file_buffer.resize(fileSize);
     ifs.read(reinterpret_cast<char*>(meshData.file_buffer.data()), fileSize);
     ifs.close();
@@ -301,13 +302,33 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
         case CHUNK_INDEX_STREAM: {
             const IndexStreamHeader* indexHeader =
                 reinterpret_cast<const IndexStreamHeader*>(payload);
+
+            std::cout << "  [DEBUG] IndexStreamHeader raw values:" << std::endl;
+            std::cout << "    index_count: " << indexHeader->index_count << std::endl;
+            std::cout << "    index_size: " << indexHeader->index_size << std::endl;
+            std::cout << "    primitive_type: " << indexHeader->primitive_type << std::endl;
+            std::cout << "    chunk.decompressed_size: " << chunk.decompressed_size << std::endl;
+
             meshData.index_data = payload + sizeof(IndexStreamHeader);
             meshData.index_size = chunk.decompressed_size - sizeof(IndexStreamHeader);
-            meshData.index_count = indexHeader->index_count;
-            meshData.index_type = (indexHeader->index_type == 16) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 
-            std::cout << "  Indices: " << indexHeader->index_count
-                      << " (" << indexHeader->index_type << " bit)" << std::endl;
+            // 실제 파일 데이터로부터 인덱스 개수 계산
+            // index_size 필드가 실제로는 인덱스 개수를 의미할 수 있음
+            uint32_t bytesPerIndex = indexHeader->index_size;
+            if (bytesPerIndex == 2 || bytesPerIndex == 4) {
+                // index_size가 실제 바이트 크기를 의미
+                meshData.index_count = indexHeader->index_count;
+                meshData.index_type = (bytesPerIndex == 2) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+            } else {
+                // 필드 순서가 바뀌었을 가능성 - 데이터 크기로 역산
+                bytesPerIndex = 4; // 일단 uint32로 가정
+                meshData.index_count = meshData.index_size / bytesPerIndex;
+                meshData.index_type = GL_UNSIGNED_INT;
+                std::cout << "    [FALLBACK] Calculated index_count from size: " << meshData.index_count << std::endl;
+            }
+
+            std::cout << "  Indices: " << meshData.index_count
+                      << " (" << bytesPerIndex << " bytes per index)" << std::endl;
             break;
         }
 
@@ -326,11 +347,14 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
             const BoneEntry* bonesData = reinterpret_cast<const BoneEntry*>(
                 payload + sizeof(SkeletonHeader));
 
-            // 이름 테이블 위치
+            // 이름 테이블 위치 및 범위
             const char* nameTable = nullptr;
-            if (skelHeader->name_table_offset > 0) {
+            size_t nameTableSize = 0;
+            if (skelHeader->name_table_offset > 0 &&
+                skelHeader->name_table_offset < chunk.decompressed_size) {
                 nameTable = reinterpret_cast<const char*>(
                     payload + skelHeader->name_table_offset);
+                nameTableSize = chunk.decompressed_size - skelHeader->name_table_offset;
             }
 
             meshData.bones.resize(skelHeader->bone_count);
@@ -338,9 +362,15 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
                 const BoneEntry& entry = bonesData[b];
                 BoneInfo& bone = meshData.bones[b];
 
-                // 이름 읽기
-                if (nameTable && entry.name_offset != static_cast<uint32_t>(-1)) {
-                    bone.name = std::string(nameTable + entry.name_offset);
+                // 이름 읽기 (안전하게 처리)
+                if (nameTable &&
+                    entry.name_offset != static_cast<uint32_t>(-1) &&
+                    entry.name_offset < nameTableSize) {
+                    const char* namePtr = nameTable + entry.name_offset;
+                    // null-terminated 문자열 길이를 안전하게 계산
+                    size_t maxLen = nameTableSize - entry.name_offset;
+                    size_t nameLen = strnlen(namePtr, maxLen);
+                    bone.name = std::string(namePtr, nameLen);
                     meshData.bone_name_to_index[bone.name] = b;
                 } else {
                     bone.name = "bone_" + std::to_string(b);
@@ -371,6 +401,7 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
                 reinterpret_cast<const AnimIndexHeader*>(payload);
 
             const uint8_t* clipData = payload + sizeof(AnimIndexHeader);
+            size_t remainingSize = chunk.decompressed_size - sizeof(AnimIndexHeader);
 
             for (uint32_t c = 0; c < animIndexHeader->clip_count; ++c) {
                 const AnimClipEntry* clipEntry =
@@ -378,10 +409,16 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
 
                 AnimationClip clip;
 
-                // 이름 읽기 (간단한 구현: 클립 엔트리 바로 뒤에 이름 테이블이 있다고 가정)
-                const char* clipName = reinterpret_cast<const char*>(
-                    clipData + clipEntry->name_offset);
-                clip.name = std::string(clipName);
+                // 이름 읽기 (안전하게 처리)
+                if (clipEntry->name_offset < remainingSize) {
+                    const char* clipName = reinterpret_cast<const char*>(
+                        clipData + clipEntry->name_offset);
+                    size_t maxLen = remainingSize - clipEntry->name_offset;
+                    size_t nameLen = strnlen(clipName, maxLen);
+                    clip.name = std::string(clipName, nameLen);
+                } else {
+                    clip.name = "anim_" + std::to_string(c);
+                }
                 clip.duration = clipEntry->duration;
                 clip.sample_rate = clipEntry->sample_rate;
 
@@ -452,7 +489,9 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
             const auto& stream = meshData.streams[s];
 
             std::cout << "Uploading stream " << s << " (ID=" << stream.stream_id
-                      << ", size=" << stream.size << ")" << std::endl;
+                      << ", size=" << stream.size
+                      << ", count=" << stream.count
+                      << ", element_size=" << stream.element_size << ")" << std::endl;
 
             if (stream.size == 0 || stream.data == nullptr) {
                 std::cerr << "Warning: Stream " << s << " has invalid data" << std::endl;
@@ -463,13 +502,81 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
             glBufferData(GL_ARRAY_BUFFER, stream.size, stream.data, GL_STATIC_DRAW);
 
             // 스트림 ID에 따라 vertex attribute 설정
+            // Stream ID 매핑: 0=position, 1=normal, 2=tangent, 3=uv0, 4=uv1, 5=color, 6=weights, 7=bones
             GLuint attribIndex = stream.stream_id;
-            GLint componentCount = stream.element_size / sizeof(float);
+            GLint componentCount = 0;
+            GLenum dataType = GL_FLOAT;
+            GLboolean normalized = GL_FALSE;
+
+            // element_size로 데이터 타입 추론
+            if (stream.stream_id == 0) { // position
+                attribIndex = 0; // shader location 0
+                if (stream.element_size == 12) {
+                    // float32 x 3
+                    componentCount = 3;
+                    dataType = GL_FLOAT;
+                } else if (stream.element_size == 6) {
+                    // int16 x 3 (quantized)
+                    componentCount = 3;
+                    dataType = GL_SHORT;
+                    normalized = GL_TRUE; // normalize to [-1, 1]
+                }
+            } else if (stream.stream_id == 1) { // normal
+                attribIndex = 2; // shader location 2
+                if (stream.element_size == 12) {
+                    componentCount = 3;
+                    dataType = GL_FLOAT;
+                } else if (stream.element_size == 6) {
+                    // int16 x 3 (quantized)
+                    componentCount = 3;
+                    dataType = GL_SHORT;
+                    normalized = GL_TRUE;
+                }
+            } else if (stream.stream_id == 2) { // tangent
+                attribIndex = 3; // shader location 3
+                if (stream.element_size == 16) {
+                    componentCount = 4;
+                    dataType = GL_FLOAT;
+                } else if (stream.element_size == 8) {
+                    componentCount = 4;
+                    dataType = GL_SHORT;
+                    normalized = GL_TRUE;
+                }
+            } else if (stream.stream_id == 3) { // uv0
+                attribIndex = 1; // shader location 1
+                if (stream.element_size == 8) {
+                    componentCount = 2;
+                    dataType = GL_FLOAT;
+                } else if (stream.element_size == 4) {
+                    // half-float or int16 x 2
+                    componentCount = 2;
+                    dataType = GL_HALF_FLOAT;
+                }
+            } else if (stream.stream_id == 6) { // bone weights
+                componentCount = 4;
+                dataType = GL_FLOAT;
+                attribIndex = 4;
+            } else if (stream.stream_id == 7) { // bone indices
+                componentCount = 4;
+                dataType = GL_UNSIGNED_BYTE;
+                attribIndex = 5;
+            } else {
+                // 기본 매핑
+                std::cerr << "Warning: Unknown stream ID " << stream.stream_id << std::endl;
+                continue;
+            }
 
             if (componentCount > 0 && componentCount <= 4) {
                 glEnableVertexAttribArray(attribIndex);
-                glVertexAttribPointer(attribIndex, componentCount, GL_FLOAT, GL_FALSE,
+                glVertexAttribPointer(attribIndex, componentCount, dataType, normalized,
                                       stream.element_size, (void*)0);
+                std::cout << "  -> Enabled attrib " << attribIndex
+                          << " with " << componentCount << " components"
+                          << " (type=" << (dataType == GL_FLOAT ? "FLOAT" :
+                                           dataType == GL_SHORT ? "SHORT" :
+                                           dataType == GL_HALF_FLOAT ? "HALF_FLOAT" : "OTHER")
+                          << ", normalized=" << (normalized ? "true" : "false") << ")"
+                          << std::endl;
             } else {
                 std::cerr << "Warning: Invalid component count " << componentCount
                           << " for stream " << s << std::endl;
@@ -499,8 +606,9 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
 
 const XMeshData* ResourceManager::GetXMeshData(const std::string_view& name) const
 {
+    std::string nameStr(name);
     for (const auto& mesh : xmeshList) {
-        if (mesh.name == name) {
+        if (mesh.name == nameStr) {
             return &mesh;
         }
     }

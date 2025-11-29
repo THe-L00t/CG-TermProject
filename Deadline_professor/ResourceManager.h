@@ -15,17 +15,18 @@ struct ObjData {
 	size_t indexCount{};
 };
 
-// XMesh 파일 포맷 구조체 (Version 2)
+// XMesh 파일 포맷 구조체 (Version 2.1)
 #pragma pack(push, 1)
 struct XMeshHeader {
-	char magic[6];            // "XMESH\0"
+	char magic[6];            // "XMESH\x1a" (6 bytes)
 	uint16_t version;         // 버전 2 (animation-enabled)
 	uint32_t chunk_count;     // 청크 개수
-	uint64_t chunk_table_offset; // 청크 테이블 오프셋
+	uint64_t chunk_table_offset; // 청크 테이블 오프셋 (일반적으로 52)
 	uint32_t flags;           // 플래그 (엔디안, quantization 기본값)
 	uint32_t reserved;        // 예약
 	uint64_t file_size;       // 파일 크기
-	uint8_t uuid[16];         // asset id
+	// 실제 데이터: 52 bytes
+	// 권장 패딩: +12 bytes → 64 bytes aligned (파일에서 자동 처리)
 };
 
 struct ChunkEntry {
@@ -35,6 +36,7 @@ struct ChunkEntry {
 	uint64_t decompressed_size; // 압축 해제된 크기
 	uint32_t compression;     // 0=none, 1=LZ4, 2=ZSTD, 3=MESHOPT, 4=ZSTD+MESHOPT
 	uint32_t flags;           // 청크별 플래그
+	// 총 크기: 36 bytes
 };
 
 struct VertexStreamHeader {
@@ -47,9 +49,11 @@ struct VertexStreamHeader {
 };
 
 struct IndexStreamHeader {
-	uint32_t index_type;     // 16 또는 32 bit
-	uint32_t index_count;    // 인덱스 개수
-	uint32_t reserved[2];
+	uint32_t index_count;      // 총 인덱스 개수
+	uint32_t index_size;       // 인덱스당 크기 (2=uint16, 4=uint32)
+	uint32_t primitive_type;   // 0=triangles, 1=lines, 2=points
+	uint32_t reserved;         // 예약됨
+	// 총 크기: 16 bytes
 };
 
 struct MeshSection {
@@ -62,11 +66,11 @@ struct MeshSection {
 	uint16_t flags;
 };
 
-// 스켈레톤 구조체 (새 포맷)
+// 스켈레톤 구조체 (v2.1 포맷)
 struct SkeletonHeader {
-	uint32_t bone_count;
-	uint32_t name_table_offset; // 이름 테이블 오프셋 (optional)
-	uint32_t reserved[2];
+	uint32_t bone_count;         // 본 개수
+	uint32_t name_table_offset;  // 이름 테이블 오프셋 (청크 시작부터), 0이면 없음
+	// 총 크기: 8 bytes
 };
 
 struct BoneEntry {
@@ -74,38 +78,40 @@ struct BoneEntry {
 	int32_t parent_index;      // 부모 본 인덱스 (-1이면 루트)
 	float local_bind[16];      // column-major mat4 (bind pose local)
 	float inv_bind[16];        // inverse bind matrix
-	uint32_t flags;
-	uint32_t reserved;
+	uint32_t flags;            // 본별 플래그
+	// 총 크기: 4 + 4 + 64 + 64 + 4 = 140 bytes per bone
 };
 
 // 애니메이션 인덱스 (CHUNK_ANIMATION_INDEX)
 struct AnimIndexHeader {
-	uint32_t clip_count;
-	uint32_t reserved[3];
+	uint32_t clip_count;  // 애니메이션 클립 개수
+	// 총 크기: 4 bytes
 };
 
 struct AnimClipEntry {
-	uint32_t name_offset;        // 이름 테이블 내 오프셋
-	float duration;
-	float sample_rate;           // nominal fps
-	uint32_t num_bone_tracks;
-	uint32_t track_table_offset; // 이 엔트리로부터의 오프셋
-	uint32_t reserved[2];
+	uint32_t name_offset;        // 클립 이름 오프셋 (청크 내)
+	float duration;              // 애니메이션 길이 (초)
+	float sample_rate;           // 샘플링 주파수 (fps)
+	uint32_t num_bone_tracks;    // 이 클립의 본 트랙 개수
+	uint32_t track_table_offset; // 트랙 테이블 오프셋 (이 엔트리부터)
+	// 총 크기: 20 bytes per clip
 };
 
 struct TrackTableEntry {
-	uint32_t bone_index;
-	uint32_t num_keys;
-	uint64_t track_chunk_offset; // 파일 내 CHUNK_ANIM_TRACK 오프셋
+	uint32_t bone_index;         // 어떤 본의 트랙인지
+	uint32_t num_keys;           // 키프레임 개수
+	uint64_t track_chunk_offset; // 해당 ANIM_TRACK 청크의 파일 오프셋
+	// 총 크기: 16 bytes per track
 };
 
 // 애니메이션 트랙 (CHUNK_ANIM_TRACK)
 struct AnimTrackHeader {
-	uint32_t bone_index;
-	uint32_t num_keys;
-	uint8_t key_format;    // bitflags: POS_COMPRESSED, ROT_COMPRESSED, SCL_COMPRESSED
-	uint8_t time_format;   // 16-bit normalized 등
-	uint16_t reserved;
+	uint32_t bone_index;      // 본 인덱스
+	uint32_t num_keys;        // 키프레임 개수
+	uint8_t key_format;       // 비트플래그: POS_COMPRESSED, ROT_COMPRESSED, SCL_COMPRESSED
+	uint8_t time_format;      // 시간 저장 포맷 (0=uint16 normalized, 1=float)
+	uint16_t reserved;        // 예약됨
+	// 총 크기: 12 bytes
 };
 
 // 키프레임 포맷 플래그

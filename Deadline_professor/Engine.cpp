@@ -71,6 +71,27 @@ void Engine::Initialize(int argc, char** argv)
 	inputManager->init();
 	inputManager->SetCamera(camera.get());
 	inputManager->SetWindow(w.get());
+
+	// 키보드 액션 바인딩
+	inputManager->ActionW = [this]() {
+		camera->MoveForward(gameTimer->elapsedTime);
+	};
+	inputManager->ActionS = [this]() {
+		camera->MoveBackward(gameTimer->elapsedTime);
+	};
+	inputManager->ActionA = [this]() {
+		camera->MoveLeft(gameTimer->elapsedTime);
+	};
+	inputManager->ActionD = [this]() {
+		camera->MoveRight(gameTimer->elapsedTime);
+	};
+	inputManager->ActionWheelUp = [this]() {
+		camera->Zoom(1.0f);
+	};
+	inputManager->ActionWheelDown = [this]() {
+		camera->Zoom(-1.0f);
+	};
+
 	std::cout << "InputManager Initialized and Connected to Camera & Window" << std::endl;
 
 	// AnimationPlayer 초기화
@@ -88,6 +109,8 @@ void Engine::Initialize(int argc, char** argv)
 
 	r->onDrawScene = [this]() {
 		static int frameCount = 0;
+		static bool printedOnce = false;
+
 		if (frameCount % 60 == 0) {
 			std::cout << "Frame " << frameCount << ": Rendering..." << std::endl;
 		}
@@ -95,18 +118,39 @@ void Engine::Initialize(int argc, char** argv)
 
 		// RunLee 애니메이션 렌더링
 		const XMeshData* meshData = resourceManager->GetXMeshData("RunLee");
+
+		// 첫 프레임에만 상세 정보 출력
+		if (!printedOnce) {
+			std::cout << "\n=== XMesh Rendering Debug Info ===" << std::endl;
+			if (meshData) {
+				std::cout << "RunLee mesh found!" << std::endl;
+				std::cout << "  Index count: " << meshData->index_count << std::endl;
+				std::cout << "  Vertex streams: " << meshData->streams.size() << std::endl;
+				std::cout << "  Has skeleton: " << (meshData->has_skeleton ? "Yes" : "No") << std::endl;
+				std::cout << "  Bone count: " << meshData->bones.size() << std::endl;
+				std::cout << "  Sections: " << meshData->sections.size() << std::endl;
+				if (meshData->has_skeleton) {
+					std::cout << "  Animation playing: " << (animPlayer->IsPlaying() ? "Yes" : "No") << std::endl;
+				}
+			} else {
+				std::cout << "RunLee mesh NOT FOUND!" << std::endl;
+			}
+			std::cout << "==================================\n" << std::endl;
+			printedOnce = true;
+		}
+
 		if (meshData && meshData->has_skeleton && animPlayer->IsPlaying()) {
 			if (frameCount % 60 == 0) {
 				std::cout << "Rendering animated RunLee" << std::endl;
 			}
 			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f)); // 스케일 조정
+			model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
 			r->RenderAnimatedMesh("RunLee", animPlayer->GetFinalTransforms(), model);
 		}
 		else if (meshData) {
 			// 애니메이션이 없으면 정적 메시로 렌더링
 			if (frameCount % 60 == 0) {
-				std::cout << "Rendering static RunLee" << std::endl;
+				std::cout << "Rendering static RunLee (index_count=" << meshData->index_count << ")" << std::endl;
 			}
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
@@ -127,6 +171,8 @@ void Engine::Initialize(int argc, char** argv)
 	glutKeyboardFunc(InputManager::Keyboard);
 	glutSpecialFunc(InputManager::SKeyboard);
 	glutMouseFunc(InputManager::Mouse);
+	glutPassiveMotionFunc(InputManager::PassiveMotion);
+	glutMotionFunc(InputManager::PassiveMotion); // Also handle when buttons are pressed
 	glutTimerFunc(1, TimerCallback, 0);
 
 	std::cout << "=== Engine Initialization Complete ===" << std::endl;
@@ -136,14 +182,26 @@ void Engine::LoadAssets()
 {
 	std::cout << "=== Loading Assets ===" << std::endl;
 
-	// OBJ 파일 로드
-	if (!resourceManager->LoadObj("cube", "cube.obj")) {
-		std::cerr << "Warning: Failed to load cube.obj" << std::endl;
+	// OBJ 파일 로드 (fallback용)
+	if (!resourceManager->LoadObj("bugatti", "bugatti.obj")) {
+		std::cerr << "Warning: Failed to load bugatti.obj" << std::endl;
 	}
 
 	// XMesh 파일 로드
+	std::cout << "\n--- Loading XMesh files ---" << std::endl;
+
 	if (!resourceManager->LoadXMesh("RunLee", "RunLee.xmesh")) {
-		std::cerr << "Warning: Failed to load RunLee.xmesh" << std::endl;
+		std::cerr << "ERROR: Failed to load RunLee.xmesh" << std::endl;
+	} else {
+		std::cout << "SUCCESS: RunLee.xmesh loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadXMesh("RunSong", "RunSong.xmesh")) {
+		std::cerr << "Warning: Failed to load RunSong.xmesh" << std::endl;
+	}
+
+	if (!resourceManager->LoadXMesh("RunDragon", "RunDragon.xmesh")) {
+		std::cerr << "Warning: Failed to load RunDragon.xmesh" << std::endl;
 	}
 
 	std::cout << "=== Assets Loaded ===" << std::endl;

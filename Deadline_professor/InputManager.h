@@ -12,10 +12,11 @@ public:
 	void SetWindow(Window* window);
 	void SetMouseControlActive(bool);
 
-	//콜백용 함수 
+	//콜백용 함수
 	static void Keyboard(unsigned char, int, int);
 	static void SKeyboard(int, int, int);
 	static void Mouse(int, int, int, int);
+	static void PassiveMotion(int, int);
 
 	// 키 할당 함수 객체
 	std::function<void()> ActionW;

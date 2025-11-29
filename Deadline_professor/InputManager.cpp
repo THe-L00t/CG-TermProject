@@ -1,5 +1,6 @@
 ﻿#include "InputManager.h"
 #include "Window.h"
+#include "Camera.h"
 
 InputManager* InputManager::onceInstance = nullptr;
 
@@ -38,25 +39,31 @@ void InputManager::SetMouseControlActive(bool active)
 
 void InputManager::Keyboard(unsigned char key, int x, int y)
 {
-	if (not onceInstance->cmr) return;
-	float distance; //= onceInstance->cmr->이동속도 출력 함수 * deltaTime;
+	if (!onceInstance || !onceInstance->cmr) return;
+
 	switch (key) {
 	case'W':case'w':
-		if (not onceInstance->ActionW) onceInstance->ActionW();
+		if (onceInstance->ActionW) onceInstance->ActionW();
 		break;
 	case'A':case'a':
-		if (not onceInstance->ActionA) onceInstance->ActionA();
+		if (onceInstance->ActionA) onceInstance->ActionA();
 		break;
 	case'S':case's':
-		if (not onceInstance->ActionS) onceInstance->ActionS();
+		if (onceInstance->ActionS) onceInstance->ActionS();
 		break;
 	case'D':case'd':
-		if (not onceInstance->ActionD) onceInstance->ActionD();
+		if (onceInstance->ActionD) onceInstance->ActionD();
+		break;
 	case'1':
 		onceInstance->SetMouseControlActive(true);
 		break;
+	case'2':
+		onceInstance->SetMouseControlActive(false);
+		break;
+	case 27: // ESC key
+		exit(0);
+		break;
 	}
-
 }
 
 void InputManager::SKeyboard(int, int, int)
@@ -65,11 +72,41 @@ void InputManager::SKeyboard(int, int, int)
 
 void InputManager::Mouse(int button, int state, int x, int y)
 {
-	if (button == 3) {
-		onceInstance->ActionWheelUp();
+	if (!onceInstance) return;
+
+	if (button == 3 && state == GLUT_DOWN) { // Mouse wheel up
+		if (onceInstance->ActionWheelUp) onceInstance->ActionWheelUp();
 	}
-	if (button == 4) {
-		onceInstance->ActionWheelDown();
+	if (button == 4 && state == GLUT_DOWN) { // Mouse wheel down
+		if (onceInstance->ActionWheelDown) onceInstance->ActionWheelDown();
 	}
-	
+}
+
+void InputManager::PassiveMotion(int x, int y)
+{
+	if (!onceInstance || !onceInstance->cmr || !onceInstance->mouseControl || !onceInstance->window)
+		return;
+
+	static bool firstMouse = true;
+	static int lastX = 0;
+	static int lastY = 0;
+
+	int centerX = onceInstance->window->GetWidth() / 2;
+	int centerY = onceInstance->window->GetHeight() / 2;
+
+	if (firstMouse) {
+		lastX = centerX;
+		lastY = centerY;
+		firstMouse = false;
+	}
+
+	// Calculate mouse movement delta
+	float xOffset = static_cast<float>(centerX - x); // Reversed for inverted control
+	float yOffset = static_cast<float>(centerY - y); // Reversed: y-coordinates go from bottom to top
+
+	// Rotate camera based on mouse movement
+	onceInstance->cmr->Rotate(xOffset * 0.01f, yOffset * 0.01f);
+
+	// Reset cursor to center
+	glutWarpPointer(centerX, centerY);
 }

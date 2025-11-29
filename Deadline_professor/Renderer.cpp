@@ -151,6 +151,8 @@ void Renderer::RenderTestCube()
 
 void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& modelMatrix)
 {
+	static bool printedDebug = false;
+
 	const XMeshData* meshData = resourceManager->GetXMeshData(meshName);
 	if (!meshData) {
 		std::cerr << "XMesh '" << meshName << "' not found" << std::endl;
@@ -167,7 +169,18 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 		return;
 	}
 
-	std::cout << "Rendering XMesh '" << meshName << "' with " << meshData->index_count << " indices" << std::endl;
+	if (!printedDebug) {
+		std::cout << "\n=== RenderXMesh Debug ===" << std::endl;
+		std::cout << "Mesh: " << meshName << std::endl;
+		std::cout << "Index count: " << meshData->index_count << std::endl;
+		std::cout << "Index type: " << (meshData->index_type == GL_UNSIGNED_SHORT ? "UNSIGNED_SHORT" : "UNSIGNED_INT") << std::endl;
+		std::cout << "VBOs: " << meshData->vbos.size() << std::endl;
+		std::cout << "EBO: " << meshData->ebo << std::endl;
+		std::cout << "VAO: " << resourceManager->GetVAO() << std::endl;
+		std::cout << "Sections: " << meshData->sections.size() << std::endl;
+		std::cout << "========================\n" << std::endl;
+		printedDebug = true;
+	}
 
 	Shader* shader = GetShader("basic");
 	if (!shader) {
@@ -202,11 +215,27 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 	shader->setUniform("uLightColor", lightColor);
 
 	// VAO 바인드 및 렌더링
-	glBindVertexArray(resourceManager->GetVAO());
+	GLuint vao = resourceManager->GetVAO();
+	glBindVertexArray(vao);
+
+	if (!printedDebug) {
+		GLenum err = glGetError();
+		if (err != GL_NO_ERROR) {
+			std::cerr << "OpenGL error before draw: " << err << std::endl;
+		}
+	}
 
 	// 섹션별로 렌더링 (섹션이 있는 경우)
 	if (!meshData->sections.empty()) {
-		for (const auto& section : meshData->sections) {
+		if (!printedDebug) {
+			std::cout << "Drawing " << meshData->sections.size() << " sections" << std::endl;
+		}
+		for (size_t i = 0; i < meshData->sections.size(); ++i) {
+			const auto& section = meshData->sections[i];
+			if (!printedDebug) {
+				std::cout << "  Section " << i << ": start=" << section.index_start
+				          << ", count=" << section.index_count << std::endl;
+			}
 			glDrawElementsBaseVertex(
 				GL_TRIANGLES,
 				section.index_count,
@@ -218,7 +247,17 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 	}
 	else {
 		// 섹션 정보가 없으면 전체 인덱스 렌더링
+		if (!printedDebug) {
+			std::cout << "Drawing entire mesh: " << meshData->index_count << " indices" << std::endl;
+		}
 		glDrawElements(GL_TRIANGLES, meshData->index_count, meshData->index_type, 0);
+	}
+
+	if (!printedDebug) {
+		GLenum err = glGetError();
+		if (err != GL_NO_ERROR) {
+			std::cerr << "OpenGL error after draw: " << err << std::endl;
+		}
 	}
 
 	glBindVertexArray(0);
