@@ -162,14 +162,18 @@ void Engine::Initialize(int argc, char** argv)
 		}
 		else if (meshData) {
 			// 애니메이션이 없으면 정적 메시로 렌더링
-			if (frameCount % 60 == 0) {
-				std::cout << "Rendering static RunLee (index_count=" << meshData->index_count << ")" << std::endl;
-			}
+			std::cout << "🔍 Frame " << frameCount << ": Calling RenderXMesh..." << std::endl;
+
 			glm::mat4 model = glm::mat4(1.0f);
 			// ✅ 모델을 카메라 정면에 배치
 			model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
 			model = glm::scale(model, glm::vec3(2.0f));
+
+			std::cout << "  Model matrix: scale=2.0, pos=(0,0,0)" << std::endl;
 			r->RenderXMesh("RunLee", model);
+			std::cout << "  RenderXMesh returned" << std::endl;
+		} else {
+			std::cout << "❌ meshData is NULL!" << std::endl;
 		}
 		};
 

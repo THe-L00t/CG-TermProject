@@ -20,8 +20,33 @@ void Renderer::Init()
 	// 배경색 설정
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
+	// 현재 작업 디렉토리 확인
+	std::filesystem::path currentPath = std::filesystem::current_path();
+	std::cout << "Current working directory: " << currentPath << std::endl;
+
+	// 셰이더 파일 경로 확인
+	std::filesystem::path vertPath = currentPath / "basic.vert";
+	std::filesystem::path fragPath = currentPath / "basic.frag";
+
+	std::cout << "Looking for vertex shader: " << vertPath << std::endl;
+	std::cout << "  Exists: " << (std::filesystem::exists(vertPath) ? "YES" : "NO") << std::endl;
+	std::cout << "Looking for fragment shader: " << fragPath << std::endl;
+	std::cout << "  Exists: " << (std::filesystem::exists(fragPath) ? "YES" : "NO") << std::endl;
+
 	// 셰이더 로드
-	LoadShader("basic", "basic.vert", "basic.frag");
+	std::cout << "\n========================================" << std::endl;
+	std::cout << "ATTEMPTING TO LOAD SHADER 'basic'" << std::endl;
+	std::cout << "========================================" << std::endl;
+
+	bool shaderLoaded = LoadShader("basic", vertPath, fragPath);
+
+	if (shaderLoaded) {
+		std::cout << "✅ SUCCESS: Shader 'basic' loaded!" << std::endl;
+	} else {
+		std::cerr << "❌ CRITICAL ERROR: Failed to load shader 'basic'!" << std::endl;
+		std::cerr << "   The program will not render correctly." << std::endl;
+	}
+	std::cout << "========================================\n" << std::endl;
 
 	// OBJ 데이터 가져오기 (이미 Engine에서 로드됨)
 	const ObjData* cubeData = resourceManager->GetObjData("bugatti");
@@ -152,6 +177,8 @@ void Renderer::RenderTestCube()
 void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& modelMatrix)
 {
 	static bool printedDebug = false;
+	static int frameCount = 0;
+	frameCount++;
 
 	const XMeshData* meshData = resourceManager->GetXMeshData(meshName);
 	if (!meshData) {
@@ -169,7 +196,10 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 		return;
 	}
 
-	if (!printedDebug) {
+	// 🔍 매 60프레임마다 디버그 정보 출력
+	bool shouldPrintDebug = (!printedDebug) || (frameCount % 60 == 0);
+
+	if (shouldPrintDebug) {
 		std::cout << "\n=== RenderXMesh Debug ===" << std::endl;
 		std::cout << "Mesh: " << meshName << std::endl;
 		std::cout << "Index count: " << meshData->index_count << std::endl;
@@ -226,6 +256,10 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 		return;
 	}
 
+	if (shouldPrintDebug) {
+		std::cout << "🔍 Using shader 'basic'" << std::endl;
+	}
+
 	shader->Use();
 
 	// 변환 행렬 설정
@@ -248,6 +282,15 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 	shader->setUniform("uPosOffset", meshData->pos_offset);
 	shader->setUniform("uPosScale", meshData->pos_scale);
 
+	// 🔍 CRITICAL: Uniform 값 확인
+	if (shouldPrintDebug) {
+		std::cout << "\n=== 🎯 UNIFORM VALUES SENT TO GPU ===" << std::endl;
+		std::cout << "uPosOffset: (" << meshData->pos_offset.x << ", "
+		          << meshData->pos_offset.y << ", " << meshData->pos_offset.z << ")" << std::endl;
+		std::cout << "uPosScale: " << meshData->pos_scale << std::endl;
+		std::cout << "======================================\n" << std::endl;
+	}
+
 	// 라이팅 설정
 	glm::vec3 color(0.8f, 0.3f, 0.3f);
 	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
@@ -269,12 +312,12 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 
 	// 섹션별로 렌더링 (섹션이 있는 경우)
 	if (!meshData->sections.empty()) {
-		if (!printedDebug) {
-			std::cout << "Drawing " << meshData->sections.size() << " sections" << std::endl;
+		if (shouldPrintDebug) {
+			std::cout << "🔍 Drawing " << meshData->sections.size() << " sections" << std::endl;
 		}
 		for (size_t i = 0; i < meshData->sections.size(); ++i) {
 			const auto& section = meshData->sections[i];
-			if (!printedDebug) {
+			if (shouldPrintDebug) {
 				std::cout << "  Section " << i << ": start=" << section.index_start
 				          << ", count=" << section.index_count
 				          << ", vertex_start=" << section.vertex_start << std::endl;
@@ -295,8 +338,8 @@ void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& mo
 	}
 	else {
 		// 섹션 정보가 없으면 전체 인덱스 렌더링
-		if (!printedDebug) {
-			std::cout << "Drawing entire mesh: " << meshData->index_count << " indices" << std::endl;
+		if (shouldPrintDebug) {
+			std::cout << "🔍 Drawing entire mesh: " << meshData->index_count << " indices" << std::endl;
 		}
 		glDrawElements(GL_TRIANGLES, meshData->index_count, meshData->index_type, 0);
 
