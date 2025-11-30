@@ -302,8 +302,57 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
             streamInfo.element_size = streamHeader->element_size;
             streamInfo.count = streamHeader->count;
             streamInfo.stream_id = streamHeader->stream_id;
+            streamInfo.stride = streamHeader->stride;  // ✅ stride 저장
 
             meshData.streams.push_back(streamInfo);
+
+            // Position stream (stream_id=0)이고 int16x3 포맷이면 quantization 메타데이터 계산
+            if (streamHeader->stream_id == 0 && streamHeader->element_size == 6) {
+                const int16_t* posData = reinterpret_cast<const int16_t*>(streamData);
+
+                // ✅ 올바른 quantization 메타데이터 계산
+                // 실제 메시 범위 분석
+                glm::vec3 minPos(FLT_MAX);
+                glm::vec3 maxPos(-FLT_MAX);
+
+                for (uint32_t v = 0; v < streamHeader->count; ++v) {
+                    glm::vec3 pos(
+                        static_cast<float>(posData[v * 3 + 0]),
+                        static_cast<float>(posData[v * 3 + 1]),
+                        static_cast<float>(posData[v * 3 + 2])
+                    );
+                    minPos = glm::min(minPos, pos);
+                    maxPos = glm::max(maxPos, pos);
+                }
+
+                // ✅ 메시를 원점 중심으로, 정규화 범위 [-1, 1]로 디코딩
+                glm::vec3 center = (minPos + maxPos) * 0.5f;
+                glm::vec3 extent = (maxPos - minPos) * 0.5f;
+                float maxExtent = glm::max(glm::max(extent.x, extent.y), extent.z);
+
+                meshData.pos_offset = center;
+                meshData.pos_scale = 1.0f / maxExtent;  // 정규화 [-1, 1]
+
+                std::cout << "  [Quantization Metadata - COMPUTED]:" << std::endl;
+                std::cout << "    Raw int16 range: Min(" << minPos.x << ", " << minPos.y << ", " << minPos.z << ")"
+                          << " Max(" << maxPos.x << ", " << maxPos.y << ", " << maxPos.z << ")" << std::endl;
+                std::cout << "    Center: (" << center.x << ", " << center.y << ", " << center.z << ")" << std::endl;
+                std::cout << "    Max extent: " << maxExtent << std::endl;
+                std::cout << "    Offset: (" << meshData.pos_offset.x << ", " << meshData.pos_offset.y << ", " << meshData.pos_offset.z << ")" << std::endl;
+                std::cout << "    Scale: " << meshData.pos_scale << std::endl;
+
+                // 검증: 첫 번째 정점 디코딩
+                glm::vec3 firstRaw(posData[0], posData[1], posData[2]);
+                glm::vec3 decoded = (firstRaw - meshData.pos_offset) * meshData.pos_scale;
+                std::cout << "    First vertex: raw(" << firstRaw.x << ", " << firstRaw.y << ", " << firstRaw.z << ")"
+                          << " → decoded(" << decoded.x << ", " << decoded.y << ", " << decoded.z << ")" << std::endl;
+
+                // 예상 world space 범위 (정규화된 좌표)
+                glm::vec3 worldMin = (minPos - center) * meshData.pos_scale;
+                glm::vec3 worldMax = (maxPos - center) * meshData.pos_scale;
+                std::cout << "    Normalized range: Min(" << worldMin.x << ", " << worldMin.y << ", " << worldMin.z << ")"
+                          << " Max(" << worldMax.x << ", " << worldMax.y << ", " << worldMax.z << ")" << std::endl;
+            }
 
             std::cout << "  Stream " << streamHeader->stream_id
                       << ": " << streamHeader->count << " elements, "
@@ -328,9 +377,16 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
             std::cout << "    index_type: " << indexHeader->index_type
                       << " (" << (indexHeader->index_type == 0 ? "uint32" : "uint16") << ")" << std::endl;
             std::cout << "    primitive_type: " << indexHeader->primitive_type << std::endl;
+            std::cout << "    sizeof(IndexStreamHeader): " << sizeof(IndexStreamHeader) << " bytes" << std::endl;
 
-            meshData.index_data = payload + sizeof(IndexStreamHeader);
-            meshData.index_size = chunk.decompressed_size - sizeof(IndexStreamHeader);
+            // ✅ CRITICAL: header_size 필드를 사용해서 정확한 오프셋 계산
+            uint32_t actualHeaderSize = indexHeader->header_size;
+            if (actualHeaderSize != sizeof(IndexStreamHeader)) {
+                std::cout << "    WARNING: sizeof() mismatch! Using header_size from file: " << actualHeaderSize << std::endl;
+            }
+
+            meshData.index_data = payload + actualHeaderSize;  // ✅ 파일의 header_size 사용
+            meshData.index_size = chunk.decompressed_size - actualHeaderSize;
             meshData.index_count = indexHeader->index_count;
 
             // index_type: 0=uint32 (4 bytes), 1=uint16 (2 bytes)
@@ -523,7 +579,7 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
             glBufferData(GL_ARRAY_BUFFER, stream.size, stream.data, GL_STATIC_DRAW);
 
             // 첫 몇 개 정점 데이터 출력 (디버깅)
-            if (s == 0 && stream.stream_id == 0 && stream.element_size == 6) {
+            if (stream.stream_id == 0 && stream.element_size == 6) {
                 // position stream (int16x3)
                 const int16_t* posData = reinterpret_cast<const int16_t*>(stream.data);
                 std::cout << "  [DEBUG] First 3 position vertices (int16x3):" << std::endl;
@@ -532,6 +588,32 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
                               << posData[v*3+0] << ", "
                               << posData[v*3+1] << ", "
                               << posData[v*3+2] << ")" << std::endl;
+                }
+            }
+
+            // Bone weights 검증
+            if (stream.stream_id == 6 && stream.element_size == 4) {
+                const uint8_t* weightData = reinterpret_cast<const uint8_t*>(stream.data);
+                std::cout << "  [DEBUG] First 3 bone weights (u8x4, normalized):" << std::endl;
+                for (int v = 0; v < 3 && v < static_cast<int>(stream.count); ++v) {
+                    std::cout << "    v" << v << ": ("
+                              << (int)weightData[v*4+0] << ", "
+                              << (int)weightData[v*4+1] << ", "
+                              << (int)weightData[v*4+2] << ", "
+                              << (int)weightData[v*4+3] << ")" << std::endl;
+                }
+            }
+
+            // Bone indices 검증
+            if (stream.stream_id == 7 && stream.element_size == 4) {
+                const uint8_t* indexData = reinterpret_cast<const uint8_t*>(stream.data);
+                std::cout << "  [DEBUG] First 3 bone indices (u8x4):" << std::endl;
+                for (int v = 0; v < 3 && v < static_cast<int>(stream.count); ++v) {
+                    std::cout << "    v" << v << ": ("
+                              << (int)indexData[v*4+0] << ", "
+                              << (int)indexData[v*4+1] << ", "
+                              << (int)indexData[v*4+2] << ", "
+                              << (int)indexData[v*4+3] << ")" << std::endl;
                 }
             }
 
@@ -551,27 +633,29 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
             GLboolean normalized = GL_FALSE;
 
             switch (stream.stream_id) {
-            case 0: // position
+            case 0: // position (int16x3, normalized=false → ivec3)
                 attribIndex = 0;
                 if (stream.element_size == 12) {
                     componentCount = 3;
                     dataType = GL_FLOAT;
+                    normalized = GL_FALSE;
                 } else if (stream.element_size == 6) {
                     componentCount = 3;
                     dataType = GL_SHORT;
-                    normalized = GL_FALSE; // raw int16, 셰이더에서 변환
+                    normalized = GL_FALSE; // ✅ CRITICAL: raw int16 → ivec3
                 }
                 break;
 
-            case 1: // normal
+            case 1: // normal (int16x3, normalized=true → vec3)
                 attribIndex = 1;
                 if (stream.element_size == 12) {
                     componentCount = 3;
                     dataType = GL_FLOAT;
+                    normalized = GL_FALSE;
                 } else if (stream.element_size == 6) {
                     componentCount = 3;
                     dataType = GL_SHORT;
-                    normalized = GL_TRUE; // 노말은 정규화
+                    normalized = GL_TRUE; // ✅ normalized → [-1,1] vec3
                 }
                 break;
 
@@ -636,6 +720,7 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
                 attribIndex = 6;
                 componentCount = 4;
                 dataType = GL_UNSIGNED_BYTE;
+                normalized = GL_FALSE;  // ✅ CRITICAL: integer indices, no normalization
                 break;
 
             default:
@@ -645,15 +730,56 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
 
             if (componentCount > 0 && componentCount <= 4) {
                 glEnableVertexAttribArray(attribIndex);
-                glVertexAttribPointer(attribIndex, componentCount, dataType, normalized,
-                                      stream.element_size, (void*)0);
-                std::cout << "  -> Enabled attrib " << attribIndex
-                          << " with " << componentCount << " components"
-                          << " (type=" << (dataType == GL_FLOAT ? "FLOAT" :
-                                           dataType == GL_SHORT ? "SHORT" :
-                                           dataType == GL_HALF_FLOAT ? "HALF_FLOAT" : "OTHER")
-                          << ", normalized=" << (normalized ? "true" : "false") << ")"
-                          << std::endl;
+
+                // ✅ XMesh 명세에 따른 정확한 attribute 설정
+                // Position (stream 0, int16, normalized=false) → glVertexAttribIPointer → ivec3
+                // Normal (stream 1, int16, normalized=true) → glVertexAttribPointer → vec3
+                // UV (stream 2/3, half) → glVertexAttribPointer → vec2
+                // BoneWeights (stream 6, u8, normalized=true) → glVertexAttribPointer → vec4
+                // BoneIndices (stream 7, u8, normalized=false) → glVertexAttribIPointer → ivec4
+
+                bool useIntegerAttrib = false;
+
+                // Position: int16 raw → ivec3
+                if (stream.stream_id == 0 && dataType == GL_SHORT && normalized == GL_FALSE) {
+                    useIntegerAttrib = true;
+                }
+                // BoneIndices: u8 raw → ivec4
+                else if (stream.stream_id == 7 && dataType == GL_UNSIGNED_BYTE && normalized == GL_FALSE) {
+                    useIntegerAttrib = true;
+                }
+
+                // ✅ XMesh 스펙: stride가 0이면 tightly packed (element_size 사용)
+                GLsizei actualStride = (stream.stride == 0) ? stream.element_size : stream.stride;
+
+                if (useIntegerAttrib) {
+                    // ✅ Integer attribute (ivec*)
+                    glVertexAttribIPointer(attribIndex, componentCount, dataType,
+                                          actualStride, (void*)0);
+                    std::cout << "  -> Enabled INTEGER attrib " << attribIndex
+                              << " (stream_id=" << stream.stream_id << ")"
+                              << " with " << componentCount << " components"
+                              << " (type=" << (dataType == GL_SHORT ? "SHORT" :
+                                               dataType == GL_UNSIGNED_BYTE ? "UBYTE" : "OTHER")
+                              << ", stride=" << actualStride
+                              << ") → GLSL: " << (componentCount == 3 ? "ivec3" : "ivec4")
+                              << std::endl;
+                } else {
+                    // ✅ Float attribute (vec*)
+                    glVertexAttribPointer(attribIndex, componentCount, dataType, normalized,
+                                          actualStride, (void*)0);
+                    std::cout << "  -> Enabled FLOAT attrib " << attribIndex
+                              << " (stream_id=" << stream.stream_id << ")"
+                              << " with " << componentCount << " components"
+                              << " (type=" << (dataType == GL_FLOAT ? "FLOAT" :
+                                               dataType == GL_SHORT ? "SHORT" :
+                                               dataType == GL_UNSIGNED_BYTE ? "UBYTE" :
+                                               dataType == GL_HALF_FLOAT ? "HALF_FLOAT" : "OTHER")
+                              << ", normalized=" << (normalized ? "true" : "false")
+                              << ", stride=" << actualStride << ")"
+                              << " → GLSL: vec" << componentCount
+                              << std::endl;
+                }
             } else {
                 std::cerr << "Warning: Invalid component count " << componentCount
                           << " for stream " << s << std::endl;
@@ -668,6 +794,63 @@ bool ResourceManager::LoadXMesh(const std::string_view& name, const std::filesys
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshData.ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, meshData.index_size,
                      meshData.index_data, GL_STATIC_DRAW);
+    }
+
+    // 스키닝 데이터가 없는 스태틱 메시를 위한 더미 bone attributes 추가
+    bool hasBoneWeights = false;
+    bool hasBoneIndices = false;
+    for (const auto& stream : meshData.streams) {
+        if (stream.stream_id == 6) hasBoneWeights = true;
+        if (stream.stream_id == 7) hasBoneIndices = true;
+    }
+
+    if (!hasBoneWeights || !hasBoneIndices) {
+        // 정점 개수 찾기
+        uint32_t vertexCount = 0;
+        for (const auto& stream : meshData.streams) {
+            if (stream.stream_id == 0) {
+                vertexCount = stream.count;
+                break;
+            }
+        }
+
+        if (vertexCount > 0) {
+            std::cout << "Adding dummy bone attributes for static mesh (" << vertexCount << " vertices)" << std::endl;
+
+            if (!hasBoneWeights) {
+                // 더미 bone weights (1.0, 0, 0, 0) - 첫 번째 본에만 100% 가중치
+                std::vector<float> dummyWeights(vertexCount * 4);
+                for (uint32_t i = 0; i < vertexCount; ++i) {
+                    dummyWeights[i * 4 + 0] = 1.0f;
+                    dummyWeights[i * 4 + 1] = 0.0f;
+                    dummyWeights[i * 4 + 2] = 0.0f;
+                    dummyWeights[i * 4 + 3] = 0.0f;
+                }
+
+                GLuint dummyWeightsVBO;
+                glGenBuffers(1, &dummyWeightsVBO);
+                glBindBuffer(GL_ARRAY_BUFFER, dummyWeightsVBO);
+                glBufferData(GL_ARRAY_BUFFER, dummyWeights.size() * sizeof(float),
+                            dummyWeights.data(), GL_STATIC_DRAW);
+                glEnableVertexAttribArray(5);
+                glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+                meshData.vbos.push_back(dummyWeightsVBO);
+            }
+
+            if (!hasBoneIndices) {
+                // 더미 bone indices (0, 0, 0, 0)
+                std::vector<uint8_t> dummyIndices(vertexCount * 4, 0);
+
+                GLuint dummyIndicesVBO;
+                glGenBuffers(1, &dummyIndicesVBO);
+                glBindBuffer(GL_ARRAY_BUFFER, dummyIndicesVBO);
+                glBufferData(GL_ARRAY_BUFFER, dummyIndices.size(),
+                            dummyIndices.data(), GL_STATIC_DRAW);
+                glEnableVertexAttribArray(6);
+                glVertexAttribIPointer(6, 4, GL_UNSIGNED_BYTE, 0, (void*)0);
+                meshData.vbos.push_back(dummyIndicesVBO);
+            }
+        }
     }
 
     glBindVertexArray(0);

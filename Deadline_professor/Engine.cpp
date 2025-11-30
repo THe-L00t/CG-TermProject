@@ -150,12 +150,14 @@ void Engine::Initialize(int argc, char** argv)
 			printedOnce = true;
 		}
 
-		if (meshData && meshData->has_skeleton && animPlayer->IsPlaying()) {
+		// 🔍 임시: 애니메이션 끄고 정적 메시로 테스트
+		if (false && meshData && meshData->has_skeleton && animPlayer->IsPlaying()) {
 			if (frameCount % 60 == 0) {
 				std::cout << "Rendering animated RunLee" << std::endl;
 			}
 			glm::mat4 model = glm::mat4(1.0f);
-			// 스케일은 셰이더에서 처리
+			model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // 원점
+			model = glm::scale(model, glm::vec3(2.0f)); // 2m 크기
 			r->RenderAnimatedMesh("RunLee", animPlayer->GetFinalTransforms(), model);
 		}
 		else if (meshData) {
@@ -164,7 +166,9 @@ void Engine::Initialize(int argc, char** argv)
 				std::cout << "Rendering static RunLee (index_count=" << meshData->index_count << ")" << std::endl;
 			}
 			glm::mat4 model = glm::mat4(1.0f);
-			// 스케일은 셰이더에서 처리
+			// ✅ 모델을 카메라 정면에 배치
+			model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+			model = glm::scale(model, glm::vec3(2.0f));
 			r->RenderXMesh("RunLee", model);
 		}
 		};

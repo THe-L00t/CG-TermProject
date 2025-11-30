@@ -191,8 +191,13 @@ struct XMeshData {
 		uint32_t element_size;
 		uint32_t count;
 		uint32_t stream_id;
+		uint32_t stride;  // ✅ XMesh 스펙: 0이면 tightly packed
 	};
 	std::vector<StreamInfo> streams;
+
+	// Quantization 메타데이터 (position stream용)
+	glm::vec3 pos_offset{0.0f, 0.0f, 0.0f};  // int16 → float 변환 offset
+	float pos_scale{1.0f};                   // int16 → float 변환 scale
 
 	// 인덱스 정보
 	const void* index_data{};
