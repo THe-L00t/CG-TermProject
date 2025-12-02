@@ -6,7 +6,7 @@
 #include "Camera.h"
 #include "InputManager.h"
 #include "SceneManager.h"
-#include "AnimationPlayer.h"
+#include "FBXAnimationPlayer.h"
 
 Engine* Engine::instance = nullptr;
 Engine* g_engine = nullptr;
@@ -98,14 +98,21 @@ void Engine::Initialize(int argc, char** argv)
 
 	std::cout << "InputManager Initialized and Connected to Camera & Window" << std::endl;
 
-	// AnimationPlayer 초기화
-	animPlayer = std::make_unique<AnimationPlayer>();
-	std::cout << "AnimationPlayer Initialized" << std::endl;
-
 	// SceneManager 초기화
 	sceneManager = std::make_unique<SceneManager>();
 	sceneManager->ChangeScene("Test");
 	std::cout << "SceneManager Initialized with TestScene" << std::endl;
+
+	// AnimationPlayer 초기화
+	animationPlayer = std::make_unique<FBXAnimationPlayer>();
+	const FBXModel* model = resourceManager->GetFBXModel("RunLee");
+	if (model) {
+		animationPlayer->Init(model);
+		if (!model->animations.empty()) {
+			animationPlayer->PlayAnimation(0); // 첫 번째 애니메이션 재생
+			std::cout << "AnimationPlayer Initialized with " << model->animations.size() << " animations" << std::endl;
+		}
+	}
 
 	w->onResize = [this](int w, int h) {
 		r->OnWindowResize(w, h);
@@ -120,12 +127,12 @@ void Engine::Initialize(int argc, char** argv)
 		}
 		frameCount++;
 
-		// RunLee 애니메이션 렌더링
-		const XMeshData* meshData = resourceManager->GetXMeshData("RunLee");
+		// RunLee FBX 모델 렌더링
+		const FBXModel* model = resourceManager->GetFBXModel("RunLee");
 
 		// 첫 프레임에만 상세 정보 출력
 		if (!printedOnce) {
-			std::cout << "\n=== XMesh Rendering Debug Info ===" << std::endl;
+			std::cout << "\n=== FBX Rendering Debug Info ===" << std::endl;
 
 			// 카메라 정보 출력
 			glm::vec3 camPos = camera->GetPosition();
@@ -133,47 +140,33 @@ void Engine::Initialize(int argc, char** argv)
 			std::cout << "Camera Position: (" << camPos.x << ", " << camPos.y << ", " << camPos.z << ")" << std::endl;
 			std::cout << "Camera Direction: (" << camDir.x << ", " << camDir.y << ", " << camDir.z << ")" << std::endl;
 
-			if (meshData) {
-				std::cout << "RunLee mesh found!" << std::endl;
-				std::cout << "  Index count: " << meshData->index_count << std::endl;
-				std::cout << "  Vertex streams: " << meshData->streams.size() << std::endl;
-				std::cout << "  Has skeleton: " << (meshData->has_skeleton ? "Yes" : "No") << std::endl;
-				std::cout << "  Bone count: " << meshData->bones.size() << std::endl;
-				std::cout << "  Sections: " << meshData->sections.size() << std::endl;
-				if (meshData->has_skeleton) {
-					std::cout << "  Animation playing: " << (animPlayer->IsPlaying() ? "Yes" : "No") << std::endl;
-				}
+			if (model) {
+				std::cout << "RunLee model found!" << std::endl;
+				std::cout << "  Meshes: " << model->meshes.size() << std::endl;
+				std::cout << "  Bounding box: Min(" << model->boundingBoxMin.x << ", "
+				          << model->boundingBoxMin.y << ", " << model->boundingBoxMin.z << ")" << std::endl;
+				std::cout << "                Max(" << model->boundingBoxMax.x << ", "
+				          << model->boundingBoxMax.y << ", " << model->boundingBoxMax.z << ")" << std::endl;
 			} else {
-				std::cout << "RunLee mesh NOT FOUND!" << std::endl;
+				std::cout << "RunLee model NOT FOUND!" << std::endl;
 			}
 			std::cout << "==================================\n" << std::endl;
 			printedOnce = true;
 		}
 
-		// 🔍 임시: 애니메이션 끄고 정적 메시로 테스트
-		if (false && meshData && meshData->has_skeleton && animPlayer->IsPlaying()) {
-			if (frameCount % 60 == 0) {
-				std::cout << "Rendering animated RunLee" << std::endl;
+		if (model) {
+			glm::mat4 modelMatrix = glm::mat4(1.0f);
+			modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f)); // 원점
+			modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f)); // FBX는 보통 큰 스케일로 저장됨
+
+			// 애니메이션이 있으면 애니메이션 렌더링, 없으면 기본 렌더링
+			if (animationPlayer && animationPlayer->IsPlaying()) {
+				r->RenderFBXModelWithAnimation("RunLee", modelMatrix, animationPlayer->GetBoneTransforms());
+			} else {
+				r->RenderFBXModel("RunLee", modelMatrix);
 			}
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // 원점
-			model = glm::scale(model, glm::vec3(2.0f)); // 2m 크기
-			r->RenderAnimatedMesh("RunLee", animPlayer->GetFinalTransforms(), model);
-		}
-		else if (meshData) {
-			// 애니메이션이 없으면 정적 메시로 렌더링
-			std::cout << "🔍 Frame " << frameCount << ": Calling RenderXMesh..." << std::endl;
-
-			glm::mat4 model = glm::mat4(1.0f);
-			// ✅ 모델을 카메라 정면에 배치
-			model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-			model = glm::scale(model, glm::vec3(2.0f));
-
-			std::cout << "  Model matrix: scale=2.0, pos=(0,0,0)" << std::endl;
-			r->RenderXMesh("RunLee", model);
-			std::cout << "  RenderXMesh returned" << std::endl;
 		} else {
-			std::cout << "❌ meshData is NULL!" << std::endl;
+			std::cerr << "❌ FBX model is NULL!" << std::endl;
 		}
 		};
 
@@ -199,21 +192,25 @@ void Engine::LoadAssets()
 		std::cerr << "Warning: Failed to load bugatti.obj" << std::endl;
 	}
 
-	// XMesh 파일 로드
-	std::cout << "\n--- Loading XMesh files ---" << std::endl;
+	// FBX 파일 로드
+	std::cout << "\n--- Loading FBX files ---" << std::endl;
 
-	if (!resourceManager->LoadXMesh("RunLee", "RunLee.xmesh")) {
-		std::cerr << "ERROR: Failed to load RunLee.xmesh" << std::endl;
+	if (!resourceManager->LoadFBX("RunLee", "RunLee.fbx")) {
+		std::cerr << "ERROR: Failed to load RunLee.fbx" << std::endl;
 	} else {
-		std::cout << "SUCCESS: RunLee.xmesh loaded" << std::endl;
+		std::cout << "SUCCESS: RunLee.fbx loaded" << std::endl;
 	}
 
-	if (!resourceManager->LoadXMesh("RunSong", "RunSong.xmesh")) {
-		std::cerr << "Warning: Failed to load RunSong.xmesh" << std::endl;
+	if (!resourceManager->LoadFBX("RunSong", "RunSong.fbx")) {
+		std::cerr << "Warning: Failed to load RunSong.fbx" << std::endl;
+	} else {
+		std::cout << "SUCCESS: RunSong.fbx loaded" << std::endl;
 	}
 
-	if (!resourceManager->LoadXMesh("RunDragon", "RunDragon.xmesh")) {
-		std::cerr << "Warning: Failed to load RunDragon.xmesh" << std::endl;
+	if (!resourceManager->LoadFBX("RunDragon", "RunDragon.fbx")) {
+		std::cerr << "Warning: Failed to load RunDragon.fbx" << std::endl;
+	} else {
+		std::cout << "SUCCESS: RunDragon.fbx loaded" << std::endl;
 	}
 
 	std::cout << "=== Assets Loaded ===" << std::endl;
@@ -229,6 +226,11 @@ void Engine::Update()
 {
 	gameTimer->Update();
 	float deltaTime = gameTimer->elapsedTime;
+
+	// AnimationPlayer 업데이트
+	if (animationPlayer) {
+		animationPlayer->Update(deltaTime);
+	}
 
 	// SceneManager 업데이트
 	if (sceneManager) {

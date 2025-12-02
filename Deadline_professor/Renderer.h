@@ -30,12 +30,9 @@ public:
 	Shader* GetShader(const std::string&);
 	void RenderTestCube();
 
-	// XMesh 렌더링
-	void RenderXMesh(const std::string_view& meshName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
-	void RenderXMeshSection(const std::string_view& meshName, size_t sectionIndex, const glm::mat4& modelMatrix = glm::mat4(1.0f));
-
-	// 스켈레톤 애니메이션 렌더링
-	void RenderAnimatedMesh(const std::string_view& meshName, const std::vector<glm::mat4>& boneTransforms, const glm::mat4& modelMatrix = glm::mat4(1.0f));
+	// FBX 모델 렌더링
+	void RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
+	void RenderFBXModelWithAnimation(const std::string_view& modelName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms);
 
 private:
 	static Renderer* activeInstance;

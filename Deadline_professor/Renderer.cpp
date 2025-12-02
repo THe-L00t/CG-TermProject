@@ -15,6 +15,10 @@ Renderer::~Renderer()
 
 void Renderer::Init()
 {
+	std::cout << "\n========================================" << std::endl;
+	std::cout << "RENDERER::INIT() CALLED" << std::endl;
+	std::cout << "========================================\n" << std::endl;
+
 	Active();
 
 	// 배경색 설정
@@ -42,11 +46,15 @@ void Renderer::Init()
 
 	if (shaderLoaded) {
 		std::cout << "✅ SUCCESS: Shader 'basic' loaded!" << std::endl;
+		std::cout << "   Total shaders in map: " << shaders.size() << std::endl;
 	} else {
 		std::cerr << "❌ CRITICAL ERROR: Failed to load shader 'basic'!" << std::endl;
 		std::cerr << "   The program will not render correctly." << std::endl;
+		std::cerr << "   Check if basic.vert and basic.frag exist in the working directory." << std::endl;
 	}
 	std::cout << "========================================\n" << std::endl;
+
+	std::cout << "Renderer::Init() completed. Shaders loaded: " << shaders.size() << std::endl;
 
 	// OBJ 데이터 가져오기 (이미 Engine에서 로드됨)
 	const ObjData* cubeData = resourceManager->GetObjData("bugatti");
@@ -174,201 +182,35 @@ void Renderer::RenderTestCube()
 	shader->Unuse();
 }
 
-void Renderer::RenderXMesh(const std::string_view& meshName, const glm::mat4& modelMatrix)
+void Renderer::RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix)
 {
-	static bool printedDebug = false;
-	static int frameCount = 0;
-	frameCount++;
-
-	const XMeshData* meshData = resourceManager->GetXMeshData(meshName);
-	if (!meshData) {
-		std::cerr << "XMesh '" << meshName << "' not found" << std::endl;
-		return;
-	}
-
-	if (meshData->index_count == 0) {
-		std::cerr << "XMesh '" << meshName << "' has no indices" << std::endl;
-		return;
-	}
-
-	if (meshData->streams.empty()) {
-		std::cerr << "XMesh '" << meshName << "' has no vertex streams" << std::endl;
-		return;
-	}
-
-	// 🔍 매 60프레임마다 디버그 정보 출력
-	bool shouldPrintDebug = (!printedDebug) || (frameCount % 60 == 0);
-
-	if (shouldPrintDebug) {
-		std::cout << "\n=== RenderXMesh Debug ===" << std::endl;
-		std::cout << "Mesh: " << meshName << std::endl;
-		std::cout << "Index count: " << meshData->index_count << std::endl;
-		std::cout << "Index type: " << (meshData->index_type == GL_UNSIGNED_SHORT ? "UNSIGNED_SHORT" : "UNSIGNED_INT") << std::endl;
-		std::cout << "VBOs: " << meshData->vbos.size() << std::endl;
-		std::cout << "EBO: " << meshData->ebo << std::endl;
-		std::cout << "VAO: " << meshData->vao << std::endl;
-		std::cout << "Sections: " << meshData->sections.size() << std::endl;
-
-		// VBO/EBO가 실제로 생성되었는지 확인
-		for (size_t i = 0; i < meshData->vbos.size(); ++i) {
-			std::cout << "  VBO[" << i << "]: " << meshData->vbos[i] << std::endl;
+	static bool firstCall = true;
+	if (firstCall) {
+		std::cout << "\n=== RenderFBXModel First Call Debug ===" << std::endl;
+		std::cout << "Available shaders: ";
+		for (const auto& [name, shader] : shaders) {
+			std::cout << "'" << name << "' ";
 		}
-
-		// 스트림 정보 상세 출력
-		std::cout << "Streams detail:" << std::endl;
-		for (size_t i = 0; i < meshData->streams.size(); ++i) {
-			const auto& s = meshData->streams[i];
-			std::cout << "  Stream " << i << " (id=" << s.stream_id << "): "
-			          << "count=" << s.count << ", element_size=" << s.element_size
-			          << ", total_size=" << s.size << std::endl;
-		}
-
-		// Quantization 메타데이터 출력
-		std::cout << "Quantization metadata:" << std::endl;
-		std::cout << "  pos_offset: (" << meshData->pos_offset.x << ", " << meshData->pos_offset.y << ", " << meshData->pos_offset.z << ")" << std::endl;
-		std::cout << "  pos_scale: " << meshData->pos_scale << std::endl;
-
-		// 🚨 렌더링 시점에는 stream.data가 무효화됨 (file_buffer 해제됨)
-		// GPU VBO에 이미 업로드되어 있으므로 CPU 메모리는 불필요
-
-		// OpenGL 상태 확인
-		GLboolean depthTest, cullFace;
-		glGetBooleanv(GL_DEPTH_TEST, &depthTest);
-		glGetBooleanv(GL_CULL_FACE, &cullFace);
-		std::cout << "GL_DEPTH_TEST: " << (depthTest ? "enabled" : "disabled") << std::endl;
-		std::cout << "GL_CULL_FACE: " << (cullFace ? "enabled" : "disabled") << std::endl;
-
-		// 카메라 정보
-		if (camera) {
-			glm::vec3 pos = camera->GetPosition();
-			glm::vec3 dir = camera->GetDirection();
-			std::cout << "Camera pos: (" << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
-			std::cout << "Camera dir: (" << dir.x << ", " << dir.y << ", " << dir.z << ")" << std::endl;
-		}
-
-		std::cout << "========================\n" << std::endl;
-		printedDebug = true;
-	}
-
-	Shader* shader = GetShader("basic");
-	if (!shader) {
-		std::cerr << "Shader 'basic' not found" << std::endl;
-		return;
-	}
-
-	if (shouldPrintDebug) {
-		std::cout << "🔍 Using shader 'basic'" << std::endl;
-	}
-
-	shader->Use();
-
-	// 변환 행렬 설정
-	glm::mat4 view = glm::mat4(1.0f);
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
-
-	if (camera) {
-		view = camera->GetViewMat();
-		projection = camera->GetProjMat();
-	}
-
-	shader->setUniform("uModel", modelMatrix);
-	shader->setUniform("uView", view);
-	shader->setUniform("uProjection", projection);
-
-	// 애니메이션 없음 (스태틱 메시)
-	shader->setUniform("uBoneCount", 0);
-
-	// Position quantization 메타데이터 전달
-	shader->setUniform("uPosOffset", meshData->pos_offset);
-	shader->setUniform("uPosScale", meshData->pos_scale);
-
-	// 🔍 CRITICAL: Uniform 값 확인
-	if (shouldPrintDebug) {
-		std::cout << "\n=== 🎯 UNIFORM VALUES SENT TO GPU ===" << std::endl;
-		std::cout << "uPosOffset: (" << meshData->pos_offset.x << ", "
-		          << meshData->pos_offset.y << ", " << meshData->pos_offset.z << ")" << std::endl;
-		std::cout << "uPosScale: " << meshData->pos_scale << std::endl;
+		std::cout << std::endl;
 		std::cout << "======================================\n" << std::endl;
+		firstCall = false;
 	}
 
-	// 라이팅 설정
-	glm::vec3 color(0.8f, 0.3f, 0.3f);
-	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
-	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
-	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-
-	shader->setUniform("uColor", color);
-	shader->setUniform("uLightPos", lightPos);
-	shader->setUniform("uViewPos", viewPos);
-	shader->setUniform("uLightColor", lightColor);
-
-	// XMesh 전용 VAO 바인드 (로드 시 이미 설정됨)
-	glBindVertexArray(meshData->vao);
-
-	GLenum err = glGetError();
-	if (err != GL_NO_ERROR) {
-		std::cerr << "OpenGL error after VAO bind: " << err << std::endl;
-	}
-
-	// 섹션별로 렌더링 (섹션이 있는 경우)
-	if (!meshData->sections.empty()) {
-		if (shouldPrintDebug) {
-			std::cout << "🔍 Drawing " << meshData->sections.size() << " sections" << std::endl;
-		}
-		for (size_t i = 0; i < meshData->sections.size(); ++i) {
-			const auto& section = meshData->sections[i];
-			if (shouldPrintDebug) {
-				std::cout << "  Section " << i << ": start=" << section.index_start
-				          << ", count=" << section.index_count
-				          << ", vertex_start=" << section.vertex_start << std::endl;
-			}
-			glDrawElementsBaseVertex(
-				GL_TRIANGLES,
-				section.index_count,
-				meshData->index_type,
-				(void*)(section.index_start * (meshData->index_type == GL_UNSIGNED_SHORT ? 2 : 4)),
-				section.vertex_start
-			);
-
-			err = glGetError();
-			if (err != GL_NO_ERROR) {
-				std::cerr << "OpenGL error after drawing section " << i << ": " << err << std::endl;
-			}
-		}
-	}
-	else {
-		// 섹션 정보가 없으면 전체 인덱스 렌더링
-		if (shouldPrintDebug) {
-			std::cout << "🔍 Drawing entire mesh: " << meshData->index_count << " indices" << std::endl;
-		}
-		glDrawElements(GL_TRIANGLES, meshData->index_count, meshData->index_type, 0);
-
-		err = glGetError();
-		if (err != GL_NO_ERROR) {
-			std::cerr << "OpenGL error after draw: " << err << std::endl;
-		}
-	}
-
-	glBindVertexArray(0);
-	shader->Unuse();
-}
-
-void Renderer::RenderXMeshSection(const std::string_view& meshName, size_t sectionIndex, const glm::mat4& modelMatrix)
-{
-	const XMeshData* meshData = resourceManager->GetXMeshData(meshName);
-	if (!meshData) {
-		std::cerr << "XMesh '" << meshName << "' not found" << std::endl;
+	const FBXModel* model = resourceManager->GetFBXModel(modelName);
+	if (!model) {
+		std::cerr << "FBX model '" << modelName << "' not found" << std::endl;
 		return;
 	}
 
-	if (sectionIndex >= meshData->sections.size()) {
-		std::cerr << "Section index " << sectionIndex << " out of range for XMesh '" << meshName << "'" << std::endl;
+	if (model->meshes.empty()) {
+		std::cerr << "FBX model '" << modelName << "' has no meshes" << std::endl;
 		return;
 	}
 
 	Shader* shader = GetShader("basic");
 	if (!shader) {
-		std::cerr << "Shader 'basic' not found" << std::endl;
+		std::cerr << "ERROR: Shader 'basic' not found in shaders map!" << std::endl;
+		std::cerr << "Total shaders loaded: " << shaders.size() << std::endl;
 		return;
 	}
 
@@ -387,13 +229,6 @@ void Renderer::RenderXMeshSection(const std::string_view& meshName, size_t secti
 	shader->setUniform("uView", view);
 	shader->setUniform("uProjection", projection);
 
-	// 애니메이션 없음 (스태틱 메시)
-	shader->setUniform("uBoneCount", 0);
-
-	// Position quantization 메타데이터 전달
-	shader->setUniform("uPosOffset", meshData->pos_offset);
-	shader->setUniform("uPosScale", meshData->pos_scale);
-
 	// 라이팅 설정
 	glm::vec3 color(0.8f, 0.3f, 0.3f);
 	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
@@ -405,59 +240,36 @@ void Renderer::RenderXMeshSection(const std::string_view& meshName, size_t secti
 	shader->setUniform("uViewPos", viewPos);
 	shader->setUniform("uLightColor", lightColor);
 
-	// XMesh 전용 VAO 바인드 및 특정 섹션만 렌더링
-	glBindVertexArray(meshData->vao);
+	// 모든 메시 렌더링
+	for (const auto& mesh : model->meshes) {
+		glBindVertexArray(mesh.VAO);
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
 
-	const MeshSection& section = meshData->sections[sectionIndex];
-	glDrawElementsBaseVertex(
-		GL_TRIANGLES,
-		section.index_count,
-		meshData->index_type,
-		(void*)(section.index_start * (meshData->index_type == GL_UNSIGNED_SHORT ? 2 : 4)),
-		section.vertex_start
-	);
-
-	glBindVertexArray(0);
 	shader->Unuse();
 }
 
-void Renderer::RenderAnimatedMesh(const std::string_view& meshName, const std::vector<glm::mat4>& boneTransforms, const glm::mat4& modelMatrix)
+void Renderer::RenderFBXModelWithAnimation(const std::string_view& modelName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms)
 {
-	const XMeshData* meshData = resourceManager->GetXMeshData(meshName);
-	if (!meshData) {
-		std::cerr << "XMesh '" << meshName << "' not found" << std::endl;
+	const FBXModel* model = resourceManager->GetFBXModel(modelName);
+	if (!model) {
+		std::cerr << "FBX model '" << modelName << "' not found" << std::endl;
 		return;
 	}
 
-	if (!meshData->has_skeleton) {
-		std::cerr << "Mesh '" << meshName << "' has no skeleton" << std::endl;
-		return;
-	}
-
-	if (boneTransforms.empty()) {
-		std::cerr << "❌ Bone transforms are empty" << std::endl;
-		return;
-	}
-
-	if (meshData->index_count == 0) {
-		std::cerr << "❌ Mesh has no indices" << std::endl;
+	if (model->meshes.empty()) {
+		std::cerr << "FBX model '" << modelName << "' has no meshes" << std::endl;
 		return;
 	}
 
 	Shader* shader = GetShader("basic");
 	if (!shader) {
-		std::cerr << "❌ Shader 'basic' not found" << std::endl;
+		std::cerr << "ERROR: Shader 'basic' not found in shaders map!" << std::endl;
 		return;
 	}
 
-	std::cout << "🔍 Using shader 'basic' for animated mesh" << std::endl;
 	shader->Use();
-
-	// Shader 사용 후 에러 체크
-	GLenum err = glGetError();
-	if (err != GL_NO_ERROR) {
-		std::cerr << "❌ OpenGL error after shader use: " << err << std::endl;
-	}
 
 	// 변환 행렬 설정
 	glm::mat4 view = glm::mat4(1.0f);
@@ -472,22 +284,6 @@ void Renderer::RenderAnimatedMesh(const std::string_view& meshName, const std::v
 	shader->setUniform("uView", view);
 	shader->setUniform("uProjection", projection);
 
-	// 본 변환 행렬 전달 (최대 100개 본 지원)
-	const int MAX_BONES = 100;
-	int boneCount = std::min(static_cast<int>(boneTransforms.size()), MAX_BONES);
-
-	for (int i = 0; i < boneCount; ++i) {
-		std::string uniformName = "uBones[" + std::to_string(i) + "]";
-		shader->setUniform(uniformName.c_str(), boneTransforms[i]);
-	}
-
-	// 본 개수 전달
-	shader->setUniform("uBoneCount", boneCount);
-
-	// Position quantization 메타데이터 전달
-	shader->setUniform("uPosOffset", meshData->pos_offset);
-	shader->setUniform("uPosScale", meshData->pos_scale);
-
 	// 라이팅 설정
 	glm::vec3 color(0.8f, 0.3f, 0.3f);
 	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
@@ -499,80 +295,25 @@ void Renderer::RenderAnimatedMesh(const std::string_view& meshName, const std::v
 	shader->setUniform("uViewPos", viewPos);
 	shader->setUniform("uLightColor", lightColor);
 
-	// XMesh 전용 VAO 바인드
-	glBindVertexArray(meshData->vao);
+	// 스켈레탈 애니메이션 설정
+	bool useSkinning = !boneTransforms.empty();
+	shader->setUniform("uUseSkinning", useSkinning);
 
-	// 디버그: 첫 프레임에만 렌더링 정보 출력
-	static bool printedRenderInfo = false;
-	if (!printedRenderInfo) {
-		std::cout << "\n=== RenderAnimatedMesh Debug ===" << std::endl;
-		std::cout << "  VAO: " << meshData->vao << std::endl;
-		std::cout << "  Index count: " << meshData->index_count << std::endl;
-		std::cout << "  Index type: " << (meshData->index_type == GL_UNSIGNED_SHORT ? "UNSIGNED_SHORT" : "UNSIGNED_INT") << std::endl;
-		std::cout << "  Bone count: " << boneCount << std::endl;
-		std::cout << "  Sections: " << meshData->sections.size() << std::endl;
-		if (!meshData->sections.empty()) {
-			const auto& sec = meshData->sections[0];
-			std::cout << "  Section[0]: start=" << sec.index_start
-			          << ", count=" << sec.index_count
-			          << ", vstart=" << sec.vertex_start << std::endl;
-		}
-		std::cout << "  Quantization: offset=(" << meshData->pos_offset.x << ","
-		          << meshData->pos_offset.y << "," << meshData->pos_offset.z
-		          << "), scale=" << meshData->pos_scale << std::endl;
-
-		// 🔍 Bone 변환 행렬 확인 (첫 3개 본)
-		std::cout << "\n  First 3 Bone Transforms:" << std::endl;
-		for (int i = 0; i < std::min(3, boneCount); ++i) {
-			const glm::mat4& m = boneTransforms[i];
-			std::cout << "    Bone[" << i << "]: " << std::endl;
-			std::cout << "      [" << m[0][0] << ", " << m[1][0] << ", " << m[2][0] << ", " << m[3][0] << "]" << std::endl;
-			std::cout << "      [" << m[0][1] << ", " << m[1][1] << ", " << m[2][1] << ", " << m[3][1] << "]" << std::endl;
-			std::cout << "      [" << m[0][2] << ", " << m[1][2] << ", " << m[2][2] << ", " << m[3][2] << "]" << std::endl;
-			std::cout << "      [" << m[0][3] << ", " << m[1][3] << ", " << m[2][3] << ", " << m[3][3] << "]" << std::endl;
-		}
-
-		std::cout << "================================\n" << std::endl;
-		printedRenderInfo = true;
-	}
-
-	// 섹션별로 렌더링
-	if (!meshData->sections.empty()) {
-		std::cout << "🔍 Drawing " << meshData->sections.size() << " sections..." << std::endl;
-		for (const auto& section : meshData->sections) {
-			std::cout << "  Section: start=" << section.index_start
-			          << ", count=" << section.index_count
-			          << ", vstart=" << section.vertex_start << std::endl;
-
-			glDrawElementsBaseVertex(
-				GL_TRIANGLES,
-				section.index_count,
-				meshData->index_type,
-				(void*)(section.index_start * (meshData->index_type == GL_UNSIGNED_SHORT ? 2 : 4)),
-				section.vertex_start
-			);
-
-			GLenum err = glGetError();
-			if (err != GL_NO_ERROR) {
-				std::cerr << "❌ OpenGL error after draw: " << err << std::endl;
-			} else {
-				std::cout << "  ✅ Draw call succeeded" << std::endl;
-			}
-		}
-	}
-	else {
-		std::cout << "🔍 Drawing entire mesh: " << meshData->index_count << " indices" << std::endl;
-		glDrawElements(GL_TRIANGLES, meshData->index_count, meshData->index_type, 0);
-
-		GLenum err = glGetError();
-		if (err != GL_NO_ERROR) {
-			std::cerr << "❌ OpenGL error after draw: " << err << std::endl;
-		} else {
-			std::cout << "  ✅ Draw call succeeded" << std::endl;
+	if (useSkinning) {
+		// 본 변환 행렬 전달 (최대 100개)
+		int boneCount = std::min(static_cast<int>(boneTransforms.size()), 100);
+		for (int i = 0; i < boneCount; ++i) {
+			std::string uniformName = "uBoneTransforms[" + std::to_string(i) + "]";
+			shader->setUniform(uniformName, boneTransforms[i]);
 		}
 	}
 
-	glBindVertexArray(0);
+	// 모든 메시 렌더링
+	for (const auto& mesh : model->meshes) {
+		glBindVertexArray(mesh.VAO);
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
+
 	shader->Unuse();
 }
-

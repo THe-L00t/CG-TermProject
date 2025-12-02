@@ -20,6 +20,7 @@ public:
 	void Unuse() const;
 
 	void setUniform(const std::string_view&, int);
+	void setUniform(const std::string_view&, bool);
 	void setUniform(const std::string_view&, float);
 	void setUniform(const std::string_view&, float, float);
 	void setUniform(const std::string_view&, float, float, float);

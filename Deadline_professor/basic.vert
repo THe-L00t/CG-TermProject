@@ -1,25 +1,21 @@
 #version 330 core
 
-// XMesh format attribute mapping
-layout(location = 0) in ivec3 aPositionRaw;  // int16x3, normalized=false -> ivec3
-layout(location = 1) in vec3 aNormal;        // int16x3, normalized=true -> vec3 [-1,1]
-layout(location = 3) in vec2 aTexCoord;      // half2 -> vec2
-layout(location = 5) in vec4 aBoneWeights;   // u8x4, normalized=true -> vec4 [0,1]
-layout(location = 6) in ivec4 aBoneIndices;  // u8x4, normalized=false -> ivec4
+// Standard vertex attributes
+layout(location = 0) in vec3 aPosition;   // float3 position
+layout(location = 1) in vec2 aTexCoord;   // float2 texture coordinates
+layout(location = 2) in vec3 aNormal;     // float3 normal
+layout(location = 3) in ivec4 aBoneIDs;   // int4 bone indices
+layout(location = 4) in vec4 aBoneWeights; // float4 bone weights
 
 // Transform matrices
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProjection;
 
-// Skeletal animation (max 100 bones)
-uniform mat4 uBones[100];
-uniform int uBoneCount;
-
-// Position quantization metadata (XMesh spec)
-// Formula: float_position = (int16_raw - offset) * scale
-uniform vec3 uPosOffset;   // quantization center
-uniform float uPosScale;   // quantization scale
+// Skeletal animation
+const int MAX_BONES = 100;
+uniform mat4 uBoneTransforms[MAX_BONES];
+uniform bool uUseSkinning;
 
 // Output to fragment shader
 out vec3 FragPos;
@@ -28,38 +24,38 @@ out vec3 Normal;
 
 void main()
 {
-    // Step 1: Position quantization decoding
-    // int16 raw -> float world space
-    vec3 decodedPosition = (vec3(aPositionRaw) - uPosOffset) * uPosScale;
+    vec4 localPosition = vec4(aPosition, 1.0);
+    vec3 localNormal = aNormal;
 
-    // Step 2: Skeletal animation (bone skinning)
-    vec4 pos = vec4(decodedPosition, 1.0);
-    vec3 nrm = normalize(aNormal);  // Normal is already normalized to [-1,1]
+    // Apply skeletal animation if enabled
+    if (uUseSkinning) {
+        mat4 boneTransform = mat4(0.0);
 
-    if (uBoneCount > 0) {
-        // Calculate skinning matrix
-        mat4 skinMat = mat4(0.0);
-        skinMat += uBones[aBoneIndices.x] * aBoneWeights.x;
-        skinMat += uBones[aBoneIndices.y] * aBoneWeights.y;
-        skinMat += uBones[aBoneIndices.z] * aBoneWeights.z;
-        skinMat += uBones[aBoneIndices.w] * aBoneWeights.w;
+        for (int i = 0; i < 4; ++i) {
+            if (aBoneIDs[i] >= 0 && aBoneIDs[i] < MAX_BONES) {
+                boneTransform += uBoneTransforms[aBoneIDs[i]] * aBoneWeights[i];
+            }
+        }
 
-        // Apply skinning to position and normal
-        pos = skinMat * pos;
-        nrm = normalize(mat3(skinMat) * nrm);
+        // Apply bone transformation
+        localPosition = boneTransform * vec4(aPosition, 1.0);
+
+        // Transform normal
+        mat3 boneNormalMatrix = mat3(boneTransform);
+        localNormal = boneNormalMatrix * aNormal;
     }
 
-    // Step 3: World / View / Projection transform
-    vec4 worldPos = uModel * pos;
+    // World space position
+    vec4 worldPos = uModel * localPosition;
     FragPos = worldPos.xyz;
 
-    // Step 4: Normal transform (using normal matrix)
+    // Normal transform (using normal matrix)
     mat3 normalMatrix = mat3(transpose(inverse(uModel)));
-    Normal = normalize(normalMatrix * nrm);
+    Normal = normalize(normalMatrix * localNormal);
 
-    // Step 5: Texture coordinates (pass through)
+    // Texture coordinates (pass through)
     TexCoord = aTexCoord;
 
-    // Step 6: Final position
+    // Final position
     gl_Position = uProjection * uView * worldPos;
 }
