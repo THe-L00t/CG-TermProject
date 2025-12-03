@@ -29,20 +29,27 @@ void main()
 
     // Apply skeletal animation if enabled
     if (uUseSkinning) {
-        mat4 boneTransform = mat4(0.0);
+        // 본 가중치 합계 계산
+        float totalWeight = aBoneWeights[0] + aBoneWeights[1] + aBoneWeights[2] + aBoneWeights[3];
 
-        for (int i = 0; i < 4; ++i) {
-            if (aBoneIDs[i] >= 0 && aBoneIDs[i] < MAX_BONES) {
-                boneTransform += uBoneTransforms[aBoneIDs[i]] * aBoneWeights[i];
+        // 본의 영향을 받는 정점인 경우에만 본 변환 적용
+        if (totalWeight > 0.001) {
+            mat4 boneTransform = mat4(0.0);
+
+            for (int i = 0; i < 4; ++i) {
+                if (aBoneIDs[i] >= 0 && aBoneIDs[i] < MAX_BONES && aBoneWeights[i] > 0.0) {
+                    boneTransform += uBoneTransforms[aBoneIDs[i]] * aBoneWeights[i];
+                }
             }
+
+            // Apply bone transformation
+            localPosition = boneTransform * vec4(aPosition, 1.0);
+
+            // Transform normal
+            mat3 boneNormalMatrix = mat3(boneTransform);
+            localNormal = boneNormalMatrix * aNormal;
         }
-
-        // Apply bone transformation
-        localPosition = boneTransform * vec4(aPosition, 1.0);
-
-        // Transform normal
-        mat3 boneNormalMatrix = mat3(boneTransform);
-        localNormal = boneNormalMatrix * aNormal;
+        // 본의 영향을 받지 않는 정점은 원래 위치 유지 (항등 변환)
     }
 
     // World space position

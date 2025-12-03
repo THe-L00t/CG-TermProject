@@ -157,7 +157,7 @@ void Engine::Initialize(int argc, char** argv)
 		if (model) {
 			glm::mat4 modelMatrix = glm::mat4(1.0f);
 			modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f)); // 원점
-			modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f)); // FBX는 보통 큰 스케일로 저장됨
+			modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f)); // 50배 확대 (0.01f * 50 = 0.5f)
 
 			// 애니메이션이 있으면 애니메이션 렌더링, 없으면 기본 렌더링
 			if (animationPlayer && animationPlayer->IsPlaying()) {

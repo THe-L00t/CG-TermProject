@@ -184,33 +184,13 @@ void Renderer::RenderTestCube()
 
 void Renderer::RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix)
 {
-	static bool firstCall = true;
-	if (firstCall) {
-		std::cout << "\n=== RenderFBXModel First Call Debug ===" << std::endl;
-		std::cout << "Available shaders: ";
-		for (const auto& [name, shader] : shaders) {
-			std::cout << "'" << name << "' ";
-		}
-		std::cout << std::endl;
-		std::cout << "======================================\n" << std::endl;
-		firstCall = false;
-	}
-
 	const FBXModel* model = resourceManager->GetFBXModel(modelName);
-	if (!model) {
-		std::cerr << "FBX model '" << modelName << "' not found" << std::endl;
-		return;
-	}
-
-	if (model->meshes.empty()) {
-		std::cerr << "FBX model '" << modelName << "' has no meshes" << std::endl;
+	if (!model || model->meshes.empty()) {
 		return;
 	}
 
 	Shader* shader = GetShader("basic");
 	if (!shader) {
-		std::cerr << "ERROR: Shader 'basic' not found in shaders map!" << std::endl;
-		std::cerr << "Total shaders loaded: " << shaders.size() << std::endl;
 		return;
 	}
 
@@ -253,19 +233,12 @@ void Renderer::RenderFBXModel(const std::string_view& modelName, const glm::mat4
 void Renderer::RenderFBXModelWithAnimation(const std::string_view& modelName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms)
 {
 	const FBXModel* model = resourceManager->GetFBXModel(modelName);
-	if (!model) {
-		std::cerr << "FBX model '" << modelName << "' not found" << std::endl;
-		return;
-	}
-
-	if (model->meshes.empty()) {
-		std::cerr << "FBX model '" << modelName << "' has no meshes" << std::endl;
+	if (!model || model->meshes.empty()) {
 		return;
 	}
 
 	Shader* shader = GetShader("basic");
 	if (!shader) {
-		std::cerr << "ERROR: Shader 'basic' not found in shaders map!" << std::endl;
 		return;
 	}
 
