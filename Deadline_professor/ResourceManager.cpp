@@ -3,6 +3,7 @@
 #include <functional>
 #include <algorithm>
 #include <array>
+#include <iostream>
 
 // ============================================
 // ResourceManager 구현
@@ -86,14 +87,19 @@ bool ResourceManager::LoadFBX(const std::string_view& name, const std::filesyste
 	Assimp::Importer importer;
 
 	// FBX 파일 로드 (최적화 플래그 적용)
-	const aiScene* scene = importer.ReadFile(path.string(),
-		aiProcess_Triangulate |
+	unsigned int flags = aiProcess_Triangulate |
 		aiProcess_GenNormals |
 		aiProcess_FlipUVs |
 		aiProcess_CalcTangentSpace |
 		aiProcess_JoinIdenticalVertices |
-		aiProcess_LimitBoneWeights      // 최대 4개 본 가중치
-	);
+		aiProcess_LimitBoneWeights;      // 최대 4개 본 가중치
+
+	std::cout << "Loading FBX with flags: " << flags << std::endl;
+	std::cout << "aiProcess_MakeLeftHanded: " << ((flags & aiProcess_MakeLeftHanded) ? "YES" : "NO") << std::endl;
+	std::cout << "aiProcess_FlipUVs: " << ((flags & aiProcess_FlipUVs) ? "YES" : "NO") << std::endl;
+	std::cout << "aiProcess_FlipWindingOrder: " << ((flags & aiProcess_FlipWindingOrder) ? "YES" : "NO") << std::endl;
+
+	const aiScene* scene = importer.ReadFile(path.string(), flags);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 		std::cerr << "ERROR::ASSIMP: " << importer.GetErrorString() << std::endl;
@@ -118,6 +124,44 @@ bool ResourceManager::LoadFBX(const std::string_view& name, const std::filesyste
 
 	// 씬 노드 처리
 	ProcessNode(scene->mRootNode, scene, model);
+
+	// ============================================
+	// DEBUG: FBX 로드 후 변환 검증
+	// ============================================
+	std::cout << "==== FBX Debug Dump ====" << std::endl;
+	std::cout << "Model: " << model.name << std::endl;
+	std::cout << "globalInverseTransform determinant: " << glm::determinant(model.globalInverseTransform) << std::endl;
+
+	if (!model.bones.empty()) {
+		const auto& b = model.bones[0];
+		std::cout << "First bone name: " << b.name << " parent: " << b.parentIndex << std::endl;
+		std::cout << "nodeTransform (col-major):\n";
+		const glm::mat4& nt = b.nodeTransform;
+		for (int r = 0; r < 4; ++r) {
+			for (int c = 0; c < 4; ++c) std::cout << nt[c][r] << " ";
+			std::cout << "\n";
+		}
+		std::cout << "offsetMatrix (col-major):\n";
+		const glm::mat4& om = b.offsetMatrix;
+		for (int r = 0; r < 4; ++r) {
+			for (int c = 0; c < 4; ++c) std::cout << om[c][r] << " ";
+			std::cout << "\n";
+		}
+		glm::mat4 sampleGlobal = nt; // as if root
+		glm::mat4 final = model.globalInverseTransform * sampleGlobal * om;
+		std::cout << "sample final matrix det: " << glm::determinant(final) << std::endl;
+	}
+	else {
+		std::cout << "No bones!" << std::endl;
+	}
+
+	if (!model.meshes.empty() && !model.meshes[0].vertices.empty()) {
+		auto& v = model.meshes[0].vertices[0];
+		std::cout << "Sample vertex pos: " << v.position.x << ", " << v.position.y << ", " << v.position.z << std::endl;
+		std::cout << "Sample vertex boneIDs: " << v.boneIDs[0] << "," << v.boneIDs[1] << "," << v.boneIDs[2] << "," << v.boneIDs[3] << std::endl;
+		std::cout << "Sample vertex weights: " << v.boneWeights[0] << "," << v.boneWeights[1] << "," << v.boneWeights[2] << "," << v.boneWeights[3] << std::endl;
+	}
+	std::cout << "=========================" << std::endl;
 
 	fbxModels.push_back(std::move(model));
 	return true;
@@ -181,6 +225,9 @@ FBXMesh ResourceManager::ProcessMesh(aiMesh* mesh, const aiScene* scene, FBXMode
 
 	// 본 가중치 처리
 	if (mesh->HasBones()) {
+		int missingBones = 0;
+		int totalWeightsApplied = 0;
+
 		for (unsigned int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex) {
 			const aiBone* bone = mesh->mBones[boneIndex];
 			std::string boneName(bone->mName.C_Str());
@@ -188,6 +235,8 @@ FBXMesh ResourceManager::ProcessMesh(aiMesh* mesh, const aiScene* scene, FBXMode
 			// 본 ID 찾기
 			auto it = model.boneMap.find(boneName);
 			if (it == model.boneMap.end()) {
+				missingBones++;
+				std::cerr << "WARNING: Bone not found in boneMap: " << boneName << std::endl;
 				continue;
 			}
 			int boneID = it->second;
@@ -201,15 +250,51 @@ FBXMesh ResourceManager::ProcessMesh(aiMesh* mesh, const aiScene* scene, FBXMode
 
 				Vertex& vertex = fbxMesh.vertices[vertexID];
 				// 빈 슬롯에 가중치 추가
+				bool added = false;
 				for (int i = 0; i < 4; ++i) {
 					if (vertex.boneWeights[i] == 0.0f) {
 						vertex.boneIDs[i] = boneID;
 						vertex.boneWeights[i] = weight;
+						added = true;
+						totalWeightsApplied++;
 						break;
 					}
 				}
+				if (!added) {
+					std::cerr << "WARNING: Vertex " << vertexID << " has more than 4 bone weights!" << std::endl;
+				}
 			}
 		}
+
+		// 가중치 정규화 및 검증
+		int zeroWeightCount = 0;
+		for (size_t i = 0; i < fbxMesh.vertices.size(); ++i) {
+			auto& vertex = fbxMesh.vertices[i];
+			float totalWeight = vertex.boneWeights[0] + vertex.boneWeights[1] +
+			                    vertex.boneWeights[2] + vertex.boneWeights[3];
+
+			if (totalWeight > 0.0001f) {
+				// 정규화
+				vertex.boneWeights[0] /= totalWeight;
+				vertex.boneWeights[1] /= totalWeight;
+				vertex.boneWeights[2] /= totalWeight;
+				vertex.boneWeights[3] /= totalWeight;
+			}
+			else {
+				// 가중치가 없는 정점 - 루트 본에 바인딩
+				zeroWeightCount++;
+				vertex.boneIDs[0] = 0;  // 루트 본
+				vertex.boneWeights[0] = 1.0f;
+			}
+		}
+
+		if (missingBones > 0) {
+			std::cout << "Mesh has " << missingBones << " missing bones in boneMap" << std::endl;
+		}
+		if (zeroWeightCount > 0) {
+			std::cout << "Mesh has " << zeroWeightCount << " vertices with zero weights (bound to root)" << std::endl;
+		}
+		std::cout << "Total bone weights applied: " << totalWeightsApplied << std::endl;
 	}
 
 	// 인덱스 데이터 처리
@@ -279,7 +364,10 @@ FBXMesh ResourceManager::ProcessMesh(aiMesh* mesh, const aiScene* scene, FBXMode
 
 void ResourceManager::LoadBones(const aiScene* scene, FBXModel& model)
 {
-	// 모든 메시의 본 정보 수집
+	// ============================================
+	// STEP 1: 메시의 본부터 먼저 등록 (offsetMatrix 포함)
+	// 이렇게 해야 정점의 boneID와 boneMap 인덱스가 일치
+	// ============================================
 	for (unsigned int meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
 		const aiMesh* mesh = scene->mMeshes[meshIndex];
 		if (!mesh->HasBones()) continue;
@@ -288,45 +376,140 @@ void ResourceManager::LoadBones(const aiScene* scene, FBXModel& model)
 			const aiBone* bone = mesh->mBones[boneIndex];
 			std::string boneName(bone->mName.C_Str());
 
-			// 이미 추가된 본인지 확인
-			if (model.boneMap.find(boneName) != model.boneMap.end()) {
-				continue;
+			// 아직 등록되지 않은 본이면 추가
+			if (model.boneMap.find(boneName) == model.boneMap.end()) {
+				int index = static_cast<int>(model.bones.size());
+				model.boneMap[boneName] = index;
+
+				FBXBone fbxBone;
+				fbxBone.name = boneName;
+				fbxBone.offsetMatrix = ConvertAiMatToGlmFixed(bone->mOffsetMatrix);
+				fbxBone.nodeTransform = glm::mat4(1.0f); // 나중에 업데이트
+
+				model.bones.push_back(std::move(fbxBone));
 			}
-
-			// 새 본 추가
-			int newBoneIndex = static_cast<int>(model.bones.size());
-			model.boneMap[boneName] = newBoneIndex;
-
-			FBXBone fbxBone(boneName);
-			// Offset matrix를 FBX → OpenGL 좌표계로 변환
-			fbxBone.offsetMatrix = ConvertAiMatToGlmFixed(bone->mOffsetMatrix);
-
-			model.bones.push_back(std::move(fbxBone));
 		}
 	}
 
-	// 본 계층 구조 빌드 (람다 재귀 사용)
-	std::function<void(aiNode*, int)> buildHierarchy = [&](aiNode* node, int parentIndex) {
+	// ============================================
+	// STEP 2: 씬 트리의 모든 노드를 순회하며 nodeTransform 설정
+	// 및 누락된 본 추가
+	// ============================================
+	std::function<void(aiNode*)> collectAllNodes = [&](aiNode* node) {
+		std::string nodeName(node->mName.C_Str());
+
+		// 아직 등록되지 않은 노드면 본으로 등록
+		if (model.boneMap.find(nodeName) == model.boneMap.end()) {
+			int index = static_cast<int>(model.bones.size());
+			model.boneMap[nodeName] = index;
+
+			FBXBone bone;
+			bone.name = nodeName;
+			bone.nodeTransform = ConvertAiMatToGlmFixed(node->mTransformation);
+			bone.offsetMatrix = glm::mat4(1.0f); // 스킨에 영향 없는 본
+
+			model.bones.push_back(std::move(bone));
+		}
+		else {
+			// 이미 등록된 본이면 nodeTransform만 업데이트
+			int index = model.boneMap[nodeName];
+			model.bones[index].nodeTransform = ConvertAiMatToGlmFixed(node->mTransformation);
+		}
+
+		// 자식 노드 재귀
+		for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+			collectAllNodes(node->mChildren[i]);
+		}
+	};
+
+	collectAllNodes(scene->mRootNode);
+
+	// ============================================
+	// STEP 3: 애니메이션 채널에 등장하는 본 이름 확인 및 등록
+	// ============================================
+	for (unsigned int animIndex = 0; animIndex < scene->mNumAnimations; ++animIndex) {
+		const aiAnimation* anim = scene->mAnimations[animIndex];
+		for (unsigned int channelIndex = 0; channelIndex < anim->mNumChannels; ++channelIndex) {
+			const aiNodeAnim* channel = anim->mChannels[channelIndex];
+			std::string boneName(channel->mNodeName.C_Str());
+
+			// Assimp 접미사 제거
+			size_t suffixPos = boneName.find("_$AssimpFbx$_");
+			if (suffixPos != std::string::npos) {
+				boneName = boneName.substr(0, suffixPos);
+			}
+
+			// 아직 등록되지 않은 본이면 추가 (애니메이션용)
+			if (model.boneMap.find(boneName) == model.boneMap.end()) {
+				int index = static_cast<int>(model.bones.size());
+				model.boneMap[boneName] = index;
+
+				FBXBone bone;
+				bone.name = boneName;
+				bone.nodeTransform = glm::mat4(1.0f);
+				bone.offsetMatrix = glm::mat4(1.0f);
+
+				model.bones.push_back(std::move(bone));
+
+				std::cout << "Warning: Animation bone not in scene tree: " << boneName << std::endl;
+			}
+		}
+	}
+
+	// ============================================
+	// STEP 4: 계층 구조 설정 (parentIndex)
+	// ============================================
+	std::function<void(aiNode*, int)> setParentIndices = [&](aiNode* node, int parentIndex) {
 		std::string nodeName(node->mName.C_Str());
 
 		auto it = model.boneMap.find(nodeName);
 		if (it != model.boneMap.end()) {
-			int currentBoneIndex = it->second;
-			model.bones[currentBoneIndex].parentIndex = parentIndex;
+			int currentIndex = it->second;
+			model.bones[currentIndex].parentIndex = parentIndex;
 
-			// 노드 변환 저장 (bind pose) - FBX → OpenGL 좌표계 변환
-			model.bones[currentBoneIndex].nodeTransform = ConvertAiMatToGlmFixed(node->mTransformation);
-
-			parentIndex = currentBoneIndex;
+			// 현재 본을 부모로 설정
+			parentIndex = currentIndex;
 		}
 
-		// 자식 노드 재귀 처리
+		// 자식 노드 재귀
 		for (unsigned int i = 0; i < node->mNumChildren; ++i) {
-			buildHierarchy(node->mChildren[i], parentIndex);
+			setParentIndices(node->mChildren[i], parentIndex);
 		}
 	};
 
-	buildHierarchy(scene->mRootNode, -1);
+	setParentIndices(scene->mRootNode, -1);
+
+	// ============================================
+	// STEP 5: offsetMatrix가 없는 본 검증 및 통계
+	// ============================================
+	int bonesWithOffset = 0;
+	int bonesWithoutOffset = 0;
+	for (size_t i = 0; i < model.bones.size(); ++i) {
+		const auto& bone = model.bones[i];
+		// offsetMatrix가 항등 행렬인지 확인
+		bool isIdentity = true;
+		for (int r = 0; r < 4; ++r) {
+			for (int c = 0; c < 4; ++c) {
+				float expected = (r == c) ? 1.0f : 0.0f;
+				if (std::abs(bone.offsetMatrix[c][r] - expected) > 0.0001f) {
+					isIdentity = false;
+					break;
+				}
+			}
+			if (!isIdentity) break;
+		}
+
+		if (isIdentity) {
+			bonesWithoutOffset++;
+		}
+		else {
+			bonesWithOffset++;
+		}
+	}
+
+	std::cout << "Total bones registered: " << model.bones.size() << std::endl;
+	std::cout << "  Bones with offsetMatrix: " << bonesWithOffset << std::endl;
+	std::cout << "  Bones without offsetMatrix (identity): " << bonesWithoutOffset << std::endl;
 }
 
 void ResourceManager::LoadAnimations(const aiScene* scene, FBXModel& model)

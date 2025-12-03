@@ -3,6 +3,7 @@
 #include <gl/glm/gtc/type_ptr.hpp>
 #include <gl/glm/gtc/quaternion.hpp>
 #include <algorithm>
+#include <iostream>
 
 // ============================================
 // 생성자 / 초기화
@@ -97,18 +98,30 @@ void FBXAnimationPlayer::CalculateBoneTransforms(const FBXAnimation& animation, 
 	}
 
 	// 애니메이션 채널의 변환 적용
+	int missingChannels = 0;
 	for (const auto& channel : animation.channels) {
 		auto it = fbxModel->boneMap.find(channel.boneName);
 		if (it == fbxModel->boneMap.end()) {
+			missingChannels++;
 			continue;
 		}
 
 		int boneIndex = it->second;
+		if (boneIndex < 0 || boneIndex >= static_cast<int>(boneTransforms.size())) {
+			std::cerr << "ERROR: Invalid bone index " << boneIndex << " for " << channel.boneName << std::endl;
+			continue;
+		}
 
 		// 애니메이션 데이터 보간
 		glm::vec3 position = InterpolatePosition(channel, time);
 		glm::quat rotation = InterpolateRotation(channel, time);
 		glm::vec3 scale = InterpolateScale(channel, time);
+
+		// 유효성 검증
+		if (glm::any(glm::isnan(position)) || glm::any(glm::isnan(scale))) {
+			std::cerr << "ERROR: NaN in animation data for bone " << channel.boneName << std::endl;
+			continue;
+		}
 
 		// TRS 조합
 		glm::mat4 translationMat = glm::translate(glm::mat4(1.0f), position);
@@ -116,6 +129,10 @@ void FBXAnimationPlayer::CalculateBoneTransforms(const FBXAnimation& animation, 
 		glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), scale);
 
 		boneTransforms[boneIndex] = translationMat * rotationMat * scaleMat;
+	}
+
+	if (missingChannels > 0 && currentTime < 0.1f) {
+		std::cout << "Animation has " << missingChannels << " channels with missing bones" << std::endl;
 	}
 
 	// 루트 본부터 계층 구조 계산
@@ -135,6 +152,14 @@ void FBXAnimationPlayer::CalculateBoneHierarchy(int boneIndex, const glm::mat4& 
 
 	// 최종 변환 = globalInverseTransform * globalTransform * offsetMatrix
 	finalBoneTransforms[boneIndex] = fbxModel->globalInverseTransform * globalTransform * bone.offsetMatrix;
+
+	// DEBUG: 이상한 변환 행렬 감지
+	float det = glm::determinant(finalBoneTransforms[boneIndex]);
+	if (std::abs(det) < 0.0001f || std::abs(det) > 1000.0f || std::isnan(det)) {
+		std::cerr << "WARNING: Bone " << boneIndex << " (" << bone.name << ") has abnormal determinant: " << det << std::endl;
+		// 항등 행렬로 대체
+		finalBoneTransforms[boneIndex] = glm::mat4(1.0f);
+	}
 
 	// 자식 본들 재귀 처리
 	for (size_t i = 0; i < fbxModel->bones.size(); ++i) {
