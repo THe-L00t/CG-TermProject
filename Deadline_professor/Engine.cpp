@@ -105,7 +105,7 @@ void Engine::Initialize(int argc, char** argv)
 
 	// AnimationPlayer 초기화
 	animationPlayer = std::make_unique<FBXAnimationPlayer>();
-	const FBXModel* model = resourceManager->GetFBXModel("RunLee");
+	const FBXModel* model = resourceManager->GetFBXModel("RunDragon");
 	if (model) {
 		animationPlayer->Init(model);
 		if (!model->animations.empty()) {
@@ -128,7 +128,7 @@ void Engine::Initialize(int argc, char** argv)
 		frameCount++;
 
 		// RunLee FBX 모델 렌더링
-		const FBXModel* model = resourceManager->GetFBXModel("RunLee");
+		const FBXModel* model = resourceManager->GetFBXModel("RunSong");
 
 		// 첫 프레임에만 상세 정보 출력
 		if (!printedOnce) {
@@ -161,9 +161,9 @@ void Engine::Initialize(int argc, char** argv)
 
 			// 애니메이션이 있으면 애니메이션 렌더링, 없으면 기본 렌더링
 			if (animationPlayer && animationPlayer->IsPlaying()) {
-				r->RenderFBXModelWithAnimation("RunLee", modelMatrix, animationPlayer->GetBoneTransforms());
+				r->RenderFBXModelWithAnimation("RunDragon", modelMatrix, animationPlayer->GetBoneTransforms());
 			} else {
-				r->RenderFBXModel("RunLee", modelMatrix);
+				r->RenderFBXModel("RunDragon", modelMatrix);
 			}
 		} else {
 			std::cerr << "❌ FBX model is NULL!" << std::endl;
@@ -188,9 +188,6 @@ void Engine::LoadAssets()
 	std::cout << "=== Loading Assets ===" << std::endl;
 
 	// OBJ 파일 로드 (fallback용)
-	if (!resourceManager->LoadObj("bugatti", "bugatti.obj")) {
-		std::cerr << "Warning: Failed to load bugatti.obj" << std::endl;
-	}
 
 	// FBX 파일 로드
 	std::cout << "\n--- Loading FBX files ---" << std::endl;
