@@ -5,6 +5,9 @@
 #include <array>
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 // ============================================
 // ResourceManager 구현
 // ============================================
@@ -186,6 +189,10 @@ FBXMesh ResourceManager::ProcessMesh(aiMesh* mesh, const aiScene* scene, FBXMode
 {
 	FBXMesh fbxMesh;
 
+	// UV 좌표 존재 여부 로그
+	bool hasUVs = mesh->mTextureCoords[0] != nullptr;
+	std::cout << "Mesh '" << mesh->mName.C_Str() << "' has UV coordinates: " << (hasUVs ? "YES" : "NO") << std::endl;
+
 	// 메모리 미리 할당 (성능 최적화)
 	fbxMesh.vertices.reserve(mesh->mNumVertices);
 	fbxMesh.indices.reserve(mesh->mNumFaces * 3);
@@ -218,6 +225,9 @@ FBXMesh ResourceManager::ProcessMesh(aiMesh* mesh, const aiScene* scene, FBXMode
 				mesh->mTextureCoords[0][i].x,
 				mesh->mTextureCoords[0][i].y
 			);
+		} else {
+			// UV 좌표가 없으면 기본값 설정
+			vertex.texcoord = glm::vec2(0.0f, 0.0f);
 		}
 
 		fbxMesh.vertices.push_back(std::move(vertex));
@@ -770,6 +780,69 @@ void ResourceManager::SortData()
 
 bool ResourceManager::LoadTexture(const std::string_view& name, const std::filesystem::path& path)
 {
-	// Texture loading implementation (기존 코드 유지)
-	return false;
+	// 이미 로드된 텍스처인지 확인
+	std::string keyName(name);
+	if (textureMap.find(keyName) != textureMap.end()) {
+		std::cout << "Texture '" << name << "' already loaded" << std::endl;
+		return true;
+	}
+
+	// stb_image를 사용한 이미지 로딩
+	int width, height, channels;
+	std::cout << "Loading texture from: " << path << std::endl;
+	unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
+
+	if (!data) {
+		std::cerr << "Failed to load texture: " << path << std::endl;
+		std::cerr << "stbi_failure_reason: " << stbi_failure_reason() << std::endl;
+		return false;
+	}
+
+	std::cout << "Texture loaded: " << width << "x" << height << " with " << channels << " channels" << std::endl;
+
+	// OpenGL 텍스처 생성
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	std::cout << "Generated texture ID: " << textureID << std::endl;
+
+	// 텍스처 파라미터 설정
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// 이미지 포맷 결정
+	GLenum format = GL_RGB;
+	if (channels == 1)
+		format = GL_RED;
+	else if (channels == 3)
+		format = GL_RGB;
+	else if (channels == 4)
+		format = GL_RGBA;
+
+	// 텍스처 데이터 업로드
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	// OpenGL 에러 확인
+	GLenum error = glGetError();
+	if (error != GL_NO_ERROR) {
+		std::cerr << "OpenGL Error after texture upload: " << error << std::endl;
+		stbi_image_free(data);
+		return false;
+	}
+
+	// 메모리 해제
+	stbi_image_free(data);
+
+	// 텍스처 언바인드
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// 맵에 저장
+	textureMap[keyName] = textureID;
+	std::cout << "Texture '" << name << "' successfully stored with ID: " << textureID << std::endl;
+
+	std::cout << "Texture loaded: " << name << " (" << width << "x" << height << ", " << channels << " channels)" << std::endl;
+	return true;
 }

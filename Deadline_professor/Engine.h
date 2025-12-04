@@ -29,6 +29,7 @@ public:
 	FBXAnimationPlayer* GetAnimationPlayer() const { return animationPlayer.get(); }
 	InputManager* GetInputManager() const { return inputManager.get(); }
 	GameTimer* GetGameTimer() const { return gameTimer.get(); }
+	SceneManager* GetSceneManager() const { return sceneManager.get(); }
 
 	static void TimerCallback(int value);
 

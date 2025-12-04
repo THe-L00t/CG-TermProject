@@ -48,86 +48,83 @@ void Engine::Initialize(int argc, char** argv)
 	r = std::make_unique<Renderer>(resourceManager.get());
 	r->Init();
 	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);  // Face culling 일시적으로 비활성화 (winding order 확인용)
-
-	std::cout << "OpenGL settings:" << std::endl;
-	std::cout << "  DEPTH_TEST: enabled" << std::endl;
-	std::cout << "  CULL_FACE: disabled (for debugging)" << std::endl;
+	glDisable(GL_CULL_FACE);
 
 	gameTimer = std::make_unique<GameTimer>();
 
 	// Camera 초기화
 	camera = std::make_unique<Camera>(
-		glm::vec3(0.0f, 2.0f, 5.0f),  // position
-		glm::vec3(0.0f, 0.0f, 0.0f),  // target
-		glm::vec3(0.0f, 1.0f, 0.0f),  // up
-		45.0f,                         // fov
-		(float)w->GetWidth() / (float)w->GetHeight()  // aspect ratio
+		glm::vec3(0.0f, 2.0f, 5.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		45.0f,
+		(float)w->GetWidth() / (float)w->GetHeight()
 	);
-	std::cout << "Camera Initialized" << std::endl;
-
-	// Renderer에 Camera 연결
 	r->SetCamera(camera.get());
-	std::cout << "Renderer Connected to Camera" << std::endl;
+	std::cout << "Camera: Initialized" << std::endl;
 
-	// InputManager 초기화 및 Camera, Window 연결
+	// InputManager 초기화
 	inputManager = std::make_unique<InputManager>();
 	inputManager->init();
 	inputManager->SetCamera(camera.get());
 	inputManager->SetWindow(w.get());
 
-	// 키보드 액션 바인딩
-	// 주의: 실제 게임에서는 Scene이 Player 객체를 소유하므로,
-	// Scene에서 InputManager의 액션을 Player에 연결해야 함
-	// 여기서는 카메라 직접 제어 (테스트용)
-	inputManager->ActionW = [this]() {
-		camera->MoveForward(gameTimer->elapsedTime);
+	// 키보드 액션 바인딩 (테스트용 - Scene에서 재설정됨)
+	inputManager->ActionW = [this]() { camera->MoveForward(gameTimer->elapsedTime); };
+	inputManager->ActionS = [this]() { camera->MoveBackward(gameTimer->elapsedTime); };
+	inputManager->ActionA = [this]() { camera->MoveLeft(gameTimer->elapsedTime); };
+	inputManager->ActionD = [this]() { camera->MoveRight(gameTimer->elapsedTime); };
+	inputManager->ActionWheelUp = [this]() { camera->Zoom(1.0f); };
+	inputManager->ActionWheelDown = [this]() { camera->Zoom(-1.0f); };
+
+	// 디버깅용 씬 전환 바인딩
+	inputManager->Action1 = [this]() {
+		if (sceneManager) sceneManager->ChangeScene("Title");
 	};
-	inputManager->ActionS = [this]() {
-		camera->MoveBackward(gameTimer->elapsedTime);
+	inputManager->Action2 = [this]() {
+		if (sceneManager) sceneManager->ChangeScene("Floor1");
 	};
-	inputManager->ActionA = [this]() {
-		camera->MoveLeft(gameTimer->elapsedTime);
+	inputManager->Action3 = [this]() {
+		if (sceneManager) sceneManager->ChangeScene("Floor2");
 	};
-	inputManager->ActionD = [this]() {
-		camera->MoveRight(gameTimer->elapsedTime);
+	inputManager->Action4 = [this]() {
+		if (sceneManager) sceneManager->ChangeScene("Floor3");
 	};
-	inputManager->ActionWheelUp = [this]() {
-		camera->Zoom(1.0f);
-	};
-	inputManager->ActionWheelDown = [this]() {
-		camera->Zoom(-1.0f);
+	inputManager->Action5 = [this]() {
+		if (sceneManager) sceneManager->ChangeScene("Test");
 	};
 
-	std::cout << "InputManager Initialized and Connected to Camera & Window" << std::endl;
+	// 마우스 컨트롤 토글
+	inputManager->Action0 = [this]() {
+		static bool mouseControlActive = false;
+		mouseControlActive = !mouseControlActive;
+		inputManager->SetMouseControlActive(mouseControlActive);
+		std::cout << "Mouse Control: " << (mouseControlActive ? "ON" : "OFF") << std::endl;
+	};
+
+	std::cout << "InputManager: Initialized" << std::endl;
 
 	// SceneManager 초기화
 	sceneManager = std::make_unique<SceneManager>();
-	sceneManager->ChangeScene("Test");
-	std::cout << "SceneManager Initialized with TestScene" << std::endl;
+	sceneManager->ChangeScene("Title");
 
 	// AnimationPlayer 초기화
 	animationPlayer = std::make_unique<FBXAnimationPlayer>();
-	const FBXModel* model = resourceManager->GetFBXModel("RunDragon");
+	const FBXModel* model = resourceManager->GetFBXModel("RunLee");
 	if (model) {
 		animationPlayer->Init(model);
 		if (!model->animations.empty()) {
-			animationPlayer->PlayAnimation(0); // 첫 번째 애니메이션 재생
-			std::cout << "AnimationPlayer Initialized with " << model->animations.size() << " animations" << std::endl;
+			animationPlayer->PlayAnimation(0);
+			std::cout << "AnimationPlayer: Initialized with " << model->animations.size() << " animations" << std::endl;
 		}
 	}
 
-	w->onResize = [this](int w, int h) {
-		r->OnWindowResize(w, h);
-		};
-
-	// Renderer의 onDrawScene은 SceneManager의 Draw 호출로 변경
+	// 콜백 설정
+	w->onResize = [this](int w, int h) { r->OnWindowResize(w, h); };
 	r->onDrawScene = [this]() {
 		if (sceneManager) {
 			Scene* currentScene = sceneManager->GetCurrentScene();
-			if (currentScene) {
-				currentScene->Draw();
-			}
+			if (currentScene) currentScene->Draw();
 		}
 	};
 
@@ -141,16 +138,12 @@ void Engine::Initialize(int argc, char** argv)
 	glutMotionFunc(InputManager::PassiveMotion); // Also handle when buttons are pressed
 	glutTimerFunc(1, TimerCallback, 0);
 
-	std::cout << "=== Engine Initialization Complete ===" << std::endl;
+	std::cout << "Engine: Initialization complete" << std::endl;
 }
 
 void Engine::LoadAssets()
 {
 	std::cout << "=== Loading Assets ===" << std::endl;
-
-	// OBJ 파일 로드 (fallback용)
-
-	// FBX 파일 로드
 	std::cout << "\n--- Loading FBX files ---" << std::endl;
 
 	if (!resourceManager->LoadFBX("RunLee", "RunLee.fbx")) {
@@ -169,6 +162,14 @@ void Engine::LoadAssets()
 		std::cerr << "Warning: Failed to load RunDragon.fbx" << std::endl;
 	} else {
 		std::cout << "SUCCESS: RunDragon.fbx loaded" << std::endl;
+	}
+
+	// 텍스처 로드
+	std::cout << "\n--- Loading Textures ---" << std::endl;
+	if (!resourceManager->LoadTexture("RunLee", "RunLee.png")) {
+		std::cerr << "Warning: Failed to load RunLee.png" << std::endl;
+	} else {
+		std::cout << "SUCCESS: RunLee.png loaded" << std::endl;
 	}
 
 	std::cout << "=== Assets Loaded ===" << std::endl;

@@ -54,11 +54,23 @@ void InputManager::Keyboard(unsigned char key, int x, int y)
 	case'D':case'd':
 		if (onceInstance->ActionD) onceInstance->ActionD();
 		break;
+	case'0':
+		if (onceInstance->Action0) onceInstance->Action0();
+		break;
 	case'1':
-		onceInstance->SetMouseControlActive(true);
+		if (onceInstance->Action1) onceInstance->Action1();
 		break;
 	case'2':
-		onceInstance->SetMouseControlActive(false);
+		if (onceInstance->Action2) onceInstance->Action2();
+		break;
+	case'3':
+		if (onceInstance->Action3) onceInstance->Action3();
+		break;
+	case'4':
+		if (onceInstance->Action4) onceInstance->Action4();
+		break;
+	case'5':
+		if (onceInstance->Action5) onceInstance->Action5();
 		break;
 	case 27: // ESC key
 		exit(0);

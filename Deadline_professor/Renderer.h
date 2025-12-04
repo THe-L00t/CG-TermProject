@@ -28,11 +28,14 @@ public:
 	// 셰이더 관리
 	bool LoadShader(const std::string&, const std::filesystem::path&, const std::filesystem::path&);
 	Shader* GetShader(const std::string&);
-	void RenderTestCube();
 
 	// FBX 모델 렌더링
 	void RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
 	void RenderFBXModelWithAnimation(const std::string_view& modelName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms);
+
+	// 텍스처 적용 렌더링
+	void RenderFBXModelWithTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
+	void RenderFBXModelWithAnimationAndTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms);
 
 private:
 	static Renderer* activeInstance;
@@ -40,11 +43,5 @@ private:
 	std::unordered_map<std::string, Shader> shaders;
 	ResourceManager* resourceManager;
 	Camera* camera;
-
-	// 테스트용 변수
-	GLuint testVAO{};
-	GLuint testVBO{};
-	GLuint testEBO{};
-	size_t testIndexCount{};
 };
 

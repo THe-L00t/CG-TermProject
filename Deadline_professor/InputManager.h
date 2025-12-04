@@ -26,6 +26,14 @@ public:
 	std::function<void()> ActionWheelUp;
 	std::function<void()> ActionWheelDown;
 
+	// 디버깅용 씬 전환 함수 객체
+	std::function<void()> Action1; // Title Scene
+	std::function<void()> Action2; // Floor1 Scene
+	std::function<void()> Action3; // Floor2 Scene
+	std::function<void()> Action4; // Floor3 Scene
+	std::function<void()> Action5; // Test Scene
+	std::function<void()> Action0; // Mouse Control Toggle
+
 private:
 	static InputManager* onceInstance;
 	Camera* cmr;

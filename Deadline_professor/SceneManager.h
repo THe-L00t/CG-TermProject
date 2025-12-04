@@ -7,6 +7,7 @@ class Floor1Scene;
 class Floor2Scene;
 class Floor3Scene;
 class TestScene;
+class Light;
 
 class SceneManager
 {
@@ -47,7 +48,10 @@ public:
 	void Update(float) override;
 	void Draw() override;
 private:
-
+	float fadeTimer{0.0f};
+	float alpha{1.0f};
+	bool fadeOut{true};
+	bool keyPressed{false};
 };
 
 class Floor1Scene : public Scene
@@ -92,5 +96,6 @@ public:
 	void Update(float) override;
 	void Draw() override;
 private:
-
+	std::unique_ptr<Professor> lee;
+	std::unique_ptr<Light> light;
 };
