@@ -58,7 +58,8 @@ public:
 	void Update(float) override;
 	void Draw() override;
 private:
-
+	std::unique_ptr<class Player> player;
+	std::unique_ptr<class Professor> professor;
 };
 
 class Floor2Scene : public Scene

@@ -27,6 +27,8 @@ public:
 	Renderer* GetRenderer() const { return r.get(); }
 	Camera* GetCamera() const { return camera.get(); }
 	FBXAnimationPlayer* GetAnimationPlayer() const { return animationPlayer.get(); }
+	InputManager* GetInputManager() const { return inputManager.get(); }
+	GameTimer* GetGameTimer() const { return gameTimer.get(); }
 
 	static void TimerCallback(int value);
 

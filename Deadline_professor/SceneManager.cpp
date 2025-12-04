@@ -2,6 +2,11 @@
 #include "Engine.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
+#include "Player.h"
+#include "Professor.h"
+#include "Camera.h"
+#include "InputManager.h"
+#include "GameTimer.h"
 
 SceneManager::SceneManager()
 {
@@ -9,14 +14,20 @@ SceneManager::SceneManager()
 	sceneFactory["Title"] = []() -> std::unique_ptr<Scene> {
 		return std::make_unique<TitleScene>();
 	};
-	sceneFactory["Game"] = []() -> std::unique_ptr<Scene> {
-		return std::make_unique<GameScene>();
+	sceneFactory["Floor1"] = []() -> std::unique_ptr<Scene> {
+		return std::make_unique<Floor1Scene>();
+	};
+	sceneFactory["Floor2"] = []() -> std::unique_ptr<Scene> {
+		return std::make_unique<Floor2Scene>();
+	};
+	sceneFactory["Floor3"] = []() -> std::unique_ptr<Scene> {
+		return std::make_unique<Floor3Scene>();
 	};
 	sceneFactory["Test"] = []() -> std::unique_ptr<Scene> {
 		return std::make_unique<TestScene>();
 	};
 
-	std::cout << "SceneManager: Scene Factory Initialized (Title, Game, Test)" << std::endl;
+	std::cout << "SceneManager: Scene Factory Initialized (Title, Floor1-3, Test)" << std::endl;
 }
 
 void SceneManager::update(float deltaTime)
@@ -79,18 +90,106 @@ void TitleScene::Draw()
 
 void Floor1Scene::Enter()
 {
+	std::cout << "=== Floor1Scene Entered ===" << std::endl;
+
+	extern Engine* g_engine;
+	if (!g_engine) {
+		std::cerr << "Floor1Scene: g_engine is null" << std::endl;
+		return;
+	}
+
+	Camera* camera = g_engine->GetCamera();
+	InputManager* inputMgr = g_engine->GetInputManager();
+	GameTimer* timer = g_engine->GetGameTimer();
+
+	// Player 생성 및 초기화
+	player = std::make_unique<Player>();
+	player->Init(camera);
+	player->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	player->SetResourceID("PlayerModel"); // 나중에 실제 모델 지정
+	std::cout << "Floor1Scene: Player created at origin" << std::endl;
+
+	// Professor 생성 및 초기화
+	professor = std::make_unique<Professor>("RunDragon", "RunAnimation");
+	professor->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
+	professor->SetPlayerReference(player.get());
+	std::cout << "Floor1Scene: Professor created at (5, 0, 0)" << std::endl;
+
+	// InputManager의 액션을 Player 이동에 연결
+	if (inputMgr && timer) {
+		inputMgr->ActionW = [this, timer]() {
+			if (player) {
+				player->MoveForward(timer->elapsedTime);
+			}
+		};
+		inputMgr->ActionS = [this, timer]() {
+			if (player) {
+				player->MoveBackward(timer->elapsedTime);
+			}
+		};
+		inputMgr->ActionA = [this, timer]() {
+			if (player) {
+				player->MoveLeft(timer->elapsedTime);
+			}
+		};
+		inputMgr->ActionD = [this, timer]() {
+			if (player) {
+				player->MoveRight(timer->elapsedTime);
+			}
+		};
+		std::cout << "Floor1Scene: Input actions bound to Player" << std::endl;
+	}
 }
 
 void Floor1Scene::Exit()
 {
+	std::cout << "=== Floor1Scene Exited ===" << std::endl;
+
+	// InputManager 액션 해제
+	extern Engine* g_engine;
+	if (g_engine) {
+		InputManager* inputMgr = g_engine->GetInputManager();
+		if (inputMgr) {
+			inputMgr->ActionW = nullptr;
+			inputMgr->ActionS = nullptr;
+			inputMgr->ActionA = nullptr;
+			inputMgr->ActionD = nullptr;
+		}
+	}
+
+	player.reset();
+	professor.reset();
 }
 
-void Floor1Scene::Update(float)
+void Floor1Scene::Update(float deltaTime)
 {
+	if (player) {
+		player->Update(deltaTime);
+	}
+	if (professor) {
+		professor->Update(deltaTime);
+	}
 }
 
 void Floor1Scene::Draw()
 {
+	extern Engine* g_engine;
+	if (!g_engine) return;
+
+	Renderer* renderer = g_engine->GetRenderer();
+	if (!renderer) return;
+
+	// Professor 렌더링 (FBX 모델 사용)
+	if (professor && professor->IsActive()) {
+		glm::mat4 professorMatrix = professor->GetModelMat();
+		renderer->RenderFBXModel(professor->GetMeshKey(), professorMatrix);
+	}
+
+	// Player 렌더링 (나중에 모델 추가 시)
+	// if (player && player->IsActive()) {
+	//     glm::mat4 playerMatrix = player->GetModelMat();
+	//     renderer->RenderFBXModel(player->GetResourceID(), playerMatrix);
+	// }
 }
 
 //---------------------------------------------------------------Floor2Scene
@@ -179,5 +278,28 @@ void TestScene::Update(float deltaTime)
 
 void TestScene::Draw()
 {
-	// TestScene에서는 별도 렌더링 없음 (Renderer가 이미 처리)
+	// Engine을 통해 Renderer와 리소스에 접근
+	extern Engine* g_engine;
+	if (!g_engine) return;
+
+	Renderer* renderer = g_engine->GetRenderer();
+	ResourceManager* resMgr = g_engine->GetResourceManager();
+	FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
+
+	if (!renderer || !resMgr) return;
+
+	// FBX 모델 렌더링
+	const FBXModel* model = resMgr->GetFBXModel("RunDragon");
+	if (model) {
+		glm::mat4 modelMatrix = glm::mat4(1.0f);
+		modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+		modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f));
+
+		// 애니메이션이 있으면 애니메이션과 함께 렌더링
+		if (animPlayer && animPlayer->IsPlaying()) {
+			renderer->RenderFBXModelWithAnimation("RunDragon", modelMatrix, animPlayer->GetBoneTransforms());
+		} else {
+			renderer->RenderFBXModel("RunDragon", modelMatrix);
+		}
+	}
 }

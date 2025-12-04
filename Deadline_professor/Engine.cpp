@@ -77,6 +77,9 @@ void Engine::Initialize(int argc, char** argv)
 	inputManager->SetWindow(w.get());
 
 	// 키보드 액션 바인딩
+	// 주의: 실제 게임에서는 Scene이 Player 객체를 소유하므로,
+	// Scene에서 InputManager의 액션을 Player에 연결해야 함
+	// 여기서는 카메라 직접 제어 (테스트용)
 	inputManager->ActionW = [this]() {
 		camera->MoveForward(gameTimer->elapsedTime);
 	};
@@ -118,57 +121,15 @@ void Engine::Initialize(int argc, char** argv)
 		r->OnWindowResize(w, h);
 		};
 
+	// Renderer의 onDrawScene은 SceneManager의 Draw 호출로 변경
 	r->onDrawScene = [this]() {
-		static int frameCount = 0;
-		static bool printedOnce = false;
-
-		if (frameCount % 60 == 0) {
-			std::cout << "Frame " << frameCount << ": Rendering..." << std::endl;
-		}
-		frameCount++;
-
-		// RunLee FBX 모델 렌더링
-		const FBXModel* model = resourceManager->GetFBXModel("RunSong");
-
-		// 첫 프레임에만 상세 정보 출력
-		if (!printedOnce) {
-			std::cout << "\n=== FBX Rendering Debug Info ===" << std::endl;
-
-			// 카메라 정보 출력
-			glm::vec3 camPos = camera->GetPosition();
-			glm::vec3 camDir = camera->GetDirection();
-			std::cout << "Camera Position: (" << camPos.x << ", " << camPos.y << ", " << camPos.z << ")" << std::endl;
-			std::cout << "Camera Direction: (" << camDir.x << ", " << camDir.y << ", " << camDir.z << ")" << std::endl;
-
-			if (model) {
-				std::cout << "RunLee model found!" << std::endl;
-				std::cout << "  Meshes: " << model->meshes.size() << std::endl;
-				std::cout << "  Bounding box: Min(" << model->boundingBoxMin.x << ", "
-				          << model->boundingBoxMin.y << ", " << model->boundingBoxMin.z << ")" << std::endl;
-				std::cout << "                Max(" << model->boundingBoxMax.x << ", "
-				          << model->boundingBoxMax.y << ", " << model->boundingBoxMax.z << ")" << std::endl;
-			} else {
-				std::cout << "RunLee model NOT FOUND!" << std::endl;
+		if (sceneManager) {
+			Scene* currentScene = sceneManager->GetCurrentScene();
+			if (currentScene) {
+				currentScene->Draw();
 			}
-			std::cout << "==================================\n" << std::endl;
-			printedOnce = true;
 		}
-
-		if (model) {
-			glm::mat4 modelMatrix = glm::mat4(1.0f);
-			modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f)); // 원점
-			modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f)); // 50배 확대 (0.01f * 50 = 0.5f)
-
-			// 애니메이션이 있으면 애니메이션 렌더링, 없으면 기본 렌더링
-			if (animationPlayer && animationPlayer->IsPlaying()) {
-				r->RenderFBXModelWithAnimation("RunDragon", modelMatrix, animationPlayer->GetBoneTransforms());
-			} else {
-				r->RenderFBXModel("RunDragon", modelMatrix);
-			}
-		} else {
-			std::cerr << "❌ FBX model is NULL!" << std::endl;
-		}
-		};
+	};
 
 	// GLUT 콜백 등록
 	glutDisplayFunc(Renderer::DrawScene);
