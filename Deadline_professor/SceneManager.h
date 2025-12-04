@@ -2,8 +2,10 @@
 #include "TotalHeader.h"
 
 class Scene;
-class GameScene;
 class TitleScene;
+class Floor1Scene;
+class Floor2Scene;
+class Floor3Scene;
 class TestScene;
 
 class SceneManager
@@ -48,7 +50,29 @@ private:
 
 };
 
-class GameScene : public Scene
+class Floor1Scene : public Scene
+{
+public:
+	void Enter() override;
+	void Exit() override;
+	void Update(float) override;
+	void Draw() override;
+private:
+
+};
+
+class Floor2Scene : public Scene
+{
+public:
+	void Enter() override;
+	void Exit() override;
+	void Update(float) override;
+	void Draw() override;
+private:
+
+};
+
+class Floor3Scene : public Scene
 {
 public:
 	void Enter() override;
