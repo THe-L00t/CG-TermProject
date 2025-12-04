@@ -57,21 +57,57 @@ void TitleScene::Draw()
 {
 }
 
-//-----------------------------------------------------------------GameScene
+//---------------------------------------------------------------Floor1Scene
 
-void GameScene::Enter()
+void Floor1Scene::Enter()
 {
 }
 
-void GameScene::Exit()
+void Floor1Scene::Exit()
 {
 }
 
-void GameScene::Update(float)
+void Floor1Scene::Update(float)
 {
 }
 
-void GameScene::Draw()
+void Floor1Scene::Draw()
+{
+}
+
+//---------------------------------------------------------------Floor2Scene
+
+void Floor2Scene::Enter()
+{
+}
+
+void Floor2Scene::Exit()
+{
+}
+
+void Floor2Scene::Update(float)
+{
+}
+
+void Floor2Scene::Draw()
+{
+}
+
+//---------------------------------------------------------------Floor3Scene
+
+void Floor3Scene::Enter()
+{
+}
+
+void Floor3Scene::Exit()
+{
+}
+
+void Floor3Scene::Update(float)
+{
+}
+
+void Floor3Scene::Draw()
 {
 }
 
