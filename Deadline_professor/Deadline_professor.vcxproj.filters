@@ -36,6 +36,15 @@
     <ClCompile Include="ResourceManager.cpp">
       <Filter>소스 파일\ResourceManager</Filter>
     </ClCompile>
+    <ClCompile Include="FBXAnimationPlayer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>소스 파일\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Professor.cpp">
+      <Filter>소스 파일\Professor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TotalHeader.h">
@@ -56,6 +65,9 @@
     <Filter Include="소스 파일\window">
       <UniqueIdentifier>{a1b2c3d4-e5f6-4a5b-8c7d-9e8f7a6b5c4d}</UniqueIdentifier>
     </Filter>
+    <ClInclude Include="FBXAnimationPlayer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
