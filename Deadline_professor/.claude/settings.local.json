@@ -1,7 +1,9 @@
 ﻿{
   "permissions": {
     "allow": [
-      "Bash(cmd /c \"dir /b /s *.cpp *.h 2>nul\")"
+      "Bash(rm:*)",
+      "Bash(git show:*)",
+      "Bash(git ls-tree:*)"
     ],
     "deny": [],
     "ask": []

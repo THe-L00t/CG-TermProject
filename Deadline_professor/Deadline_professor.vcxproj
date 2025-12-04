@@ -165,6 +165,14 @@
     <ClCompile Include="Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="Object.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Object.cpp" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="TotalHeader.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
