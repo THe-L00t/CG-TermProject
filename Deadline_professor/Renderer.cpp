@@ -24,12 +24,12 @@ void Renderer::Init()
 
 	// 셰이더 로드
 	std::filesystem::path currentPath = std::filesystem::current_path();
-	std::filesystem::path vertPath = currentPath / "basic.vert";
-	std::filesystem::path fragPath = currentPath / "basic.frag";
+	std::filesystem::path vertPath = currentPath / "Shaders" / "basic.vert";
+	std::filesystem::path fragPath = currentPath / "Shaders" / "basic.frag";
 
 	if (!LoadShader("basic", vertPath, fragPath)) {
 		std::cerr << "ERROR: Failed to load shader 'basic'" << std::endl;
-		std::cerr << "Check if basic.vert and basic.frag exist in: " << currentPath << std::endl;
+		std::cerr << "Check if basic.vert and basic.frag exist in: " << currentPath / "Shaders" << std::endl;
 	} else {
 		std::cout << "Renderer: Shader 'basic' loaded successfully" << std::endl;
 	}

@@ -173,17 +173,34 @@
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Professor.cpp" />
+    <ClCompile Include="LoadPng.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Player.h" />
     <ClInclude Include="Professor.h" />
     <ClInclude Include="TotalHeader.h" />
     <ClInclude Include="Window.h" />
+    <ClInclude Include="LoadPng.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="basic.vert" />
-    <None Include="basic.frag" />
-    <None Include="cube.obj" />
+    <None Include="Shaders\basic.vert" />
+    <None Include="Shaders\basic.frag" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\cube.obj" />
+    <None Include="Resources\desk.obj" />
+    <None Include="Resources\leftHand.obj" />
+    <None Include="Resources\rightHand.obj" />
+    <None Include="Resources\RunDragon.fbx" />
+    <None Include="Resources\RunLee.fbx" />
+    <None Include="Resources\RunSong.fbx" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Textures\desk.png" />
+    <None Include="Textures\leaftHand.png" />
+    <None Include="Textures\leftHand.png" />
+    <None Include="Textures\rightHand.png" />
+    <None Include="Textures\RunLee.png" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameTimer.h" />

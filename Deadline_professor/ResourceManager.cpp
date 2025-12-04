@@ -5,8 +5,7 @@
 #include <array>
 #include <iostream>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "LoadPng.h"
 
 // ============================================
 // ResourceManager 구현
@@ -787,18 +786,22 @@ bool ResourceManager::LoadTexture(const std::string_view& name, const std::files
 		return true;
 	}
 
-	// stb_image를 사용한 이미지 로딩
-	int width, height, channels;
+	// LodePNG를 사용한 이미지 로딩
+	std::vector<unsigned char> image;
+	unsigned width, height;
 	std::cout << "Loading texture from: " << path << std::endl;
-	unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
 
-	if (!data) {
+	unsigned error = lodepng::decode(image, width, height, path.string());
+
+	if (error) {
 		std::cerr << "Failed to load texture: " << path << std::endl;
-		std::cerr << "stbi_failure_reason: " << stbi_failure_reason() << std::endl;
+		std::cerr << "LodePNG error: " << lodepng_error_text(error) << std::endl;
 		return false;
 	}
 
-	std::cout << "Texture loaded: " << width << "x" << height << " with " << channels << " channels" << std::endl;
+	// LodePNG는 항상 RGBA (4채널)로 디코드합니다
+	unsigned char* data = image.data();
+	std::cout << "Texture loaded: " << width << "x" << height << " with RGBA (4 channels)" << std::endl;
 
 	// OpenGL 텍스처 생성
 	GLuint textureID;
@@ -812,29 +815,16 @@ bool ResourceManager::LoadTexture(const std::string_view& name, const std::files
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	// 이미지 포맷 결정
-	GLenum format = GL_RGB;
-	if (channels == 1)
-		format = GL_RED;
-	else if (channels == 3)
-		format = GL_RGB;
-	else if (channels == 4)
-		format = GL_RGBA;
-
-	// 텍스처 데이터 업로드
-	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+	// 텍스처 데이터 업로드 (LodePNG는 항상 RGBA 포맷)
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// OpenGL 에러 확인
-	GLenum error = glGetError();
-	if (error != GL_NO_ERROR) {
-		std::cerr << "OpenGL Error after texture upload: " << error << std::endl;
-		stbi_image_free(data);
+	GLenum glError = glGetError();
+	if (glError != GL_NO_ERROR) {
+		std::cerr << "OpenGL Error after texture upload: " << glError << std::endl;
 		return false;
 	}
-
-	// 메모리 해제
-	stbi_image_free(data);
 
 	// 텍스처 언바인드
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -843,6 +833,5 @@ bool ResourceManager::LoadTexture(const std::string_view& name, const std::files
 	textureMap[keyName] = textureID;
 	std::cout << "Texture '" << name << "' successfully stored with ID: " << textureID << std::endl;
 
-	std::cout << "Texture loaded: " << name << " (" << width << "x" << height << ", " << channels << " channels)" << std::endl;
 	return true;
 }

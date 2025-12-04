@@ -146,19 +146,19 @@ void Engine::LoadAssets()
 	std::cout << "=== Loading Assets ===" << std::endl;
 	std::cout << "\n--- Loading FBX files ---" << std::endl;
 
-	if (!resourceManager->LoadFBX("RunLee", "RunLee.fbx")) {
+	if (!resourceManager->LoadFBX("RunLee", "Resources/RunLee.fbx")) {
 		std::cerr << "ERROR: Failed to load RunLee.fbx" << std::endl;
 	} else {
 		std::cout << "SUCCESS: RunLee.fbx loaded" << std::endl;
 	}
 
-	if (!resourceManager->LoadFBX("RunSong", "RunSong.fbx")) {
+	if (!resourceManager->LoadFBX("RunSong", "Resources/RunSong.fbx")) {
 		std::cerr << "Warning: Failed to load RunSong.fbx" << std::endl;
 	} else {
 		std::cout << "SUCCESS: RunSong.fbx loaded" << std::endl;
 	}
 
-	if (!resourceManager->LoadFBX("RunDragon", "RunDragon.fbx")) {
+	if (!resourceManager->LoadFBX("RunDragon", "Resources/RunDragon.fbx")) {
 		std::cerr << "Warning: Failed to load RunDragon.fbx" << std::endl;
 	} else {
 		std::cout << "SUCCESS: RunDragon.fbx loaded" << std::endl;
@@ -166,7 +166,8 @@ void Engine::LoadAssets()
 
 	// 텍스처 로드
 	std::cout << "\n--- Loading Textures ---" << std::endl;
-	if (!resourceManager->LoadTexture("RunLee", "RunLee.png")) {
+	std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
+	if (!resourceManager->LoadTexture("RunLee", "Textures/RunLee.png")) {
 		std::cerr << "Warning: Failed to load RunLee.png" << std::endl;
 	} else {
 		std::cout << "SUCCESS: RunLee.png loaded" << std::endl;

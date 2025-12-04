@@ -7,6 +7,8 @@ class Floor1Scene;
 class Floor2Scene;
 class Floor3Scene;
 class TestScene;
+class Player;
+class Professor;
 class Light;
 
 class SceneManager
