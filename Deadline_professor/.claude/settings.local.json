@@ -7,6 +7,8 @@
       "Bash(findstr:*)",
       "Bash(dir /s /b nul)",
       "Bash(dir /b:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(powershell -Command \"$content = Get-Content ''Player.h'' -Raw; [System.IO.File]::WriteAllText(''Player.h'', $content, [System.Text.UTF8Encoding]::new($true))\")"
     ],
     "deny": [],
     "ask": []
