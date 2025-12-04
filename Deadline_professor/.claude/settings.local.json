@@ -3,7 +3,10 @@
     "allow": [
       "Bash(rm:*)",
       "Bash(git show:*)",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(findstr:*)",
+      "Bash(dir /s /b nul)",
+      "Bash(dir /b:*)"
     ],
     "deny": [],
     "ask": []

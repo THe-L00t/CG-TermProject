@@ -171,8 +171,10 @@
   <ItemGroup>
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="Professor.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Professor.h" />
     <ClInclude Include="TotalHeader.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
