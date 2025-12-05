@@ -25,10 +25,10 @@ namespace GameConstants
 	constexpr float FLOOR_DEFAULT_HEIGHT = 200.0f;   // 바닥 기본 깊이 (m)
 	constexpr float CEILING_HEIGHT = 3.0f;          // 천장 높이 (m)
 	constexpr float WALL_THICKNESS = 0.2f;          // 벽 두께 (m)
-	constexpr float CEILING_TEXTURE_TILE_X = 200.0f;  // 천장 텍스처 타일링 X축 반복 횟수
-	constexpr float CEILING_TEXTURE_TILE_Y = 200.0f;  // 천장 텍스처 타일링 Y축 반복 횟수
-	constexpr float FLOOR_TEXTURE_TILE_X = 200.0f;    // 바닥 텍스처 타일링 X축 반복 횟수
-	constexpr float FLOOR_TEXTURE_TILE_Y = 200.0f;    // 바닥 텍스처 타일링 Y축 반복 횟수
+	constexpr float CEILING_TEXTURE_TILE_X = 20.0f;  // 천장 텍스처 타일링 X축 반복 횟수
+	constexpr float CEILING_TEXTURE_TILE_Y = 20.0f;  // 천장 텍스처 타일링 Y축 반복 횟수
+	constexpr float FLOOR_TEXTURE_TILE_X = 20.0f;    // 바닥 텍스처 타일링 X축 반복 횟수
+	constexpr float FLOOR_TEXTURE_TILE_Y = 20.0f;    // 바닥 텍스처 타일링 Y축 반복 횟수
 
 	// ===== 맵/타일 관련 =====
 	constexpr float TILE_SIZE = 2.0f;               // 한 타일의 크기 (m) - 정사각형

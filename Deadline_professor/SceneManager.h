@@ -68,6 +68,7 @@ private:
 	std::unique_ptr<class Professor> professor;
 	std::unique_ptr<class Plane> floor;
 	std::unique_ptr<class Plane> ceiling;
+	std::unique_ptr<class Wall> testWall;  // 테스트용 벽
 };
 
 class Floor2Scene : public Scene

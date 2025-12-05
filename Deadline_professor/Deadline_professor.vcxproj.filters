@@ -210,5 +210,13 @@
     <ClCompile Include="Plane.cpp">
       <Filter>소스 파일\Environment</Filter>
     </ClCompile>
+    <ClCompile Include="Wall.cpp">
+      <Filter>소스 파일\Environment</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Wall.h">
+      <Filter>소스 파일\Environment</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

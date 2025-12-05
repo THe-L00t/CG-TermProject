@@ -10,6 +10,7 @@
 #include "GameTimer.h"
 #include "FBXAnimationPlayer.h"
 #include "Plane.h"
+#include "Wall.h"
 #include "GameConstants.h"
 
 SceneManager::SceneManager()
@@ -266,6 +267,11 @@ void Floor1Scene::Enter()
 	ceiling->SetTextureTiling(glm::vec2(GameConstants::CEILING_TEXTURE_TILE_X, GameConstants::CEILING_TEXTURE_TILE_Y)); // 타일링 설정
 	ceiling->SetColor(glm::vec3(0.7f, 0.7f, 0.7f)); // 밝은 회색 (천장)
 
+	// 테스트용 벽 생성
+	testWall = std::make_unique<Wall>();
+	testWall->SetGridPosition(5, 5); // 그리드 (5, 5) 위치에 배치
+	// Wall 생성자에서 이미 CubeModel, WallTexture 설정됨
+
 	// InputManager 액션을 Player 이동에 연결
 	if (inputMgr && timer) {
 		inputMgr->ActionW = [this, timer]() { if (player) player->MoveForward(timer->elapsedTime); };
@@ -297,6 +303,7 @@ void Floor1Scene::Exit()
 	professor.reset();
 	floor.reset();
 	ceiling.reset();
+	testWall.reset();
 }
 
 void Floor1Scene::Update(float deltaTime)
@@ -312,6 +319,9 @@ void Floor1Scene::Update(float deltaTime)
 	}
 	if (ceiling) {
 		ceiling->Update(deltaTime);
+	}
+	if (testWall) {
+		testWall->Update(deltaTime);
 	}
 }
 
@@ -342,6 +352,17 @@ void Floor1Scene::Draw()
 			renderer->RenderFBXModelWithTextureTiled("PlaneModel", ceiling->GetTextureID(), ceilingMatrix, ceiling->GetTextureTiling());
 		} else {
 			renderer->RenderFBXModel("PlaneModel", ceilingMatrix, ceiling->GetColor());
+		}
+	}
+
+	// 테스트 벽 렌더링
+	if (testWall && testWall->IsActive()) {
+		glm::mat4 wallMatrix = testWall->GetModelMat();
+		// 텍스처가 설정되어 있으면 텍스처와 함께 렌더링
+		if (!testWall->GetTextureID().empty()) {
+			renderer->RenderFBXModelWithTexture(testWall->GetResourceID(), testWall->GetTextureID(), wallMatrix);
+		} else {
+			renderer->RenderFBXModel(testWall->GetResourceID(), wallMatrix, testWall->GetColor());
 		}
 	}
 

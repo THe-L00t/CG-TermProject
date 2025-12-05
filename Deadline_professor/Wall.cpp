@@ -8,6 +8,11 @@ Wall::Wall()
 {
 	// 기본 벽 크기 설정
 	SetTileSize(GameConstants::TILE_SIZE, GameConstants::TILE_SIZE, GameConstants::WALL_HEIGHT);
+
+	// 기본 리소스 설정
+	SetResourceID("CubeModel");
+	SetTextureID("WallTexture");
+	SetColor(glm::vec3(1.0f, 1.0f, 1.0f)); // 흰색 (텍스처 원본 색상)
 }
 
 Wall::~Wall()

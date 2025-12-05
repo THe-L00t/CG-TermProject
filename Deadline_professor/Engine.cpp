@@ -153,6 +153,13 @@ void Engine::LoadAssets()
 		std::cout << "SUCCESS: Plane.obj loaded" << std::endl;
 	}
 
+	// Cube 메쉬 로드 (OBJ) - 벽용
+	if (!resourceManager->LoadFBX("CubeModel", "Resources/cube.obj")) {
+		std::cerr << "ERROR: Failed to load cube.obj" << std::endl;
+	} else {
+		std::cout << "SUCCESS: cube.obj loaded" << std::endl;
+	}
+
 	if (!resourceManager->LoadFBX("RunLee", "Resources/RunLee.fbx")) {
 		std::cerr << "ERROR: Failed to load RunLee.fbx" << std::endl;
 	} else {
@@ -203,6 +210,12 @@ void Engine::LoadAssets()
 		std::cerr << "Warning: Failed to load floor.png" << std::endl;
 	} else {
 		std::cout << "SUCCESS: floor.png loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadTexture("WallTexture", "Textures/wall.png")) {
+		std::cerr << "Warning: Failed to load wall.png" << std::endl;
+	} else {
+		std::cout << "SUCCESS: wall.png loaded" << std::endl;
 	}
 
 	std::cout << "=== Assets Loaded ===" << std::endl;

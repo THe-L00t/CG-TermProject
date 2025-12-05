@@ -175,6 +175,7 @@
     <ClCompile Include="Professor.cpp" />
     <ClCompile Include="LoadPng.cpp" />
     <ClCompile Include="Plane.cpp" />
+    <ClCompile Include="Wall.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Player.h" />
@@ -183,6 +184,7 @@
     <ClInclude Include="Window.h" />
     <ClInclude Include="LoadPng.h" />
     <ClInclude Include="Plane.h" />
+    <ClInclude Include="Wall.h" />
     <ClInclude Include="GameConstants.h" />
   </ItemGroup>
   <ItemGroup>
