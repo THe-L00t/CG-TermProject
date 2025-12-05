@@ -7,6 +7,7 @@ class Floor1Scene;
 class Floor2Scene;
 class Floor3Scene;
 class TestScene;
+class Object;
 class Player;
 class Professor;
 class Light;
@@ -66,6 +67,7 @@ public:
 private:
 	std::unique_ptr<class Player> player;
 	std::unique_ptr<class Professor> professor;
+	std::unique_ptr<class Object> Ground;
 };
 
 class Floor2Scene : public Scene
@@ -99,5 +101,8 @@ public:
 	void Draw() override;
 private:
 	std::unique_ptr<Professor> lee;
+	std::unique_ptr<Object> TestCube;
+	std::unique_ptr<Object> Ground;
+
 	std::unique_ptr<Light> light;
 };

@@ -37,7 +37,14 @@ public:
 	void RenderFBXModelWithTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
 	void RenderFBXModelWithAnimationAndTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms);
 
+	// OBJ 모델 렌더링
+	void RenderObjModel(const std::string_view& modelName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
+	void RenderObjModelWithTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
+
 private:
+	// OBJ 렌더링 헬퍼 함수
+	void ConfigureSharedVAOForOBJ(const ObjData* objData) const;
+
 	static Renderer* activeInstance;
 
 	std::unordered_map<std::string, Shader> shaders;

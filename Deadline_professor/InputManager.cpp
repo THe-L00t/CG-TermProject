@@ -55,21 +55,27 @@ void InputManager::Keyboard(unsigned char key, int x, int y)
 		if (onceInstance->ActionD) onceInstance->ActionD();
 		break;
 	case'0':
+		// Mouse Control Mode
 		if (onceInstance->Action0) onceInstance->Action0();
 		break;
 	case'1':
+		// Title Mode
 		if (onceInstance->Action1) onceInstance->Action1();
 		break;
 	case'2':
+		// Floor 1
 		if (onceInstance->Action2) onceInstance->Action2();
 		break;
 	case'3':
+		// Floor 2
 		if (onceInstance->Action3) onceInstance->Action3();
 		break;
 	case'4':
+		// Floor 3
 		if (onceInstance->Action4) onceInstance->Action4();
 		break;
 	case'5':
+		// Test
 		if (onceInstance->Action5) onceInstance->Action5();
 		break;
 	case 27: // ESC key

@@ -2,6 +2,7 @@
 #include "Engine.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
+#include "Object.h"
 #include "Player.h"
 #include "Professor.h"
 #include "Light.h"
@@ -226,7 +227,7 @@ void Floor1Scene::Enter()
 	player->SetResourceID("PlayerModel");
 
 	// Professor 생성 및 초기화 (크기: 폭, 높이, 깊이)
-	professor = std::make_unique<Professor>("RunDragon", "RunAnimation", 0.6f, 1.8f, 0.6f);
+	professor = std::make_unique<Professor>("RunDragon", "RunAnimation", 1.0f, 1.0f, 1.0f);
 	professor->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
 	professor->SetPlayerReference(player.get());
 
@@ -334,10 +335,22 @@ void TestScene::Enter()
 {
 	std::cout << "TestScene: Entered" << std::endl;
 
-	// Professor 객체 생성 및 초기화 (크기: 폭, 높이, 깊이)
-	lee = std::make_unique<Professor>("RunLee", "RunAnimation", 1.0f, 2.0f, 1.0f);
+	// Professor 객체 생성 및 초기화
+	lee = std::make_unique<Professor>("RunLee", "RunAnimation");
 	lee->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	lee->SetScale(glm::vec3(1.0f)); // 0.01f * 10 = 0.1f (10배 크기)
 	lee->SetResourceID("RunLee");
+
+	// .obj 모델 생성
+	TestCube = std::make_unique<Object>();
+	TestCube->SetPosition(glm::vec3(3.0f, 0.0f, 0.0f));
+	TestCube->SetScale(glm::vec3(1.0f));
+	TestCube->SetResourceID("TestCube");
+
+	Ground = std::make_unique<Object>();
+	Ground->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	Ground->SetScale(glm::vec3(10.0f, 1.0f, 10.0f));
+	Ground->SetResourceID("GroundPlane");
 
 	// Light 객체 생성 및 초기화
 	light = std::make_unique<Light>(LightType::POINT);
@@ -354,6 +367,9 @@ void TestScene::Exit()
 {
 	std::cout << "TestScene: Exited" << std::endl;
 	lee.reset();
+	TestCube.reset();
+	Ground.reset();
+
 	light.reset();
 }
 
@@ -362,6 +378,13 @@ void TestScene::Update(float deltaTime)
 	if (lee) {
 		lee->Update(deltaTime);
 	}
+	if (TestCube) {
+		TestCube->Update(deltaTime);
+	}
+	if (Ground) {
+		Ground->Update(deltaTime);
+	}
+
 }
 
 void TestScene::Draw()
@@ -385,4 +408,16 @@ void TestScene::Draw()
 			renderer->RenderFBXModelWithTexture("RunLee", "RunLee", modelMatrix);
 		}
 	}
+
+	// TestCube (.obj 모델) 렌더링
+	//if (TestCube && TestCube->IsActive()) {
+	//	glm::mat4 cubeMatrix = TestCube->GetModelMat();
+	//	renderer->RenderObjModel("TestCube", cubeMatrix);
+	//}
+
+	if (Ground && Ground->IsActive()) {
+		glm::mat4 groundMatrix = Ground->GetModelMat();
+		renderer->RenderObjModel("Ground", groundMatrix);
+	}
 }
+

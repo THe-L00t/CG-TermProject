@@ -315,3 +315,150 @@ void Renderer::RenderFBXModelWithAnimationAndTexture(const std::string_view& mod
 	glBindTexture(GL_TEXTURE_2D, 0);
 	shader->Unuse();
 }
+
+// OBJ 모델 렌더링 헬퍼 함수
+void Renderer::ConfigureSharedVAOForOBJ(const ObjData* objData) const
+{
+	// 공용 VAO 설정 (매번 호출 시 VAO 속성 재구성)
+	GLuint sharedVAO = resourceManager->GetVAO();
+
+	glBindVertexArray(sharedVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, objData->VBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objData->EBO);
+
+	// Position attribute (location 0)
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+
+	// TexCoord attribute (location 1)
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texcoord));
+
+	// Normal attribute (location 2)
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+
+	// Bone IDs attribute (location 3) - OBJ는 0으로 채워짐
+	glEnableVertexAttribArray(3);
+	glVertexAttribIPointer(3, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, boneIDs));
+
+	// Bone Weights attribute (location 4) - OBJ는 0으로 채워짐
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, boneWeights));
+
+	glBindVertexArray(0);
+}
+
+void Renderer::RenderObjModel(const std::string_view& modelName, const glm::mat4& modelMatrix)
+{
+	const ObjData* objData = resourceManager->GetObjData(modelName);
+	if (!objData) {
+		std::cerr << "RenderObjModel: Model '" << modelName << "' not found" << std::endl;
+		return;
+	}
+
+	Shader* shader = GetShader("basic");
+	if (!shader) {
+		std::cerr << "RenderObjModel: Shader 'basic' not found" << std::endl;
+		return;
+	}
+
+	GLuint sharedVAO = resourceManager->GetVAO();
+	if (sharedVAO == 0) {
+		std::cerr << "RenderObjModel: Invalid shared VAO" << std::endl;
+		return;
+	}
+
+	// 공용 VAO 구성 (Vertex Attribute 설정)
+	ConfigureSharedVAOForOBJ(objData);
+
+	shader->Use();
+
+	// 변환 행렬 설정
+	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
+	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+	shader->setUniform("uModel", modelMatrix);
+	shader->setUniform("uView", view);
+	shader->setUniform("uProjection", projection);
+
+	// 라이팅 설정 추가
+	glm::vec3 color(0.8f, 0.8f, 0.8f);  // 회색 (중립적 색상)
+	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
+	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
+	shader->setUniform("uColor", color);
+	shader->setUniform("uLightPos", lightPos);
+	shader->setUniform("uViewPos", viewPos);
+	shader->setUniform("uLightColor", glm::vec3(1.0f));
+	shader->setUniform("uUseTexture", false);
+	shader->setUniform("uUseSkinning", false);
+
+	// 렌더링
+	glBindVertexArray(sharedVAO);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(objData->indexCount), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	shader->Unuse();
+}
+
+void Renderer::RenderObjModelWithTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix)
+{
+	const ObjData* objData = resourceManager->GetObjData(modelName);
+	if (!objData) {
+		std::cerr << "RenderObjModelWithTexture: Model '" << modelName << "' not found" << std::endl;
+		return;
+	}
+
+	GLuint textureID = resourceManager->GetTexture(textureName);
+	if (textureID == 0) {
+		std::cerr << "RenderObjModelWithTexture: Texture '" << textureName << "' not found, falling back to no texture" << std::endl;
+		RenderObjModel(modelName, modelMatrix);
+		return;
+	}
+
+	Shader* shader = GetShader("basic");
+	if (!shader) {
+		std::cerr << "RenderObjModelWithTexture: Shader 'basic' not found" << std::endl;
+		return;
+	}
+
+	GLuint sharedVAO = resourceManager->GetVAO();
+	if (sharedVAO == 0) {
+		std::cerr << "RenderObjModelWithTexture: Invalid shared VAO" << std::endl;
+		return;
+	}
+
+	// 공용 VAO 구성
+	ConfigureSharedVAOForOBJ(objData);
+
+	shader->Use();
+
+	// 변환 행렬 설정
+	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
+	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+	shader->setUniform("uModel", modelMatrix);
+	shader->setUniform("uView", view);
+	shader->setUniform("uProjection", projection);
+
+	// 라이팅 설정
+	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
+	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
+	shader->setUniform("uLightPos", lightPos);
+	shader->setUniform("uViewPos", viewPos);
+	shader->setUniform("uLightColor", glm::vec3(1.0f));
+
+	// 텍스처 바인딩
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	shader->setUniform("uTexture", 0);
+	shader->setUniform("uUseTexture", true);
+	shader->setUniform("uUseSkinning", false); // OBJ는 스킨닝 미사용
+
+	// 렌더링
+	glBindVertexArray(sharedVAO);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(objData->indexCount), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	shader->Unuse();
+}

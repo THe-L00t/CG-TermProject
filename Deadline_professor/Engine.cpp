@@ -164,6 +164,22 @@ void Engine::LoadAssets()
 		std::cout << "SUCCESS: RunDragon.fbx loaded" << std::endl;
 	}
 
+	// OBJ 파일 로드
+	std::cout << "\n--- Loading OBJ files ---" << std::endl;
+	if (!resourceManager->LoadObj("TestCube", "Resources/TestCube.obj")) {
+		std::cerr << "Warning: Failed to load TestCube.obj" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: TestCube.obj loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadObj("Ground", "Resources/Ground.obj")) {
+		std::cerr << "Warning: Failed to load Ground.obj" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: Ground.obj loaded" << std::endl;
+	}
+
 	// 텍스처 로드
 	std::cout << "\n--- Loading Textures ---" << std::endl;
 	std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
