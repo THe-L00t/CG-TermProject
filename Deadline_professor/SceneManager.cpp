@@ -347,6 +347,25 @@ void TestScene::Enter()
 		return;
 	}
 
+	Camera* camera = g_engine->GetCamera();
+	InputManager* inputMgr = g_engine->GetInputManager();
+	GameTimer* timer = g_engine->GetGameTimer();
+
+	if (camera) {
+		renderer->SetCamera(camera);
+	}
+
+	if (inputMgr && camera) {
+		inputMgr->SetCamera(camera);
+	}
+
+	if (inputMgr && timer && camera) {
+		inputMgr->ActionW = [camera, timer]() { camera->MoveForward(timer->elapsedTime); };
+		inputMgr->ActionS = [camera, timer]() { camera->MoveBackward(timer->elapsedTime); };
+		inputMgr->ActionA = [camera, timer]() { camera->MoveLeft(timer->elapsedTime); };
+		inputMgr->ActionD = [camera, timer]() { camera->MoveRight(timer->elapsedTime); };
+	}
+
 	// Professor 객체 생성 및 초기화
 	lee = std::make_unique<Professor>("RunLee", "RunAnimation");
 	lee->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -365,40 +384,31 @@ void TestScene::Enter()
 	Ground->SetResourceID("GroundPlane");
 
 	// Light 객체 생성 및 초기화
-	//light = std::make_unique<Light>(LightType::POINT);
-	//light->SetPosition(glm::vec3(5.0f, 5.0f, 5.0f));
-	//light->SetDiffuse(glm::vec3(1.0f, 1.0f, 1.0f));
-	//light->SetAmbient(glm::vec3(0.3f, 0.3f, 0.3f));
-	//light->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
-	//light->SetEnabled(true);
-
-	auto directionalLight = std::make_unique<Light>(LightType::DIRECTIONAL);
-	directionalLight->SetDirection(glm::vec3(0.0f, -1.0f, -0.5f)); // 위에서 앞쪽으로
+	directionalLight = std::make_unique<Light>(LightType::DIRECTIONAL);
+	directionalLight->SetDirection(glm::vec3(0.0f, -1.0f, -0.5f));
 	directionalLight->SetAmbient(glm::vec3(0.2f, 0.2f, 0.2f));
-	directionalLight->SetDiffuse(glm::vec3(0.8f, 0.8f, 0.7f)); // 약간 따뜻한 백색
+	directionalLight->SetDiffuse(glm::vec3(0.8f, 0.8f, 0.7f));
 	directionalLight->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
 	directionalLight->SetIntensity(0.8f);
 	directionalLight->SetEnabled(true);
 	renderer->AddLight(directionalLight.get());
 	std::cout << "Created directional light(Sun)" << std::endl;
 
-	// 2. 천장 조명 - 포인트 라이트 (왼쪽)
-	auto ceilingLight1 = std::make_unique<Light>(LightType::POINT);
+	ceilingLight1 = std::make_unique<Light>(LightType::POINT);
 	ceilingLight1->SetPosition(glm::vec3(-5.0f, 1.0f, 0.0f));
 	ceilingLight1->SetAmbient(glm::vec3(0.1f, 0.1f, 0.1f));
-	ceilingLight1->SetDiffuse(glm::vec3(1.0f, 1.0f, 0.9f)); // 따뜻한 백색
+	ceilingLight1->SetDiffuse(glm::vec3(1.0f, 1.0f, 0.9f));
 	ceilingLight1->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
-	ceilingLight1->SetAttenuation(1.0f, 0.09f, 0.032f); // 기본 감쇠값
+	ceilingLight1->SetAttenuation(1.0f, 0.09f, 0.032f);
 	ceilingLight1->SetIntensity(1.0f);
 	ceilingLight1->SetEnabled(true);
 	renderer->AddLight(ceilingLight1.get());
 	std::cout << "Created ceiling light 1" << std::endl;
 
-	// 3. 천장 조명 - 포인트 라이트 (오른쪽)
-	auto ceilingLight2 = std::make_unique<Light>(LightType::POINT);
+	ceilingLight2 = std::make_unique<Light>(LightType::POINT);
 	ceilingLight2->SetPosition(glm::vec3(5.0f, 1.0f, 0.0f));
 	ceilingLight2->SetAmbient(glm::vec3(0.1f, 0.1f, 0.1f));
-	ceilingLight2->SetDiffuse(glm::vec3(1.0f, 1.0f, 0.9f)); // 따뜻한 백색
+	ceilingLight2->SetDiffuse(glm::vec3(1.0f, 1.0f, 0.9f));
 	ceilingLight2->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
 	ceilingLight2->SetAttenuation(1.0f, 0.09f, 0.032f);
 	ceilingLight2->SetIntensity(1.0f);
@@ -406,14 +416,13 @@ void TestScene::Enter()
 	renderer->AddLight(ceilingLight2.get());
 	std::cout << "Created ceiling light 2" << std::endl;
 
-	// 4. 스팟 라이트 (어두운 분위기 연출용)
-	auto spotLight = std::make_unique<Light>(LightType::SPOT);
+	spotLight = std::make_unique<Light>(LightType::SPOT);
 	spotLight->SetPosition(glm::vec3(0.0f, 1.0f, 5.0f));
 	spotLight->SetDirection(glm::vec3(0.0f, -1.0f, -1.0f));
-	spotLight->SetAmbient(glm::vec3(0.05f, 0.05f, 0.15f)); // 약간 파란색
+	spotLight->SetAmbient(glm::vec3(0.05f, 0.05f, 0.15f));
 	spotLight->SetDiffuse(glm::vec3(0.5f, 0.5f, 0.8f));
 	spotLight->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
-	spotLight->SetCutOff(15.0f, 25.0f); // 내부각 15도, 외부각 25도
+	spotLight->SetCutOff(15.0f, 25.0f);
 	spotLight->SetAttenuation(1.0f, 0.09f, 0.032f);
 	spotLight->SetIntensity(0.5f);
 	spotLight->SetEnabled(true);
@@ -429,6 +438,14 @@ void TestScene::Exit()
 
 	extern Engine* g_engine;
 	if (g_engine) {
+		InputManager* inputMgr = g_engine->GetInputManager();
+		if (inputMgr) {
+			inputMgr->ActionW = nullptr;
+			inputMgr->ActionS = nullptr;
+			inputMgr->ActionA = nullptr;
+			inputMgr->ActionD = nullptr;
+		}
+
 		Renderer* renderer = g_engine->GetRenderer();
 		if (renderer) {
 			renderer->ClearLights();
@@ -439,7 +456,11 @@ void TestScene::Exit()
 	TestCube.reset();
 	Ground.reset();
 
-	light.reset();
+	directionalLight.reset();
+	ceilingLight1.reset();
+	ceilingLight2.reset();
+	spotLight.reset();
+
 }
 
 void TestScene::Update(float deltaTime)

@@ -16,9 +16,11 @@ Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 worldUp, float fov, fl
 	f = GameConstants::CAMERA_FAR_PLANE;
 
 	// right 벡터 계산
-	glm::vec3 forward = glm::normalize(direction - position);
-	right = glm::normalize(glm::cross(forward, worldUp));
-	up = glm::normalize(glm::cross(right, forward));
+	//glm::vec3 forward = glm::normalize(direction - position);
+	//right = glm::normalize(glm::cross(forward, worldUp));
+	//up = glm::normalize(glm::cross(right, forward));
+
+	UpdateVectors();
 }
 
 glm::mat4 Camera::GetViewMat() const
@@ -51,6 +53,10 @@ void Camera::MoveForward(float deltaTime)
 	glm::vec3 forward = glm::normalize(direction - position);
 	position += forward * moveSpd * deltaTime;
 	direction += forward * moveSpd * deltaTime;
+	UpdateVectors();
+
+	std::cout << "DEBUG : Camera moved forward to position " 
+		<< position.x << ", " << position.y << ", " << position.z << std::endl;
 }
 
 void Camera::MoveBackward(float deltaTime)
@@ -58,18 +64,30 @@ void Camera::MoveBackward(float deltaTime)
 	glm::vec3 forward = glm::normalize(direction - position);
 	position -= forward * moveSpd * deltaTime;
 	direction -= forward * moveSpd * deltaTime;
+	UpdateVectors();
+
+	std::cout << "DEBUG : Camera moved backward to position " 
+		<< position.x << ", " << position.y << ", " << position.z << std::endl;
 }
 
 void Camera::MoveLeft(float deltaTime)
 {
 	position -= right * moveSpd * deltaTime;
 	direction -= right * moveSpd * deltaTime;
+	UpdateVectors();
+
+	std::cout << "DEBUG : Camera moved left to position " 
+		<< position.x << ", " << position.y << ", " << position.z << std::endl;
 }
 
 void Camera::MoveRight(float deltaTime)
 {
 	position += right * moveSpd * deltaTime;
 	direction += right * moveSpd * deltaTime;
+	UpdateVectors();
+
+	std::cout << "DEBUG : Camera moved right to position " 
+		<< position.x << ", " << position.y << ", " << position.z << std::endl;
 }
 
 void Camera::MoveUp(float deltaTime)
