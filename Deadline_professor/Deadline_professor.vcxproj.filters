@@ -165,6 +165,9 @@
     <Filter Include="소스 파일\Professor">
       <UniqueIdentifier>{6e085732-fbe8-4cbd-aabf-d4725b360ce4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Environment">
+      <UniqueIdentifier>{7f19e8d3-4c5b-6a2d-9e1f-8b3c4a5d6e7f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Object.cpp">
@@ -196,5 +199,16 @@
     <ClInclude Include="Light.h">
       <Filter>소스 파일\Light</Filter>
     </ClInclude>
+    <ClInclude Include="Plane.h">
+      <Filter>소스 파일\Environment</Filter>
+    </ClInclude>
+    <ClInclude Include="GameConstants.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Plane.cpp">
+      <Filter>소스 파일\Environment</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

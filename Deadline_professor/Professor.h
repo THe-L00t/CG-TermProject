@@ -6,6 +6,7 @@ class Professor : public Object
 public:
 	Professor();
 	Professor(const std::string& meshKey, const std::string& animKey);
+	Professor(const std::string& meshKey, const std::string& animKey, float width, float height, float depth);
 	~Professor();
 
 	void Update(float deltaTime) override;
@@ -28,6 +29,9 @@ public:
 	void SetDirection(const glm::vec3& dir);
 	glm::vec3 GetDirection() const;
 
+	void SetSize(float width, float height, float depth);
+	glm::vec3 GetSize() const;
+
 private:
 	void FleeFromPlayer(float deltaTime);
 
@@ -39,6 +43,8 @@ private:
 
 	Object* playerRef{nullptr};
 
-	float moveSpeed{5.0f};
-	float detectionRange{10.0f};
+	glm::vec3 size{1.0f, 1.8f, 1.0f};  // 기본 크기 (width, height, depth) in meters
+
+	float moveSpeed{5.5f};           // 기본값: 이동 속도 (m/s) - GameConstants::PROFESSOR_MOVE_SPEED 사용
+	float detectionRange{15.0f};     // 기본값: 감지 범위 (m) - GameConstants::PROFESSOR_DETECTION_RANGE 사용
 };

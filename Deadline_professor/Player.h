@@ -28,5 +28,5 @@ public:
 
 private:
 	Camera* camera{nullptr};
-	float moveSpeed{5.f};
+	float moveSpeed{1.4f}; // 기본값: 걷기 속도 (m/s) - GameConstants::PLAYER_WALK_SPEED 사용
 };

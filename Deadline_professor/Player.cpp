@@ -1,8 +1,16 @@
 ﻿#include "Player.h"
 #include "Camera.h"
+#include "GameConstants.h"
 
 Player::Player()
 {
+	// 현실적인 스케일 적용 (1 unit = 1 meter)
+	SetScale(glm::vec3(GameConstants::PLAYER_WIDTH,
+	                   GameConstants::PLAYER_HEIGHT,
+	                   GameConstants::PLAYER_DEPTH));
+
+	// 기본 이동 속도 설정 (걷기)
+	moveSpeed = GameConstants::PLAYER_WALK_SPEED;
 }
 
 Player::~Player()

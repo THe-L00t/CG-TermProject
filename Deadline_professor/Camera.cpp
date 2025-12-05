@@ -1,12 +1,19 @@
 ﻿#include "Camera.h"
+#include "GameConstants.h"
 
 Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 worldUp, float fov, float aspect)
 	: position(pos), direction(target), worldUp(worldUp), fov(glm::radians(fov)), aspect(aspect)
 {
 	up = this->worldUp;
-	moveSpd = 5.0f;
-	dirSpd = 0.1f;
+
+	// 현실적인 카메라 설정 적용
+	moveSpd = GameConstants::PLAYER_WALK_SPEED;     // 플레이어 걷기 속도와 동일
+	dirSpd = GameConstants::CAMERA_SENSITIVITY;     // 마우스 감도
 	zoomSpd = 2.0f;
+
+	// Near/Far plane 설정
+	n = GameConstants::CAMERA_NEAR_PLANE;
+	f = GameConstants::CAMERA_FAR_PLANE;
 
 	// right 벡터 계산
 	glm::vec3 forward = glm::normalize(direction - position);

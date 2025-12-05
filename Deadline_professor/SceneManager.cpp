@@ -225,8 +225,8 @@ void Floor1Scene::Enter()
 	player->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 	player->SetResourceID("PlayerModel");
 
-	// Professor 생성 및 초기화
-	professor = std::make_unique<Professor>("RunDragon", "RunAnimation");
+	// Professor 생성 및 초기화 (크기: 폭, 높이, 깊이)
+	professor = std::make_unique<Professor>("RunDragon", "RunAnimation", 0.6f, 1.8f, 0.6f);
 	professor->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
 	professor->SetPlayerReference(player.get());
 
@@ -334,10 +334,9 @@ void TestScene::Enter()
 {
 	std::cout << "TestScene: Entered" << std::endl;
 
-	// Professor 객체 생성 및 초기화
-	lee = std::make_unique<Professor>("RunLee", "RunAnimation");
+	// Professor 객체 생성 및 초기화 (크기: 폭, 높이, 깊이)
+	lee = std::make_unique<Professor>("RunLee", "RunAnimation", 1.0f, 2.0f, 1.0f);
 	lee->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	lee->SetScale(glm::vec3(0.1f)); // 0.01f * 10 = 0.1f (10배 크기)
 	lee->SetResourceID("RunLee");
 
 	// Light 객체 생성 및 초기화

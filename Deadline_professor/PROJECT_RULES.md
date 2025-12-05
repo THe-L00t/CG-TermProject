@@ -76,7 +76,7 @@
 ### Player
 - Object를 상속받은 플레이어 캐릭터 클래스
 - 플레이어 이동 로직 처리
-- Camera와 연동하여 1인칭/3인칭 시점 제어
+- Camera와 연동하여 1인칭 시점 제어
 - **입력은 InputManager에서 받아옴**
 
 ### Professor
@@ -90,6 +90,13 @@
 - 방향광(Directional), 점광원(Point), 스포트라이트(Spot) 지원
 - 조명 속성(Ambient, Diffuse, Specular) 관리
 - 셰이더에 조명 정보 전달 (ApplyToShader 메서드)
+
+### Plane
+- Object를 상속받은 평면 오브젝트 클래스
+- 바닥, 천장, 벽 등의 평면 환경 요소를 표현
+- Orientation 설정을 통해 방향 제어 (UP, DOWN, FRONT, BACK, LEFT, RIGHT)
+- 크기(width, height) 설정 기능
+- Player/Professor가 이동할 수 있는 바닥 레벨 제공
 
 ### GameTimer
 - 게임 시간 관리
