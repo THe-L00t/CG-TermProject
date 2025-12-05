@@ -143,6 +143,54 @@ void Renderer::RenderFBXModel(const std::string_view& modelName, const glm::mat4
 	shader->Unuse();
 }
 
+void Renderer::RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix, const glm::vec3& color)
+{
+	const FBXModel* model = resourceManager->GetFBXModel(modelName);
+	if (!model || model->meshes.empty()) {
+		return;
+	}
+
+	Shader* shader = GetShader("basic");
+	if (!shader) {
+		return;
+	}
+
+	shader->Use();
+
+	// 변환 행렬 설정
+	glm::mat4 view = glm::mat4(1.0f);
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+
+	if (camera) {
+		view = camera->GetViewMat();
+		projection = camera->GetProjMat();
+	}
+
+	shader->setUniform("uModel", modelMatrix);
+	shader->setUniform("uView", view);
+	shader->setUniform("uProjection", projection);
+
+	// 라이팅 설정 (전달받은 색상 사용)
+	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
+	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
+	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+
+	shader->setUniform("uColor", color);
+	shader->setUniform("uLightPos", lightPos);
+	shader->setUniform("uViewPos", viewPos);
+	shader->setUniform("uLightColor", lightColor);
+	shader->setUniform("uUseTexture", false); // 텍스처 미사용
+
+	// 모든 메시 렌더링
+	for (const auto& mesh : model->meshes) {
+		glBindVertexArray(mesh.VAO);
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
+
+	shader->Unuse();
+}
+
 void Renderer::RenderFBXModelWithAnimation(const std::string_view& modelName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms)
 {
 	const FBXModel* model = resourceManager->GetFBXModel(modelName);

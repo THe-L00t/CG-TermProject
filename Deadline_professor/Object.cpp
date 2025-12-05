@@ -85,3 +85,13 @@ bool Object::IsActive() const
 	return isActive;
 }
 
+void Object::SetColor(const glm::vec3& col)
+{
+	color = col;
+}
+
+glm::vec3 Object::GetColor() const
+{
+	return color;
+}
+

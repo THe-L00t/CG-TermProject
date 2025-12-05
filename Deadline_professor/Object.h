@@ -24,6 +24,9 @@ public:
 	void SetActive(bool);
 	bool IsActive() const;
 
+	void SetColor(const glm::vec3&);
+	glm::vec3 GetColor() const;
+
 protected:
 	void UpdateModelMat();
 
@@ -36,5 +39,7 @@ protected:
 
 	bool isActive{true};
 	bool needsUpdate{true};
+
+	glm::vec3 color{1.0f, 1.0f, 1.0f}; // 기본값: 흰색
 };
 

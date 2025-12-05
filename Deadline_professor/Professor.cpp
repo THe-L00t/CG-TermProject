@@ -3,8 +3,8 @@
 
 Professor::Professor()
 {
-	// 기본 크기 사용 + FBX 모델 보정값 적용
-	SetScale(size * GameConstants::PROFESSOR_MODEL_SCALE);
+	// FBX 원본 비율에 보정값만 곱해서 사용
+	SetScale(glm::vec3(GameConstants::PROFESSOR_MODEL_SCALE));
 
 	// 기본 이동 속도 및 감지 범위 설정
 	moveSpeed = GameConstants::PROFESSOR_MOVE_SPEED;
@@ -14,8 +14,8 @@ Professor::Professor()
 Professor::Professor(const std::string& meshKey, const std::string& animKey)
 	: meshKey(meshKey), animationKey(animKey)
 {
-	// 기본 크기 사용 + FBX 모델 보정값 적용
-	SetScale(size * GameConstants::PROFESSOR_MODEL_SCALE);
+	// FBX 원본 비율에 보정값만 곱해서 사용
+	SetScale(glm::vec3(GameConstants::PROFESSOR_MODEL_SCALE));
 
 	// 기본 이동 속도 및 감지 범위 설정
 	moveSpeed = GameConstants::PROFESSOR_MOVE_SPEED;
@@ -25,8 +25,8 @@ Professor::Professor(const std::string& meshKey, const std::string& animKey)
 Professor::Professor(const std::string& meshKey, const std::string& animKey, float width, float height, float depth)
 	: meshKey(meshKey), animationKey(animKey), size(width, height, depth)
 {
-	// 지정된 크기 사용 + FBX 모델 보정값 적용
-	SetScale(size * GameConstants::PROFESSOR_MODEL_SCALE);
+	// FBX 원본 비율에 보정값만 곱해서 사용 (width, height, depth는 정보용으로만 유지)
+	SetScale(glm::vec3(GameConstants::PROFESSOR_MODEL_SCALE));
 
 	// 기본 이동 속도 및 감지 범위 설정
 	moveSpeed = GameConstants::PROFESSOR_MOVE_SPEED;
@@ -112,8 +112,8 @@ glm::vec3 Professor::GetDirection() const
 void Professor::SetSize(float width, float height, float depth)
 {
 	size = glm::vec3(width, height, depth);
-	// 크기 변경 시 스케일도 함께 업데이트 (보정값 적용)
-	SetScale(size * GameConstants::PROFESSOR_MODEL_SCALE);
+	// 크기 변경 시에도 FBX 원본 비율에 보정값만 적용 (size는 정보용으로만 유지)
+	SetScale(glm::vec3(GameConstants::PROFESSOR_MODEL_SCALE));
 }
 
 glm::vec3 Professor::GetSize() const

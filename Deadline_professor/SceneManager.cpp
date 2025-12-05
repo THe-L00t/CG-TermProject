@@ -9,6 +9,7 @@
 #include "InputManager.h"
 #include "GameTimer.h"
 #include "FBXAnimationPlayer.h"
+#include "Plane.h"
 
 SceneManager::SceneManager()
 {
@@ -225,10 +226,40 @@ void Floor1Scene::Enter()
 	player->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 	player->SetResourceID("PlayerModel");
 
-	// Professor 생성 및 초기화 (크기: 폭, 높이, 깊이)
-	professor = std::make_unique<Professor>("RunDragon", "RunAnimation", 0.6f, 1.8f, 0.6f);
+	// Professor 생성 및 초기화 (1층: RunSong)
+	professor = std::make_unique<Professor>("RunSong", "RunAnimation", 0.6f, 1.8f, 0.6f);
 	professor->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
 	professor->SetPlayerReference(player.get());
+
+	// AnimationPlayer를 RunSong 모델로 초기화
+	FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
+	ResourceManager* resMgr = g_engine->GetResourceManager();
+	if (animPlayer && resMgr) {
+		const FBXModel* model = resMgr->GetFBXModel("RunSong");
+		if (model) {
+			animPlayer->Init(model);
+			if (!model->animations.empty()) {
+				animPlayer->PlayAnimation(0);
+				std::cout << "Floor1Scene: RunSong animation initialized" << std::endl;
+			}
+		}
+	}
+
+	// 바닥 생성 및 초기화
+	floor = std::make_unique<Plane>();
+	floor->SetOrientation(Plane::Orientation::UP);
+	floor->SetPosition(glm::vec3(0.0f, -1.0f, 0.0f)); // 바닥을 y=-1 위치에 배치
+	floor->SetSize(50.0f, 50.0f); // 50x50 크기의 바닥
+	floor->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
+	floor->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+
+	// 천장 생성 및 초기화
+	ceiling = std::make_unique<Plane>();
+	ceiling->SetOrientation(Plane::Orientation::DOWN);
+	ceiling->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f)); // 천장을 y=5 위치에 배치
+	ceiling->SetSize(50.0f, 50.0f); // 50x50 크기의 천장
+	ceiling->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
+	ceiling->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
 
 	// InputManager 액션을 Player 이동에 연결
 	if (inputMgr && timer) {
@@ -259,6 +290,8 @@ void Floor1Scene::Exit()
 
 	player.reset();
 	professor.reset();
+	floor.reset();
+	ceiling.reset();
 }
 
 void Floor1Scene::Update(float deltaTime)
@@ -268,6 +301,12 @@ void Floor1Scene::Update(float deltaTime)
 	}
 	if (professor) {
 		professor->Update(deltaTime);
+	}
+	if (floor) {
+		floor->Update(deltaTime);
+	}
+	if (ceiling) {
+		ceiling->Update(deltaTime);
 	}
 }
 
@@ -279,10 +318,30 @@ void Floor1Scene::Draw()
 	Renderer* renderer = g_engine->GetRenderer();
 	if (!renderer) return;
 
-	// Professor 렌더링 (FBX 모델 사용)
+	// 바닥 렌더링
+	if (floor && floor->IsActive()) {
+		glm::mat4 floorMatrix = floor->GetModelMat();
+		renderer->RenderFBXModel("PlaneModel", floorMatrix, floor->GetColor());
+	}
+
+	// 천장 렌더링
+	if (ceiling && ceiling->IsActive()) {
+		glm::mat4 ceilingMatrix = ceiling->GetModelMat();
+		renderer->RenderFBXModel("PlaneModel", ceilingMatrix, ceiling->GetColor());
+	}
+
+	// Professor 렌더링 (1층: RunSong - 애니메이션 + 텍스처)
 	if (professor && professor->IsActive()) {
 		glm::mat4 professorMatrix = professor->GetModelMat();
-		renderer->RenderFBXModel(professor->GetMeshKey(), professorMatrix);
+
+		extern Engine* g_engine;
+		FBXAnimationPlayer* animPlayer = g_engine ? g_engine->GetAnimationPlayer() : nullptr;
+
+		if (animPlayer && animPlayer->IsPlaying()) {
+			renderer->RenderFBXModelWithAnimationAndTexture("RunSong", "RunSong", professorMatrix, animPlayer->GetBoneTransforms());
+		} else {
+			renderer->RenderFBXModelWithTexture("RunSong", "RunSong", professorMatrix);
+		}
 	}
 
 	// Player 렌더링 (나중에 모델 추가 시)
@@ -296,36 +355,200 @@ void Floor1Scene::Draw()
 
 void Floor2Scene::Enter()
 {
+	std::cout << "Floor2Scene: Entered" << std::endl;
+
+	// Professor 생성 및 초기화 (2층: RunLee)
+	professor = std::make_unique<Professor>("RunLee", "RunAnimation", 0.6f, 1.8f, 0.6f);
+	professor->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
+
+	// AnimationPlayer를 RunLee 모델로 초기화
+	extern Engine* g_engine;
+	if (g_engine) {
+		FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
+		ResourceManager* resMgr = g_engine->GetResourceManager();
+		if (animPlayer && resMgr) {
+			const FBXModel* model = resMgr->GetFBXModel("RunLee");
+			if (model) {
+				animPlayer->Init(model);
+				if (!model->animations.empty()) {
+					animPlayer->PlayAnimation(0);
+					std::cout << "Floor2Scene: RunLee animation initialized" << std::endl;
+				}
+			}
+		}
+	}
+
+	// 바닥 생성 및 초기화
+	floor = std::make_unique<Plane>();
+	floor->SetOrientation(Plane::Orientation::UP);
+	floor->SetPosition(glm::vec3(0.0f, -1.0f, 0.0f)); // 바닥을 y=-1 위치에 배치
+	floor->SetSize(50.0f, 50.0f); // 50x50 크기의 바닥
+	floor->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
+	floor->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+
+	// 천장 생성 및 초기화
+	ceiling = std::make_unique<Plane>();
+	ceiling->SetOrientation(Plane::Orientation::DOWN);
+	ceiling->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f)); // 천장을 y=5 위치에 배치
+	ceiling->SetSize(50.0f, 50.0f); // 50x50 크기의 천장
+	ceiling->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
+	ceiling->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+
+	std::cout << "Floor2Scene: Professor (RunLee), Floor and Ceiling initialized" << std::endl;
 }
 
 void Floor2Scene::Exit()
 {
+	std::cout << "Floor2Scene: Exited" << std::endl;
+	professor.reset();
+	floor.reset();
+	ceiling.reset();
 }
 
-void Floor2Scene::Update(float)
+void Floor2Scene::Update(float deltaTime)
 {
+	if (professor) {
+		professor->Update(deltaTime);
+	}
+	if (floor) {
+		floor->Update(deltaTime);
+	}
+	if (ceiling) {
+		ceiling->Update(deltaTime);
+	}
 }
 
 void Floor2Scene::Draw()
 {
+	extern Engine* g_engine;
+	if (!g_engine) return;
+
+	Renderer* renderer = g_engine->GetRenderer();
+	if (!renderer) return;
+
+	// 바닥 렌더링
+	if (floor && floor->IsActive()) {
+		glm::mat4 floorMatrix = floor->GetModelMat();
+		renderer->RenderFBXModel("PlaneModel", floorMatrix, floor->GetColor());
+	}
+
+	// 천장 렌더링
+	if (ceiling && ceiling->IsActive()) {
+		glm::mat4 ceilingMatrix = ceiling->GetModelMat();
+		renderer->RenderFBXModel("PlaneModel", ceilingMatrix, ceiling->GetColor());
+	}
+
+	// Professor 렌더링 (2층: RunLee - 애니메이션 + 텍스처)
+	if (professor && professor->IsActive()) {
+		glm::mat4 professorMatrix = professor->GetModelMat();
+
+		FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
+		if (animPlayer && animPlayer->IsPlaying()) {
+			renderer->RenderFBXModelWithAnimationAndTexture("RunLee", "RunLee", professorMatrix, animPlayer->GetBoneTransforms());
+		} else {
+			renderer->RenderFBXModelWithTexture("RunLee", "RunLee", professorMatrix);
+		}
+	}
 }
 
 //---------------------------------------------------------------Floor3Scene
 
 void Floor3Scene::Enter()
 {
+	std::cout << "Floor3Scene: Entered" << std::endl;
+
+	// Professor 생성 및 초기화 (3층: RunDragon)
+	professor = std::make_unique<Professor>("RunDragon", "RunAnimation", 0.6f, 1.8f, 0.6f);
+	professor->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
+
+	// AnimationPlayer를 RunDragon 모델로 초기화
+	extern Engine* g_engine;
+	if (g_engine) {
+		FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
+		ResourceManager* resMgr = g_engine->GetResourceManager();
+		if (animPlayer && resMgr) {
+			const FBXModel* model = resMgr->GetFBXModel("RunDragon");
+			if (model) {
+				animPlayer->Init(model);
+				if (!model->animations.empty()) {
+					animPlayer->PlayAnimation(0);
+					std::cout << "Floor3Scene: RunDragon animation initialized" << std::endl;
+				}
+			}
+		}
+	}
+
+	// 바닥 생성 및 초기화
+	floor = std::make_unique<Plane>();
+	floor->SetOrientation(Plane::Orientation::UP);
+	floor->SetPosition(glm::vec3(0.0f, -1.0f, 0.0f)); // 바닥을 y=-1 위치에 배치
+	floor->SetSize(50.0f, 50.0f); // 50x50 크기의 바닥
+	floor->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
+	floor->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+
+	// 천장 생성 및 초기화
+	ceiling = std::make_unique<Plane>();
+	ceiling->SetOrientation(Plane::Orientation::DOWN);
+	ceiling->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f)); // 천장을 y=5 위치에 배치
+	ceiling->SetSize(50.0f, 50.0f); // 50x50 크기의 천장
+	ceiling->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
+	ceiling->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+
+	std::cout << "Floor3Scene: Professor (RunDragon), Floor and Ceiling initialized" << std::endl;
 }
 
 void Floor3Scene::Exit()
 {
+	std::cout << "Floor3Scene: Exited" << std::endl;
+	professor.reset();
+	floor.reset();
+	ceiling.reset();
 }
 
-void Floor3Scene::Update(float)
+void Floor3Scene::Update(float deltaTime)
 {
+	if (professor) {
+		professor->Update(deltaTime);
+	}
+	if (floor) {
+		floor->Update(deltaTime);
+	}
+	if (ceiling) {
+		ceiling->Update(deltaTime);
+	}
 }
 
 void Floor3Scene::Draw()
 {
+	extern Engine* g_engine;
+	if (!g_engine) return;
+
+	Renderer* renderer = g_engine->GetRenderer();
+	if (!renderer) return;
+
+	// 바닥 렌더링
+	if (floor && floor->IsActive()) {
+		glm::mat4 floorMatrix = floor->GetModelMat();
+		renderer->RenderFBXModel("PlaneModel", floorMatrix, floor->GetColor());
+	}
+
+	// 천장 렌더링
+	if (ceiling && ceiling->IsActive()) {
+		glm::mat4 ceilingMatrix = ceiling->GetModelMat();
+		renderer->RenderFBXModel("PlaneModel", ceilingMatrix, ceiling->GetColor());
+	}
+
+	// Professor 렌더링 (3층: RunDragon - 애니메이션 + 텍스처)
+	if (professor && professor->IsActive()) {
+		glm::mat4 professorMatrix = professor->GetModelMat();
+
+		FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
+		if (animPlayer && animPlayer->IsPlaying()) {
+			renderer->RenderFBXModelWithAnimationAndTexture("RunDragon", "RunDragon", professorMatrix, animPlayer->GetBoneTransforms());
+		} else {
+			renderer->RenderFBXModelWithTexture("RunDragon", "RunDragon", professorMatrix);
+		}
+	}
 }
 
 //-----------------------------------------------------------------TestScene

@@ -16,7 +16,7 @@ namespace GameConstants
 	constexpr float PLAYER_EYE_HEIGHT = 1.6f;       // 플레이어 눈 높이 (m)
 
 	// ===== 교수님 관련 =====
-	constexpr float PROFESSOR_MODEL_SCALE = 10.0f;   // FBX 모델 스케일 보정값 (모델이 작을 경우 이 값을 조정)
+	constexpr float PROFESSOR_MODEL_SCALE = 1.0f;   // FBX 모델 스케일 보정값 (모델이 작을 경우 이 값을 조정)
 	constexpr float PROFESSOR_MOVE_SPEED = 5.5f;    // 교수님 이동 속도 (m/s) - 플레이어보다 약간 빠름
 	constexpr float PROFESSOR_DETECTION_RANGE = 15.0f; // 교수님 감지 범위 (m)
 

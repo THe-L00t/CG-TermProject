@@ -66,6 +66,8 @@ public:
 private:
 	std::unique_ptr<class Player> player;
 	std::unique_ptr<class Professor> professor;
+	std::unique_ptr<class Plane> floor;
+	std::unique_ptr<class Plane> ceiling;
 };
 
 class Floor2Scene : public Scene
@@ -76,7 +78,9 @@ public:
 	void Update(float) override;
 	void Draw() override;
 private:
-
+	std::unique_ptr<class Professor> professor;
+	std::unique_ptr<class Plane> floor;
+	std::unique_ptr<class Plane> ceiling;
 };
 
 class Floor3Scene : public Scene
@@ -87,7 +91,9 @@ public:
 	void Update(float) override;
 	void Draw() override;
 private:
-
+	std::unique_ptr<class Professor> professor;
+	std::unique_ptr<class Plane> floor;
+	std::unique_ptr<class Plane> ceiling;
 };
 
 class TestScene : public Scene

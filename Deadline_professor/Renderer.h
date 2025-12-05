@@ -31,6 +31,7 @@ public:
 
 	// FBX 모델 렌더링
 	void RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
+	void RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix, const glm::vec3& color);
 	void RenderFBXModelWithAnimation(const std::string_view& modelName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms);
 
 	// 텍스처 적용 렌더링

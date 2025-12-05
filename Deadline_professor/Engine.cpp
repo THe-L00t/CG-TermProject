@@ -167,10 +167,23 @@ void Engine::LoadAssets()
 	// 텍스처 로드
 	std::cout << "\n--- Loading Textures ---" << std::endl;
 	std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
+
 	if (!resourceManager->LoadTexture("RunLee", "Textures/RunLee.png")) {
 		std::cerr << "Warning: Failed to load RunLee.png" << std::endl;
 	} else {
 		std::cout << "SUCCESS: RunLee.png loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadTexture("RunSong", "Textures/RunSong.png")) {
+		std::cerr << "Warning: Failed to load RunSong.png" << std::endl;
+	} else {
+		std::cout << "SUCCESS: RunSong.png loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadTexture("RunDragon", "Textures/RunDragon.png")) {
+		std::cerr << "Warning: Failed to load RunDragon.png" << std::endl;
+	} else {
+		std::cout << "SUCCESS: RunDragon.png loaded" << std::endl;
 	}
 
 	std::cout << "=== Assets Loaded ===" << std::endl;
