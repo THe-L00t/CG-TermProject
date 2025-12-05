@@ -10,6 +10,7 @@
 #include "GameTimer.h"
 #include "FBXAnimationPlayer.h"
 #include "Plane.h"
+#include "GameConstants.h"
 
 SceneManager::SceneManager()
 {
@@ -251,7 +252,9 @@ void Floor1Scene::Enter()
 	floor->SetPosition(glm::vec3(0.0f, -1.0f, 0.0f)); // 바닥을 y=-1 위치에 배치
 	floor->SetSize(50.0f, 50.0f); // 50x50 크기의 바닥
 	floor->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
-	floor->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+	floor->SetTextureID("FloorTexture"); // 바닥 텍스처 설정
+	floor->SetTextureTiling(glm::vec2(GameConstants::FLOOR_TEXTURE_TILE_X, GameConstants::FLOOR_TEXTURE_TILE_Y)); // 타일링 설정
+	floor->SetColor(glm::vec3(0.6f, 0.5f, 0.4f)); // 밝은 갈색 (바닥)
 
 	// 천장 생성 및 초기화
 	ceiling = std::make_unique<Plane>();
@@ -259,7 +262,9 @@ void Floor1Scene::Enter()
 	ceiling->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f)); // 천장을 y=5 위치에 배치
 	ceiling->SetSize(50.0f, 50.0f); // 50x50 크기의 천장
 	ceiling->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
-	ceiling->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+	ceiling->SetTextureID("CeilingTexture"); // 천장 텍스처 설정
+	ceiling->SetTextureTiling(glm::vec2(GameConstants::CEILING_TEXTURE_TILE_X, GameConstants::CEILING_TEXTURE_TILE_Y)); // 타일링 설정
+	ceiling->SetColor(glm::vec3(0.7f, 0.7f, 0.7f)); // 밝은 회색 (천장)
 
 	// InputManager 액션을 Player 이동에 연결
 	if (inputMgr && timer) {
@@ -321,13 +326,23 @@ void Floor1Scene::Draw()
 	// 바닥 렌더링
 	if (floor && floor->IsActive()) {
 		glm::mat4 floorMatrix = floor->GetModelMat();
-		renderer->RenderFBXModel("PlaneModel", floorMatrix, floor->GetColor());
+		// 텍스처가 설정되어 있으면 텍스처와 함께 렌더링, 아니면 컬러로 렌더링
+		if (!floor->GetTextureID().empty()) {
+			renderer->RenderFBXModelWithTextureTiled("PlaneModel", floor->GetTextureID(), floorMatrix, floor->GetTextureTiling());
+		} else {
+			renderer->RenderFBXModel("PlaneModel", floorMatrix, floor->GetColor());
+		}
 	}
 
 	// 천장 렌더링
 	if (ceiling && ceiling->IsActive()) {
 		glm::mat4 ceilingMatrix = ceiling->GetModelMat();
-		renderer->RenderFBXModel("PlaneModel", ceilingMatrix, ceiling->GetColor());
+		// 텍스처가 설정되어 있으면 텍스처와 함께 렌더링, 아니면 컬러로 렌더링
+		if (!ceiling->GetTextureID().empty()) {
+			renderer->RenderFBXModelWithTextureTiled("PlaneModel", ceiling->GetTextureID(), ceilingMatrix, ceiling->GetTextureTiling());
+		} else {
+			renderer->RenderFBXModel("PlaneModel", ceilingMatrix, ceiling->GetColor());
+		}
 	}
 
 	// Professor 렌더링 (1층: RunSong - 애니메이션 + 텍스처)
@@ -384,7 +399,9 @@ void Floor2Scene::Enter()
 	floor->SetPosition(glm::vec3(0.0f, -1.0f, 0.0f)); // 바닥을 y=-1 위치에 배치
 	floor->SetSize(50.0f, 50.0f); // 50x50 크기의 바닥
 	floor->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
-	floor->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+	floor->SetTextureID("FloorTexture"); // 바닥 텍스처 설정
+	floor->SetTextureTiling(glm::vec2(GameConstants::FLOOR_TEXTURE_TILE_X, GameConstants::FLOOR_TEXTURE_TILE_Y)); // 타일링 설정
+	floor->SetColor(glm::vec3(0.6f, 0.5f, 0.4f)); // 밝은 갈색 (바닥)
 
 	// 천장 생성 및 초기화
 	ceiling = std::make_unique<Plane>();
@@ -392,7 +409,9 @@ void Floor2Scene::Enter()
 	ceiling->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f)); // 천장을 y=5 위치에 배치
 	ceiling->SetSize(50.0f, 50.0f); // 50x50 크기의 천장
 	ceiling->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
-	ceiling->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+	ceiling->SetTextureID("CeilingTexture"); // 천장 텍스처 설정
+	ceiling->SetTextureTiling(glm::vec2(GameConstants::CEILING_TEXTURE_TILE_X, GameConstants::CEILING_TEXTURE_TILE_Y)); // 타일링 설정
+	ceiling->SetColor(glm::vec3(0.7f, 0.7f, 0.7f)); // 밝은 회색 (천장)
 
 	std::cout << "Floor2Scene: Professor (RunLee), Floor and Ceiling initialized" << std::endl;
 }
@@ -429,13 +448,23 @@ void Floor2Scene::Draw()
 	// 바닥 렌더링
 	if (floor && floor->IsActive()) {
 		glm::mat4 floorMatrix = floor->GetModelMat();
-		renderer->RenderFBXModel("PlaneModel", floorMatrix, floor->GetColor());
+		// 텍스처가 설정되어 있으면 텍스처와 함께 렌더링, 아니면 컬러로 렌더링
+		if (!floor->GetTextureID().empty()) {
+			renderer->RenderFBXModelWithTextureTiled("PlaneModel", floor->GetTextureID(), floorMatrix, floor->GetTextureTiling());
+		} else {
+			renderer->RenderFBXModel("PlaneModel", floorMatrix, floor->GetColor());
+		}
 	}
 
 	// 천장 렌더링
 	if (ceiling && ceiling->IsActive()) {
 		glm::mat4 ceilingMatrix = ceiling->GetModelMat();
-		renderer->RenderFBXModel("PlaneModel", ceilingMatrix, ceiling->GetColor());
+		// 텍스처가 설정되어 있으면 텍스처와 함께 렌더링, 아니면 컬러로 렌더링
+		if (!ceiling->GetTextureID().empty()) {
+			renderer->RenderFBXModelWithTextureTiled("PlaneModel", ceiling->GetTextureID(), ceilingMatrix, ceiling->GetTextureTiling());
+		} else {
+			renderer->RenderFBXModel("PlaneModel", ceilingMatrix, ceiling->GetColor());
+		}
 	}
 
 	// Professor 렌더링 (2층: RunLee - 애니메이션 + 텍스처)
@@ -484,7 +513,9 @@ void Floor3Scene::Enter()
 	floor->SetPosition(glm::vec3(0.0f, -1.0f, 0.0f)); // 바닥을 y=-1 위치에 배치
 	floor->SetSize(50.0f, 50.0f); // 50x50 크기의 바닥
 	floor->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
-	floor->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+	floor->SetTextureID("FloorTexture"); // 바닥 텍스처 설정
+	floor->SetTextureTiling(glm::vec2(GameConstants::FLOOR_TEXTURE_TILE_X, GameConstants::FLOOR_TEXTURE_TILE_Y)); // 타일링 설정
+	floor->SetColor(glm::vec3(0.6f, 0.5f, 0.4f)); // 밝은 갈색 (바닥)
 
 	// 천장 생성 및 초기화
 	ceiling = std::make_unique<Plane>();
@@ -492,7 +523,9 @@ void Floor3Scene::Enter()
 	ceiling->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f)); // 천장을 y=5 위치에 배치
 	ceiling->SetSize(50.0f, 50.0f); // 50x50 크기의 천장
 	ceiling->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
-	ceiling->SetColor(glm::vec3(0.9f, 0.9f, 0.9f)); // 밝은 회색
+	ceiling->SetTextureID("CeilingTexture"); // 천장 텍스처 설정
+	ceiling->SetTextureTiling(glm::vec2(GameConstants::CEILING_TEXTURE_TILE_X, GameConstants::CEILING_TEXTURE_TILE_Y)); // 타일링 설정
+	ceiling->SetColor(glm::vec3(0.7f, 0.7f, 0.7f)); // 밝은 회색 (천장)
 
 	std::cout << "Floor3Scene: Professor (RunDragon), Floor and Ceiling initialized" << std::endl;
 }
@@ -529,13 +562,23 @@ void Floor3Scene::Draw()
 	// 바닥 렌더링
 	if (floor && floor->IsActive()) {
 		glm::mat4 floorMatrix = floor->GetModelMat();
-		renderer->RenderFBXModel("PlaneModel", floorMatrix, floor->GetColor());
+		// 텍스처가 설정되어 있으면 텍스처와 함께 렌더링, 아니면 컬러로 렌더링
+		if (!floor->GetTextureID().empty()) {
+			renderer->RenderFBXModelWithTextureTiled("PlaneModel", floor->GetTextureID(), floorMatrix, floor->GetTextureTiling());
+		} else {
+			renderer->RenderFBXModel("PlaneModel", floorMatrix, floor->GetColor());
+		}
 	}
 
 	// 천장 렌더링
 	if (ceiling && ceiling->IsActive()) {
 		glm::mat4 ceilingMatrix = ceiling->GetModelMat();
-		renderer->RenderFBXModel("PlaneModel", ceilingMatrix, ceiling->GetColor());
+		// 텍스처가 설정되어 있으면 텍스처와 함께 렌더링, 아니면 컬러로 렌더링
+		if (!ceiling->GetTextureID().empty()) {
+			renderer->RenderFBXModelWithTextureTiled("PlaneModel", ceiling->GetTextureID(), ceilingMatrix, ceiling->GetTextureTiling());
+		} else {
+			renderer->RenderFBXModel("PlaneModel", ceilingMatrix, ceiling->GetColor());
+		}
 	}
 
 	// Professor 렌더링 (3층: RunDragon - 애니메이션 + 텍스처)

@@ -17,6 +17,9 @@ const int MAX_BONES = 100;
 uniform mat4 uBoneTransforms[MAX_BONES];
 uniform bool uUseSkinning;
 
+// Texture tiling
+uniform vec2 uTextureTiling;
+
 // Output to fragment shader
 out vec3 FragPos;
 out vec2 TexCoord;
@@ -60,8 +63,8 @@ void main()
     mat3 normalMatrix = mat3(transpose(inverse(uModel)));
     Normal = normalize(normalMatrix * localNormal);
 
-    // Texture coordinates (pass through)
-    TexCoord = aTexCoord;
+    // Texture coordinates (apply tiling)
+    TexCoord = aTexCoord * uTextureTiling;
 
     // Final position
     gl_Position = uProjection * uView * worldPos;

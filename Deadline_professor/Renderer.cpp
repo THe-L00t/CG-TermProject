@@ -132,6 +132,7 @@ void Renderer::RenderFBXModel(const std::string_view& modelName, const glm::mat4
 	shader->setUniform("uViewPos", viewPos);
 	shader->setUniform("uLightColor", lightColor);
 	shader->setUniform("uUseTexture", false); // 텍스처 미사용
+	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f)); // 기본 타일링
 
 	// 모든 메시 렌더링
 	for (const auto& mesh : model->meshes) {
@@ -180,6 +181,7 @@ void Renderer::RenderFBXModel(const std::string_view& modelName, const glm::mat4
 	shader->setUniform("uViewPos", viewPos);
 	shader->setUniform("uLightColor", lightColor);
 	shader->setUniform("uUseTexture", false); // 텍스처 미사용
+	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f)); // 기본 타일링
 
 	// 모든 메시 렌더링
 	for (const auto& mesh : model->meshes) {
@@ -292,6 +294,7 @@ void Renderer::RenderFBXModelWithTexture(const std::string_view& modelName, cons
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	shader->setUniform("uTexture", 0);
 	shader->setUniform("uUseTexture", true);
+	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f)); // 기본 타일링
 
 	for (const auto& mesh : model->meshes) {
 		glBindVertexArray(mesh.VAO);
@@ -342,6 +345,7 @@ void Renderer::RenderFBXModelWithAnimationAndTexture(const std::string_view& mod
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	shader->setUniform("uTexture", 0);
 	shader->setUniform("uUseTexture", true);
+	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f)); // 기본 타일링
 	std::cout << "DEBUG: Texture bound to GL_TEXTURE0, uUseTexture set to TRUE" << std::endl;
 
 	bool useSkinning = !boneTransforms.empty();
@@ -353,6 +357,61 @@ void Renderer::RenderFBXModelWithAnimationAndTexture(const std::string_view& mod
 			shader->setUniform("uBoneTransforms[" + std::to_string(i) + "]", boneTransforms[i]);
 		}
 	}
+
+	for (const auto& mesh : model->meshes) {
+		glBindVertexArray(mesh.VAO);
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	shader->Unuse();
+}
+
+void Renderer::RenderFBXModelWithTextureTiled(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const glm::vec2& tiling)
+{
+	const FBXModel* model = resourceManager->GetFBXModel(modelName);
+	if (!model || model->meshes.empty()) {
+		std::cerr << "RenderFBXModelWithTextureTiled: Model '" << modelName << "' not found or empty" << std::endl;
+		return;
+	}
+
+	GLuint textureID = resourceManager->GetTexture(textureName);
+	if (textureID == 0) {
+		std::cerr << "RenderFBXModelWithTextureTiled: Texture '" << textureName << "' not found (ID=0)" << std::endl;
+		return;
+	}
+
+	Shader* shader = GetShader("basic");
+	if (!shader) return;
+
+	shader->Use();
+
+	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
+	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+
+	shader->setUniform("uModel", modelMatrix);
+	shader->setUniform("uView", view);
+	shader->setUniform("uProjection", projection);
+
+	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
+	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
+	shader->setUniform("uLightPos", lightPos);
+	shader->setUniform("uViewPos", viewPos);
+	shader->setUniform("uLightColor", glm::vec3(1.0f));
+
+	// 텍스처 타일링 설정
+	shader->setUniform("uTextureTiling", tiling);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	// 텍스처 래핑 모드 설정 (타일링을 위해 REPEAT 모드 사용)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	shader->setUniform("uTexture", 0);
+	shader->setUniform("uUseTexture", true);
 
 	for (const auto& mesh : model->meshes) {
 		glBindVertexArray(mesh.VAO);

@@ -27,6 +27,12 @@
 - 셰이더 객체들을 내부적으로 관리
 - 모든 렌더링 파이프라인 작업 처리
 - 다른 클래스는 OpenGL draw 함수를 직접 호출하지 않음
+- **주요 렌더링 함수**:
+  - `RenderFBXModel()`: 기본 FBX 모델 렌더링 (색상 지원)
+  - `RenderFBXModelWithTexture()`: 텍스처가 적용된 FBX 모델 렌더링
+  - `RenderFBXModelWithAnimation()`: 스켈레탈 애니메이션이 적용된 FBX 모델 렌더링
+  - `RenderFBXModelWithAnimationAndTexture()`: 애니메이션 + 텍스처 렌더링
+  - `RenderFBXModelWithTextureTiled()`: 텍스처 타일링이 적용된 렌더링 (바닥/천장용)
 
 ### ResourceManager
 - **모든** 리소스 로딩은 이 클래스에서만 관리
@@ -68,9 +74,15 @@
 
 ### Object (베이스 클래스)
 - 게임 내 모든 오브젝트의 기본 클래스
-- 위치, 회전, 크기 등의 Transform 정보 관리
-- 모델 행렬(Model Matrix) 계산
-- 리소스 ID를 통해 ResourceManager의 리소스 참조
+- **주요 기능**:
+  - 위치, 회전, 크기 등의 Transform 정보 관리
+  - 모델 행렬(Model Matrix) 계산
+  - 리소스 ID를 통해 ResourceManager의 리소스 참조
+  - 텍스처 ID 및 타일링 정보 관리
+    - `SetTextureID()` / `GetTextureID()`: 텍스처 리소스 ID 관리
+    - `SetTextureTiling()` / `GetTextureTiling()`: 텍스처 타일링 설정 (기본값: 1x1)
+  - 색상(Color) 정보 관리
+  - 활성화/비활성화 상태 관리
 - **렌더링은 Renderer에 위임**
 
 ### Player
@@ -93,10 +105,38 @@
 
 ### Plane
 - Object를 상속받은 평면 오브젝트 클래스
-- 바닥, 천장, 벽 등의 평면 환경 요소를 표현
-- Orientation 설정을 통해 방향 제어 (UP, DOWN, FRONT, BACK, LEFT, RIGHT)
-- 크기(width, height) 설정 기능
-- Player/Professor가 이동할 수 있는 바닥 레벨 제공
+- **역할**: 바닥, 천장, 벽 등의 평면 환경 요소를 표현
+- **주요 기능**:
+  - Orientation 설정을 통해 방향 제어 (UP, DOWN, FRONT, BACK, LEFT, RIGHT)
+  - 크기(width, height) 설정 기능
+  - 텍스처 적용 및 타일링(Tiling) 지원
+    - `SetTextureID()`: 평면에 적용할 텍스처 지정
+    - `SetTextureTiling()`: 텍스처 반복 횟수 설정 (X, Y축)
+  - Player/Professor가 이동할 수 있는 바닥 레벨 제공
+- **렌더링**: Renderer의 `RenderFBXModelWithTextureTiled()` 함수를 통해 타일링된 텍스처 렌더링
+- **사용 예시**:
+  - 바닥: Orientation::UP, FloorTexture 적용
+  - 천장: Orientation::DOWN, CeilingTexture 적용
+  - 벽: Orientation::FRONT/BACK/LEFT/RIGHT
+- **설정 관리**: 타일링 반복 횟수는 GameConstants에서 조절 가능
+
+### Wall
+- Object를 상속받은 벽 오브젝트 클래스
+- **역할**: n×m 타일 기반 맵에서 벽 타일을 표현하는 육면체 오브젝트
+- **주요 기능**:
+  - 타일 크기 설정: `SetTileSize(width, depth, height)`
+  - 그리드 위치 설정: `SetGridPosition(gridX, gridZ)`
+    - 그리드 좌표를 월드 좌표로 자동 변환
+  - 텍스처 적용: 윗면과 아랫면을 제외한 4면에 텍스처 적용
+  - 텍스처 ID는 Object 클래스의 `SetTextureID()` 사용
+- **크기 설정**:
+  - 가로/세로: `TILE_SIZE` (GameConstants)
+  - 높이: `WALL_HEIGHT` (바닥부터 천장까지)
+- **맵 구조**:
+  - 맵은 `MAP_GRID_WIDTH × MAP_GRID_DEPTH` 크기의 그리드
+  - 각 타일은 벽(Wall) 또는 공간(Empty)
+- **렌더링**: Cube 메쉬(1×1×1) 기반, Scale을 통해 크기 조정
+- **충돌**: 플레이어/교수님과의 충돌 처리에 사용
 
 ### GameTimer
 - 게임 시간 관리

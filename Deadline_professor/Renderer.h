@@ -38,6 +38,9 @@ public:
 	void RenderFBXModelWithTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
 	void RenderFBXModelWithAnimationAndTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms);
 
+	// 텍스처 타일링 렌더링
+	void RenderFBXModelWithTextureTiled(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const glm::vec2& tiling = glm::vec2(1.0f));
+
 private:
 	static Renderer* activeInstance;
 

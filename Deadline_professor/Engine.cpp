@@ -144,7 +144,14 @@ void Engine::Initialize(int argc, char** argv)
 void Engine::LoadAssets()
 {
 	std::cout << "=== Loading Assets ===" << std::endl;
-	std::cout << "\n--- Loading FBX files ---" << std::endl;
+	std::cout << "\n--- Loading FBX/OBJ files ---" << std::endl;
+
+	// Plane 메쉬 로드 (OBJ)
+	if (!resourceManager->LoadFBX("PlaneModel", "Resources/Plane.obj")) {
+		std::cerr << "ERROR: Failed to load Plane.obj" << std::endl;
+	} else {
+		std::cout << "SUCCESS: Plane.obj loaded" << std::endl;
+	}
 
 	if (!resourceManager->LoadFBX("RunLee", "Resources/RunLee.fbx")) {
 		std::cerr << "ERROR: Failed to load RunLee.fbx" << std::endl;
@@ -184,6 +191,18 @@ void Engine::LoadAssets()
 		std::cerr << "Warning: Failed to load RunDragon.png" << std::endl;
 	} else {
 		std::cout << "SUCCESS: RunDragon.png loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadTexture("CeilingTexture", "Textures/top.png")) {
+		std::cerr << "Warning: Failed to load top.png" << std::endl;
+	} else {
+		std::cout << "SUCCESS: top.png loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadTexture("FloorTexture", "Textures/floor.png")) {
+		std::cerr << "Warning: Failed to load floor.png" << std::endl;
+	} else {
+		std::cout << "SUCCESS: floor.png loaded" << std::endl;
 	}
 
 	std::cout << "=== Assets Loaded ===" << std::endl;

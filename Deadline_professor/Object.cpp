@@ -95,3 +95,23 @@ glm::vec3 Object::GetColor() const
 	return color;
 }
 
+void Object::SetTextureID(const std::string& id)
+{
+	textureID = id;
+}
+
+std::string Object::GetTextureID() const
+{
+	return textureID;
+}
+
+void Object::SetTextureTiling(const glm::vec2& tiling)
+{
+	textureTiling = tiling;
+}
+
+glm::vec2 Object::GetTextureTiling() const
+{
+	return textureTiling;
+}
+

@@ -27,6 +27,12 @@ public:
 	void SetColor(const glm::vec3&);
 	glm::vec3 GetColor() const;
 
+	void SetTextureID(const std::string&);
+	std::string GetTextureID() const;
+
+	void SetTextureTiling(const glm::vec2&);
+	glm::vec2 GetTextureTiling() const;
+
 protected:
 	void UpdateModelMat();
 
@@ -36,10 +42,12 @@ protected:
 	glm::mat4 modelMat{1.f};
 
 	std::string resourceID{};
+	std::string textureID{};
 
 	bool isActive{true};
 	bool needsUpdate{true};
 
 	glm::vec3 color{1.0f, 1.0f, 1.0f}; // 기본값: 흰색
+	glm::vec2 textureTiling{1.0f, 1.0f}; // 기본값: 타일링 없음 (1x1)
 };
 
