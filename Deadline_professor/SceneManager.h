@@ -99,6 +99,7 @@ public:
 	void Exit() override;
 	void Update(float) override;
 	void Draw() override;
+
 private:
 	std::unique_ptr<Professor> lee;
 	std::unique_ptr<Object> TestCube;

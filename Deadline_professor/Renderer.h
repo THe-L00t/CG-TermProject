@@ -4,6 +4,7 @@
 #include "ResourceManager.h"
 
 class Camera;
+class Light;
 
 class Renderer
 {
@@ -41,6 +42,15 @@ public:
 	void RenderObjModel(const std::string_view& modelName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
 	void RenderObjModelWithTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
 
+	// 조명 관리
+	void AddLight(Light* light);
+	void RemoveLight(Light* light);
+	void ClearLights();
+	const std::vector<Light*>& GetLights() const { return lights; }
+	void ApplyLightsToShader(Shader* shader) const;
+	// DEBUG: 조명 위치 렌더링
+	void RenderLightDebugPoints();
+
 private:
 	// OBJ 렌더링 헬퍼 함수
 	void ConfigureSharedVAOForOBJ(const ObjData* objData) const;
@@ -50,5 +60,6 @@ private:
 	std::unordered_map<std::string, Shader> shaders;
 	ResourceManager* resourceManager;
 	Camera* camera;
+	std::vector<Light*> lights;
 };
 

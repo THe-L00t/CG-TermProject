@@ -335,6 +335,18 @@ void TestScene::Enter()
 {
 	std::cout << "TestScene: Entered" << std::endl;
 
+	extern Engine* g_engine;
+	if (!g_engine) {
+		std::cerr << "ERROR: TestScene - g_engine is null" << std::endl;
+		return;
+	}
+
+	Renderer* renderer = g_engine->GetRenderer();
+	if (!renderer) {
+		std::cerr << "ERROR: TestScene - renderer is null" << std::endl;
+		return;
+	}
+
 	// Professor 객체 생성 및 초기화
 	lee = std::make_unique<Professor>("RunLee", "RunAnimation");
 	lee->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -353,12 +365,60 @@ void TestScene::Enter()
 	Ground->SetResourceID("GroundPlane");
 
 	// Light 객체 생성 및 초기화
-	light = std::make_unique<Light>(LightType::POINT);
-	light->SetPosition(glm::vec3(5.0f, 5.0f, 5.0f));
-	light->SetDiffuse(glm::vec3(1.0f, 1.0f, 1.0f));
-	light->SetAmbient(glm::vec3(0.3f, 0.3f, 0.3f));
-	light->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
-	light->SetEnabled(true);
+	//light = std::make_unique<Light>(LightType::POINT);
+	//light->SetPosition(glm::vec3(5.0f, 5.0f, 5.0f));
+	//light->SetDiffuse(glm::vec3(1.0f, 1.0f, 1.0f));
+	//light->SetAmbient(glm::vec3(0.3f, 0.3f, 0.3f));
+	//light->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+	//light->SetEnabled(true);
+
+	auto directionalLight = std::make_unique<Light>(LightType::DIRECTIONAL);
+	directionalLight->SetDirection(glm::vec3(0.0f, -1.0f, -0.5f)); // 위에서 앞쪽으로
+	directionalLight->SetAmbient(glm::vec3(0.2f, 0.2f, 0.2f));
+	directionalLight->SetDiffuse(glm::vec3(0.8f, 0.8f, 0.7f)); // 약간 따뜻한 백색
+	directionalLight->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+	directionalLight->SetIntensity(0.8f);
+	directionalLight->SetEnabled(true);
+	renderer->AddLight(directionalLight.get());
+	std::cout << "Created directional light(Sun)" << std::endl;
+
+	// 2. 천장 조명 - 포인트 라이트 (왼쪽)
+	auto ceilingLight1 = std::make_unique<Light>(LightType::POINT);
+	ceilingLight1->SetPosition(glm::vec3(-5.0f, 1.0f, 0.0f));
+	ceilingLight1->SetAmbient(glm::vec3(0.1f, 0.1f, 0.1f));
+	ceilingLight1->SetDiffuse(glm::vec3(1.0f, 1.0f, 0.9f)); // 따뜻한 백색
+	ceilingLight1->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+	ceilingLight1->SetAttenuation(1.0f, 0.09f, 0.032f); // 기본 감쇠값
+	ceilingLight1->SetIntensity(1.0f);
+	ceilingLight1->SetEnabled(true);
+	renderer->AddLight(ceilingLight1.get());
+	std::cout << "Created ceiling light 1" << std::endl;
+
+	// 3. 천장 조명 - 포인트 라이트 (오른쪽)
+	auto ceilingLight2 = std::make_unique<Light>(LightType::POINT);
+	ceilingLight2->SetPosition(glm::vec3(5.0f, 1.0f, 0.0f));
+	ceilingLight2->SetAmbient(glm::vec3(0.1f, 0.1f, 0.1f));
+	ceilingLight2->SetDiffuse(glm::vec3(1.0f, 1.0f, 0.9f)); // 따뜻한 백색
+	ceilingLight2->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+	ceilingLight2->SetAttenuation(1.0f, 0.09f, 0.032f);
+	ceilingLight2->SetIntensity(1.0f);
+	ceilingLight2->SetEnabled(true);
+	renderer->AddLight(ceilingLight2.get());
+	std::cout << "Created ceiling light 2" << std::endl;
+
+	// 4. 스팟 라이트 (어두운 분위기 연출용)
+	auto spotLight = std::make_unique<Light>(LightType::SPOT);
+	spotLight->SetPosition(glm::vec3(0.0f, 1.0f, 5.0f));
+	spotLight->SetDirection(glm::vec3(0.0f, -1.0f, -1.0f));
+	spotLight->SetAmbient(glm::vec3(0.05f, 0.05f, 0.15f)); // 약간 파란색
+	spotLight->SetDiffuse(glm::vec3(0.5f, 0.5f, 0.8f));
+	spotLight->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+	spotLight->SetCutOff(15.0f, 25.0f); // 내부각 15도, 외부각 25도
+	spotLight->SetAttenuation(1.0f, 0.09f, 0.032f);
+	spotLight->SetIntensity(0.5f);
+	spotLight->SetEnabled(true);
+	renderer->AddLight(spotLight.get());
+	std::cout << "Created spot light" << std::endl;
 
 	std::cout << "TestScene: Professor 'lee' and Light initialized" << std::endl;
 }
@@ -366,6 +426,15 @@ void TestScene::Enter()
 void TestScene::Exit()
 {
 	std::cout << "TestScene: Exited" << std::endl;
+
+	extern Engine* g_engine;
+	if (g_engine) {
+		Renderer* renderer = g_engine->GetRenderer();
+		if (renderer) {
+			renderer->ClearLights();
+		}
+	}
+
 	lee.reset();
 	TestCube.reset();
 	Ground.reset();
@@ -419,5 +488,8 @@ void TestScene::Draw()
 		glm::mat4 groundMatrix = Ground->GetModelMat();
 		renderer->RenderObjModel("Ground", groundMatrix);
 	}
+
+	// DEBUG: 조명 위치 렌더링
+	renderer->RenderLightDebugPoints();
 }
 
