@@ -19,9 +19,18 @@ public:
 	void Active();
 	void Deactive();
 	void SetCamera(Camera* cam);
-	void SetLight(Light* l);
+	void SetLight(Light* l);  // 레거시 단일 조명 (하위호환성)
 
 	void OnWindowResize(int, int);
+
+	// 다중 조명 관리
+	void AddLight(Light* light);
+	void RemoveLight(Light* light);
+	void ClearLights();
+	const std::vector<Light*>& GetLights() const { return lights; }
+	void ApplyLightsToShader(Shader* shader) const;
+	// DEBUG: 조명 위치 렌더링
+	void RenderLightDebugPoints();
 
 	//콜백 함수
 	std::function<void(GLvoid)> onDrawScene;
@@ -47,6 +56,7 @@ private:
 	std::unordered_map<std::string, Shader> shaders;
 	ResourceManager* resourceManager;
 	Camera* camera;
-	Light* light;
+	Light* light;  // 레거시 단일 조명 (하위호환성)
+	std::vector<Light*> lights;  // 다중 조명 시스템
 };
 

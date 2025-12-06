@@ -112,7 +112,8 @@ public:
 private:
 	std::unique_ptr<Player> player;
 	std::unique_ptr<Professor> lee;
-	std::unique_ptr<Light> light;
+	std::unique_ptr<Light> light;  // 레거시 단일 조명 (하위 호환성)
+	std::vector<std::unique_ptr<Light>> lights;  // 다중 조명 시스템
 	std::unique_ptr<class MapGenerator> mapGenerator;
 	std::vector<std::unique_ptr<class Wall>> walls;
 	std::unique_ptr<class Plane> floor;

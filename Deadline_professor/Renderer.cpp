@@ -134,6 +134,9 @@ void Renderer::RenderObj(const std::string_view& objName, const glm::mat4& model
 
 	shader->Use();
 
+	// 다중 조명 적용
+	ApplyLightsToShader(shader);
+
 	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
 	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
 
@@ -141,6 +144,7 @@ void Renderer::RenderObj(const std::string_view& objName, const glm::mat4& model
 	shader->setUniform("uView", view);
 	shader->setUniform("uProjection", projection);
 
+	// 레거시 조명 (하위 호환성 - 다중 조명이 없을 때 사용)
 	glm::vec3 lightPos = light ? light->GetPosition() : glm::vec3(0.0f, 10.0f, 0.0f);
 	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
 	glm::vec3 lightColor = light ? light->GetDiffuse() : glm::vec3(1.0f, 1.0f, 1.0f);
@@ -151,6 +155,7 @@ void Renderer::RenderObj(const std::string_view& objName, const glm::mat4& model
 	shader->setUniform("uLightColor", lightColor);
 	shader->setUniform("uUseTexture", false);
 	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f));
+	shader->setUniform("uUseSkinning", false);
 
 	// 개별 VAO 사용
 	glBindVertexArray(objData->VAO);
@@ -180,6 +185,9 @@ void Renderer::RenderObjWithTexture(const std::string_view& objName, const std::
 
 	shader->Use();
 
+	// 다중 조명 적용
+	ApplyLightsToShader(shader);
+
 	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
 	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
 
@@ -187,6 +195,7 @@ void Renderer::RenderObjWithTexture(const std::string_view& objName, const std::
 	shader->setUniform("uView", view);
 	shader->setUniform("uProjection", projection);
 
+	// 레거시 조명 (하위 호환성)
 	glm::vec3 lightPos = light ? light->GetPosition() : glm::vec3(0.0f, 10.0f, 0.0f);
 	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
 	glm::vec3 lightColor = light ? light->GetDiffuse() : glm::vec3(1.0f, 1.0f, 1.0f);
@@ -199,6 +208,7 @@ void Renderer::RenderObjWithTexture(const std::string_view& objName, const std::
 	shader->setUniform("uTexture", 0);
 	shader->setUniform("uUseTexture", true);
 	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f));
+	shader->setUniform("uUseSkinning", false);
 
 	// 개별 VAO 사용
 	glBindVertexArray(objData->VAO);
@@ -240,6 +250,9 @@ void Renderer::RenderObjWithTextureTiled(const std::string_view& objName, const 
 
 	shader->Use();
 
+	// 다중 조명 적용
+	ApplyLightsToShader(shader);
+
 	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
 	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
 
@@ -247,6 +260,7 @@ void Renderer::RenderObjWithTextureTiled(const std::string_view& objName, const 
 	shader->setUniform("uView", view);
 	shader->setUniform("uProjection", projection);
 
+	// 레거시 조명 (하위 호환성)
 	glm::vec3 lightPos = light ? light->GetPosition() : glm::vec3(0.0f, 10.0f, 0.0f);
 	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
 	glm::vec3 lightColor = light ? light->GetDiffuse() : glm::vec3(1.0f, 1.0f, 1.0f);
@@ -255,6 +269,7 @@ void Renderer::RenderObjWithTextureTiled(const std::string_view& objName, const 
 	shader->setUniform("uLightColor", lightColor);
 
 	shader->setUniform("uTextureTiling", tiling);
+	shader->setUniform("uUseSkinning", false);
 
 	if (textureID != 0) {
 		glActiveTexture(GL_TEXTURE0);
@@ -320,6 +335,9 @@ void Renderer::RenderFBX(const std::string_view& modelName, const std::string_vi
 
 	shader->Use();
 
+	// 다중 조명 적용
+	ApplyLightsToShader(shader);
+
 	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
 	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
 
@@ -327,6 +345,7 @@ void Renderer::RenderFBX(const std::string_view& modelName, const std::string_vi
 	shader->setUniform("uView", view);
 	shader->setUniform("uProjection", projection);
 
+	// 레거시 조명 (하위 호환성)
 	glm::vec3 lightPos = light ? light->GetPosition() : glm::vec3(0.0f, 10.0f, 0.0f);
 	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
 	glm::vec3 lightColor = light ? light->GetDiffuse() : glm::vec3(1.0f, 1.0f, 1.0f);
@@ -340,6 +359,7 @@ void Renderer::RenderFBX(const std::string_view& modelName, const std::string_vi
 	shader->setUniform("uTexture", 0);
 	shader->setUniform("uUseTexture", true);
 	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f));
+	shader->setUniform("uUseSkinning", false);
 
 	for (const auto& mesh : model->meshes) {
 		glBindVertexArray(mesh.VAO);
@@ -375,6 +395,9 @@ void Renderer::RenderFBXAnimated(const std::string_view& modelName, const std::s
 
 	shader->Use();
 
+	// 다중 조명 적용
+	ApplyLightsToShader(shader);
+
 	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
 	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
 
@@ -382,6 +405,7 @@ void Renderer::RenderFBXAnimated(const std::string_view& modelName, const std::s
 	shader->setUniform("uView", view);
 	shader->setUniform("uProjection", projection);
 
+	// 레거시 조명 (하위 호환성)
 	glm::vec3 lightPos = light ? light->GetPosition() : glm::vec3(0.0f, 10.0f, 0.0f);
 	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
 	glm::vec3 lightColor = light ? light->GetDiffuse() : glm::vec3(1.0f, 1.0f, 1.0f);
@@ -412,5 +436,132 @@ void Renderer::RenderFBXAnimated(const std::string_view& modelName, const std::s
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
+	shader->Unuse();
+}
+
+// ============================================
+// 다중 조명 시스템
+// ============================================
+
+void Renderer::AddLight(Light* light)
+{
+	if (!light) return;
+
+	// 중복 추가 방지
+	auto it = std::find(lights.begin(), lights.end(), light);
+	if (it == lights.end()) {
+		lights.push_back(light);
+		std::cout << "Renderer: Light added. Total lights: " << lights.size() << std::endl;
+	}
+}
+
+void Renderer::RemoveLight(Light* light)
+{
+	if (!light) return;
+
+	auto it = std::find(lights.begin(), lights.end(), light);
+	if (it != lights.end()) {
+		lights.erase(it);
+		std::cout << "Renderer: Light removed. Total lights: " << lights.size() << std::endl;
+	}
+}
+
+void Renderer::ClearLights()
+{
+	lights.clear();
+	std::cout << "Renderer: All lights cleared" << std::endl;
+}
+
+void Renderer::ApplyLightsToShader(Shader* shader) const
+{
+	if (!shader) return;
+
+	// 활성 광원 개수 설정
+	int activeLightCount = 0;
+	for (const auto lightPtr : lights) {
+		if (lightPtr && lightPtr->IsEnabled()) {
+			activeLightCount++;
+		}
+	}
+
+	// 최대 광원 개수 제한
+	const int MAX_LIGHTS = 8;
+	activeLightCount = std::min(activeLightCount, MAX_LIGHTS);
+
+	shader->setUniform("uLightCount", activeLightCount);
+
+	// 활성 광원만 순서대로 셰이더에 전달
+	int lightIndex = 0;
+	for (const auto lightPtr : lights) {
+		if (!lightPtr || !lightPtr->IsEnabled()) continue;
+		if (lightIndex >= MAX_LIGHTS) break;
+
+		lightPtr->ApplyToShader(shader->GetProgram(), lightIndex);
+		lightIndex++;
+	}
+}
+
+void Renderer::RenderLightDebugPoints()
+{
+	if (lights.empty()) return;
+
+	Shader* shader = GetShader("basic");
+	if (!shader) return;
+
+	shader->Use();
+
+	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
+	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+
+	shader->setUniform("uView", view);
+	shader->setUniform("uProjection", projection);
+	shader->setUniform("uModel", glm::mat4(1.0f));
+	shader->setUniform("uUseTexture", false);
+	shader->setUniform("uUseSkinning", false);
+
+	shader->setUniform("uLightCount", 0);
+	shader->setUniform("uLightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+	shader->setUniform("uLightPos", glm::vec3(0.0f, 0.0f, 0.0f));
+
+	glPointSize(15.0f);
+	glDisable(GL_DEPTH_TEST);
+
+	// 모든 활성 광원의 위치 수집
+	std::vector<glm::vec3> positions;
+	for (const auto& lightPtr : lights) {
+		if (lightPtr && lightPtr->IsEnabled()) {
+			positions.push_back(lightPtr->GetPosition());
+		}
+	}
+
+	if (positions.empty()) {
+		glEnable(GL_DEPTH_TEST);
+		glPointSize(1.0f);
+		shader->Unuse();
+		return;
+	}
+
+	// VAO, VBO 생성
+	GLuint VAO, VBO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(glm::vec3), positions.data(), GL_DYNAMIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+
+	shader->setUniform("uColor", glm::vec3(1.0f, 1.0f, 1.0f));
+
+	glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(positions.size()));
+
+	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(1, &VAO);
+
+	glEnable(GL_DEPTH_TEST);
+	glPointSize(1.0f);
+
 	shader->Unuse();
 }

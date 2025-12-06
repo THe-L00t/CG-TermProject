@@ -32,6 +32,7 @@ public:
 	float GetQuadratic() const;
 
 	void SetCutOff(float innerAngle, float outerAngle);
+	void SetSpotAngle(float innerAngle, float outerAngle) { SetCutOff(innerAngle, outerAngle); }  // SetCutOff의 별칭
 	float GetCutOff() const;
 	float GetOuterCutOff() const;
 
