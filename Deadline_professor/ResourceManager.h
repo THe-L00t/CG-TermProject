@@ -27,6 +27,7 @@ struct Vertex {
 // ============================================
 struct ObjData {
 	std::string name;
+	GLuint VAO{};
 	GLuint VBO{};
 	GLuint EBO{};
 	size_t indexCount{};
@@ -169,7 +170,6 @@ public:
 	bool LoadTexture(const std::string_view& name, const std::filesystem::path& path);
 
 	// 리소스 접근 (const 보장)
-	GLuint GetVAO() const noexcept { return VAO; }
 	const ObjData* GetObjData(const std::string_view& name) const noexcept;
 	const FBXModel* GetFBXModel(const std::string_view& name) const noexcept;
 	GLuint GetTexture(const std::string_view& name) const noexcept;
@@ -188,7 +188,6 @@ private:
 	static ResourceManager* onceInstance;
 
 	// 데이터 저장소
-	GLuint VAO{};
 	std::vector<ObjData> dataList;
 	std::vector<FBXModel> fbxModels;
 	std::unordered_map<std::string, GLuint> textureMap;

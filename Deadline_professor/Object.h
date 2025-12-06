@@ -33,6 +33,9 @@ public:
 	void SetTextureTiling(const glm::vec2&);
 	glm::vec2 GetTextureTiling() const;
 
+	// Frustum Culling용 바운딩 박스
+	virtual void GetBoundingBox(glm::vec3& outMin, glm::vec3& outMax) const;
+
 protected:
 	void UpdateModelMat();
 

@@ -34,18 +34,11 @@ void main()
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * spec * uLightColor;
 
-    // 텍스처 적용 여부에 따라 색상 결정
+    // 텍스처 적용
     vec3 objectColor;
     if (uUseTexture) {
         vec4 texColor = texture(uTexture, TexCoord);
         objectColor = texColor.rgb;
-
-        // 디버깅: UV 좌표가 올바른지 확인
-        if (length(objectColor) < 0.01) {
-            // 텍스처가 검은색이면 UV 좌표를 색상으로 표시
-            FragColor = vec4(TexCoord, 0.0, 1.0);
-            return;
-        }
     } else {
         objectColor = uColor;
     }

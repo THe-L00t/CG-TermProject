@@ -18,6 +18,9 @@ public:
 	void SetGridPosition(int gridX, int gridZ);
 	glm::ivec2 GetGridPosition() const;
 
+	// 타일 크기 조회
+	glm::vec3 GetTileSize() const { return tileSize; }
+
 	virtual void Update(float deltaTime) override;
 
 private:

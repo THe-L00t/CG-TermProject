@@ -4,10 +4,10 @@
 Wall::Wall()
 	: Object(),
 	gridPosition(0, 0),
-	tileSize(GameConstants::TILE_SIZE, GameConstants::WALL_HEIGHT, GameConstants::TILE_SIZE)
+	tileSize(GameConstants::WALL_SIZE, GameConstants::WALL_HEIGHT, GameConstants::WALL_SIZE)
 {
-	// 기본 벽 크기 설정
-	SetTileSize(GameConstants::TILE_SIZE, GameConstants::TILE_SIZE, GameConstants::WALL_HEIGHT);
+	// 기본 벽 크기 설정 (WALL_SIZE: 벽 객체 실제 크기)
+	SetTileSize(GameConstants::WALL_SIZE, GameConstants::WALL_SIZE, GameConstants::WALL_HEIGHT);
 
 	// 기본 리소스 설정
 	SetResourceID("CubeModel");
@@ -35,9 +35,11 @@ void Wall::SetGridPosition(int gridX, int gridZ)
 
 	// 그리드 위치를 월드 좌표로 변환
 	// 벽의 중심이 타일 중앙에 오도록 설정
-	float worldX = gridX * tileSize.x;
+	// 맵의 중심을 원점(0,0,0)으로 만들기 위해 오프셋 적용
+	float halfMapSize = (GameConstants::MAP_GRID_WIDTH * GameConstants::TILE_SIZE) * 0.5f;
+	float worldX = (gridX * GameConstants::TILE_SIZE) - halfMapSize + (GameConstants::TILE_SIZE * 0.5f);
 	float worldY = tileSize.y * 0.5f; // 벽 높이의 절반 (바닥 기준)
-	float worldZ = gridZ * tileSize.z;
+	float worldZ = (gridZ * GameConstants::TILE_SIZE) - halfMapSize + (GameConstants::TILE_SIZE * 0.5f);
 
 	SetPosition(glm::vec3(worldX, worldY, worldZ));
 }

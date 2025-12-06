@@ -7,6 +7,7 @@
 #include "InputManager.h"
 #include "SceneManager.h"
 #include "FBXAnimationPlayer.h"
+#include "CollisionManager.h"
 
 Engine* Engine::instance = nullptr;
 Engine* g_engine = nullptr;
@@ -48,7 +49,8 @@ void Engine::Initialize(int argc, char** argv)
 	r = std::make_unique<Renderer>(resourceManager.get());
 	r->Init();
 	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);     // 백페이스 컬링 활성화 (성능 향상)
+	std::cout << "Engine: Backface culling ENABLED" << std::endl;
 
 	gameTimer = std::make_unique<GameTimer>();
 
@@ -79,19 +81,29 @@ void Engine::Initialize(int argc, char** argv)
 
 	// 디버깅용 씬 전환 바인딩
 	inputManager->Action1 = [this]() {
+		std::cout << "\n[KEY 1 PRESSED] Requesting scene change to Title" << std::endl;
 		if (sceneManager) sceneManager->ChangeScene("Title");
+		else std::cerr << "ERROR: SceneManager is null!" << std::endl;
 	};
 	inputManager->Action2 = [this]() {
+		std::cout << "\n[KEY 2 PRESSED] Requesting scene change to Floor1" << std::endl;
 		if (sceneManager) sceneManager->ChangeScene("Floor1");
+		else std::cerr << "ERROR: SceneManager is null!" << std::endl;
 	};
 	inputManager->Action3 = [this]() {
+		std::cout << "\n[KEY 3 PRESSED] Requesting scene change to Floor2" << std::endl;
 		if (sceneManager) sceneManager->ChangeScene("Floor2");
+		else std::cerr << "ERROR: SceneManager is null!" << std::endl;
 	};
 	inputManager->Action4 = [this]() {
+		std::cout << "\n[KEY 4 PRESSED] Requesting scene change to Floor3" << std::endl;
 		if (sceneManager) sceneManager->ChangeScene("Floor3");
+		else std::cerr << "ERROR: SceneManager is null!" << std::endl;
 	};
 	inputManager->Action5 = [this]() {
+		std::cout << "\n[KEY 5 PRESSED] Requesting scene change to Test" << std::endl;
 		if (sceneManager) sceneManager->ChangeScene("Test");
+		else std::cerr << "ERROR: SceneManager is null!" << std::endl;
 	};
 
 	// 마우스 컨트롤 토글
@@ -103,6 +115,10 @@ void Engine::Initialize(int argc, char** argv)
 	};
 
 	std::cout << "InputManager: Initialized" << std::endl;
+
+	// CollisionManager 초기화
+	collisionManager = std::make_unique<CollisionManager>();
+	std::cout << "CollisionManager: Initialized" << std::endl;
 
 	// SceneManager 초기화
 	sceneManager = std::make_unique<SceneManager>();
@@ -147,14 +163,14 @@ void Engine::LoadAssets()
 	std::cout << "\n--- Loading FBX/OBJ files ---" << std::endl;
 
 	// Plane 메쉬 로드 (OBJ)
-	if (!resourceManager->LoadFBX("PlaneModel", "Resources/Plane.obj")) {
+	if (!resourceManager->LoadObj("PlaneModel", "Resources/Plane.obj")) {
 		std::cerr << "ERROR: Failed to load Plane.obj" << std::endl;
 	} else {
 		std::cout << "SUCCESS: Plane.obj loaded" << std::endl;
 	}
 
 	// Cube 메쉬 로드 (OBJ) - 벽용
-	if (!resourceManager->LoadFBX("CubeModel", "Resources/cube.obj")) {
+	if (!resourceManager->LoadObj("CubeModel", "Resources/cube.obj")) {
 		std::cerr << "ERROR: Failed to load cube.obj" << std::endl;
 	} else {
 		std::cout << "SUCCESS: cube.obj loaded" << std::endl;

@@ -1,9 +1,10 @@
 ﻿#include "Renderer.h"
 #include "Camera.h"
+#include "Light.h"
 
 Renderer* Renderer::activeInstance = nullptr;
 
-Renderer::Renderer(ResourceManager* resMgr) : resourceManager(resMgr), camera(nullptr)
+Renderer::Renderer(ResourceManager* resMgr) : resourceManager(resMgr), camera(nullptr), light(nullptr)
 {
 
 }
@@ -19,19 +20,31 @@ void Renderer::Init()
 
 	Active();
 
-	// 배경색 설정
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	// OpenGL 버전 확인
+	const GLubyte* version = glGetString(GL_VERSION);
+	const GLubyte* glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
+	std::cout << "OpenGL Version: " << (version ? (const char*)version : "Unknown") << std::endl;
+	std::cout << "GLSL Version: " << (glslVersion ? (const char*)glslVersion : "Unknown") << std::endl;
+
+	// 배경색 설정 (어두운 회색 - 렌더링 확인용)
+	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+	std::cout << "Renderer: Clear color set to (0.2, 0.2, 0.2)" << std::endl;
+
+	// Viewport 초기화 (기본 1920x1080)
+	glViewport(0, 0, 1920, 1080);
+	std::cout << "Viewport initialized: 1920x1080" << std::endl;
 
 	// 셰이더 로드
-	std::filesystem::path currentPath = std::filesystem::current_path();
-	std::filesystem::path vertPath = currentPath / "Shaders" / "basic.vert";
-	std::filesystem::path fragPath = currentPath / "Shaders" / "basic.frag";
-
-	if (!LoadShader("basic", vertPath, fragPath)) {
+	if (!LoadShader("basic", ".\\Shaders\\basic.vert", ".\\Shaders\\basic.frag")) {
 		std::cerr << "ERROR: Failed to load shader 'basic'" << std::endl;
-		std::cerr << "Check if basic.vert and basic.frag exist in: " << currentPath / "Shaders" << std::endl;
 	} else {
 		std::cout << "Renderer: Shader 'basic' loaded successfully" << std::endl;
+	}
+
+	if (!LoadShader("professor", ".\\Shaders\\professor.vert", ".\\Shaders\\professor.frag")) {
+		std::cerr << "ERROR: Failed to load shader 'professor'" << std::endl;
+	} else {
+		std::cout << "Renderer: Shader 'professor' loaded successfully" << std::endl;
 	}
 
 	std::cout << "Renderer: Initialization completed" << std::endl;
@@ -52,6 +65,11 @@ void Renderer::Deactive()
 void Renderer::SetCamera(Camera* cam)
 {
 	camera = cam;
+}
+
+void Renderer::SetLight(Light* l)
+{
+	light = l;
 }
 
 void Renderer::OnWindowResize(int w, int h)
@@ -94,183 +112,22 @@ Shader* Renderer::GetShader(const std::string& name)
 	return nullptr;
 }
 
-void Renderer::RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix)
+// ============================================
+// OBJ 렌더링 함수
+// ============================================
+
+void Renderer::RenderObj(const std::string_view& objName, const glm::mat4& modelMatrix)
 {
-	const FBXModel* model = resourceManager->GetFBXModel(modelName);
-	if (!model || model->meshes.empty()) {
-		return;
-	}
-
-	Shader* shader = GetShader("basic");
-	if (!shader) {
-		return;
-	}
-
-	shader->Use();
-
-	// 변환 행렬 설정
-	glm::mat4 view = glm::mat4(1.0f);
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
-
-	if (camera) {
-		view = camera->GetViewMat();
-		projection = camera->GetProjMat();
-	}
-
-	shader->setUniform("uModel", modelMatrix);
-	shader->setUniform("uView", view);
-	shader->setUniform("uProjection", projection);
-
-	// 라이팅 설정
-	glm::vec3 color(0.8f, 0.3f, 0.3f);
-	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
-	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
-	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-
-	shader->setUniform("uColor", color);
-	shader->setUniform("uLightPos", lightPos);
-	shader->setUniform("uViewPos", viewPos);
-	shader->setUniform("uLightColor", lightColor);
-	shader->setUniform("uUseTexture", false); // 텍스처 미사용
-	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f)); // 기본 타일링
-
-	// 모든 메시 렌더링
-	for (const auto& mesh : model->meshes) {
-		glBindVertexArray(mesh.VAO);
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-	}
-
-	shader->Unuse();
+	RenderObj(objName, modelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
 }
 
-void Renderer::RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix, const glm::vec3& color)
+void Renderer::RenderObj(const std::string_view& objName, const glm::mat4& modelMatrix, const glm::vec3& color)
 {
-	const FBXModel* model = resourceManager->GetFBXModel(modelName);
-	if (!model || model->meshes.empty()) {
+	const ObjData* objData = resourceManager->GetObjData(objName);
+	if (!objData) {
+		std::cerr << "RenderObj: OBJ '" << objName << "' not found!" << std::endl;
 		return;
 	}
-
-	Shader* shader = GetShader("basic");
-	if (!shader) {
-		return;
-	}
-
-	shader->Use();
-
-	// 변환 행렬 설정
-	glm::mat4 view = glm::mat4(1.0f);
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
-
-	if (camera) {
-		view = camera->GetViewMat();
-		projection = camera->GetProjMat();
-	}
-
-	shader->setUniform("uModel", modelMatrix);
-	shader->setUniform("uView", view);
-	shader->setUniform("uProjection", projection);
-
-	// 라이팅 설정 (전달받은 색상 사용)
-	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
-	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
-	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-
-	shader->setUniform("uColor", color);
-	shader->setUniform("uLightPos", lightPos);
-	shader->setUniform("uViewPos", viewPos);
-	shader->setUniform("uLightColor", lightColor);
-	shader->setUniform("uUseTexture", false); // 텍스처 미사용
-	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f)); // 기본 타일링
-
-	// 모든 메시 렌더링
-	for (const auto& mesh : model->meshes) {
-		glBindVertexArray(mesh.VAO);
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-	}
-
-	shader->Unuse();
-}
-
-void Renderer::RenderFBXModelWithAnimation(const std::string_view& modelName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms)
-{
-	const FBXModel* model = resourceManager->GetFBXModel(modelName);
-	if (!model || model->meshes.empty()) {
-		return;
-	}
-
-	Shader* shader = GetShader("basic");
-	if (!shader) {
-		return;
-	}
-
-	shader->Use();
-
-	// 변환 행렬 설정
-	glm::mat4 view = glm::mat4(1.0f);
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
-
-	if (camera) {
-		view = camera->GetViewMat();
-		projection = camera->GetProjMat();
-	}
-
-	shader->setUniform("uModel", modelMatrix);
-	shader->setUniform("uView", view);
-	shader->setUniform("uProjection", projection);
-
-	// 라이팅 설정
-	glm::vec3 color(0.8f, 0.3f, 0.3f);
-	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
-	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
-	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-
-	shader->setUniform("uColor", color);
-	shader->setUniform("uLightPos", lightPos);
-	shader->setUniform("uViewPos", viewPos);
-	shader->setUniform("uLightColor", lightColor);
-	shader->setUniform("uUseTexture", false); // 텍스처 미사용
-
-	// 스켈레탈 애니메이션 설정
-	bool useSkinning = !boneTransforms.empty();
-	shader->setUniform("uUseSkinning", useSkinning);
-
-	if (useSkinning) {
-		// 본 변환 행렬 전달 (최대 100개)
-		int boneCount = std::min(static_cast<int>(boneTransforms.size()), 100);
-		for (int i = 0; i < boneCount; ++i) {
-			std::string uniformName = "uBoneTransforms[" + std::to_string(i) + "]";
-			shader->setUniform(uniformName, boneTransforms[i]);
-		}
-	}
-
-	// 모든 메시 렌더링
-	for (const auto& mesh : model->meshes) {
-		glBindVertexArray(mesh.VAO);
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-	}
-
-	shader->Unuse();
-}
-
-void Renderer::RenderFBXModelWithTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix)
-{
-	const FBXModel* model = resourceManager->GetFBXModel(modelName);
-	if (!model || model->meshes.empty()) {
-		std::cerr << "RenderFBXModelWithTexture: Model '" << modelName << "' not found or empty" << std::endl;
-		return;
-	}
-
-	GLuint textureID = resourceManager->GetTexture(textureName);
-	if (textureID == 0) {
-		std::cerr << "RenderFBXModelWithTexture: Texture '" << textureName << "' not found (ID=0), falling back to no texture" << std::endl;
-		RenderFBXModel(modelName, modelMatrix);
-		return;
-	}
-
-	std::cout << "RenderFBXModelWithTexture: Using texture ID " << textureID << " for model '" << modelName << "'" << std::endl;
 
 	Shader* shader = GetShader("basic");
 	if (!shader) return;
@@ -284,17 +141,205 @@ void Renderer::RenderFBXModelWithTexture(const std::string_view& modelName, cons
 	shader->setUniform("uView", view);
 	shader->setUniform("uProjection", projection);
 
-	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
+	glm::vec3 lightPos = light ? light->GetPosition() : glm::vec3(0.0f, 10.0f, 0.0f);
 	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
+	glm::vec3 lightColor = light ? light->GetDiffuse() : glm::vec3(1.0f, 1.0f, 1.0f);
+
+	shader->setUniform("uColor", color);
 	shader->setUniform("uLightPos", lightPos);
 	shader->setUniform("uViewPos", viewPos);
-	shader->setUniform("uLightColor", glm::vec3(1.0f));
+	shader->setUniform("uLightColor", lightColor);
+	shader->setUniform("uUseTexture", false);
+	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f));
+
+	// 개별 VAO 사용
+	glBindVertexArray(objData->VAO);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(objData->indexCount), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	shader->Unuse();
+}
+
+void Renderer::RenderObjWithTexture(const std::string_view& objName, const std::string_view& textureName, const glm::mat4& modelMatrix)
+{
+	const ObjData* objData = resourceManager->GetObjData(objName);
+	if (!objData) {
+		std::cerr << "RenderObjWithTexture: OBJ '" << objName << "' not found!" << std::endl;
+		return;
+	}
+
+	GLuint textureID = resourceManager->GetTexture(textureName);
+	if (textureID == 0) {
+		std::cerr << "RenderObjWithTexture: Texture '" << textureName << "' not found, falling back to color" << std::endl;
+		RenderObj(objName, modelMatrix);
+		return;
+	}
+
+	Shader* shader = GetShader("basic");
+	if (!shader) return;
+
+	shader->Use();
+
+	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
+	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+
+	shader->setUniform("uModel", modelMatrix);
+	shader->setUniform("uView", view);
+	shader->setUniform("uProjection", projection);
+
+	glm::vec3 lightPos = light ? light->GetPosition() : glm::vec3(0.0f, 10.0f, 0.0f);
+	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
+	glm::vec3 lightColor = light ? light->GetDiffuse() : glm::vec3(1.0f, 1.0f, 1.0f);
+	shader->setUniform("uLightPos", lightPos);
+	shader->setUniform("uViewPos", viewPos);
+	shader->setUniform("uLightColor", lightColor);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	shader->setUniform("uTexture", 0);
 	shader->setUniform("uUseTexture", true);
-	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f)); // 기본 타일링
+	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f));
+
+	// 개별 VAO 사용
+	glBindVertexArray(objData->VAO);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(objData->indexCount), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	shader->Unuse();
+}
+
+void Renderer::RenderObjWithTextureTiled(const std::string_view& objName, const std::string_view& textureName, const glm::mat4& modelMatrix, const glm::vec2& tiling)
+{
+	static bool debugPrinted = false;
+	const ObjData* objData = resourceManager->GetObjData(objName);
+	if (!objData) {
+		std::cerr << "RenderObjWithTextureTiled: OBJ '" << objName << "' not found!" << std::endl;
+		return;
+	}
+
+	if (!debugPrinted) {
+		std::cout << "RenderObjWithTextureTiled: OBJ '" << objName << "' found!" << std::endl;
+		std::cout << "  VAO: " << objData->VAO << ", indexCount: " << objData->indexCount << std::endl;
+		debugPrinted = true;
+	}
+
+	GLuint textureID = resourceManager->GetTexture(textureName);
+	if (textureID == 0) {
+		std::cerr << "RenderObjWithTextureTiled: Texture '" << textureName << "' not found, using white color" << std::endl;
+	} else {
+		static bool texDebugPrinted = false;
+		if (!texDebugPrinted) {
+			std::cout << "RenderObjWithTextureTiled: Texture '" << textureName << "' found! ID: " << textureID << std::endl;
+			texDebugPrinted = true;
+		}
+	}
+
+	Shader* shader = GetShader("basic");
+	if (!shader) return;
+
+	shader->Use();
+
+	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
+	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+
+	shader->setUniform("uModel", modelMatrix);
+	shader->setUniform("uView", view);
+	shader->setUniform("uProjection", projection);
+
+	glm::vec3 lightPos = light ? light->GetPosition() : glm::vec3(0.0f, 10.0f, 0.0f);
+	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
+	glm::vec3 lightColor = light ? light->GetDiffuse() : glm::vec3(1.0f, 1.0f, 1.0f);
+	shader->setUniform("uLightPos", lightPos);
+	shader->setUniform("uViewPos", viewPos);
+	shader->setUniform("uLightColor", lightColor);
+
+	shader->setUniform("uTextureTiling", tiling);
+
+	if (textureID != 0) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		shader->setUniform("uTexture", 0);
+		shader->setUniform("uUseTexture", true);
+	} else {
+		shader->setUniform("uUseTexture", false);
+		shader->setUniform("uColor", glm::vec3(1.0f, 1.0f, 1.0f));
+	}
+
+	// 개별 VAO 사용
+	static bool drawDebugPrinted = false;
+	if (!drawDebugPrinted) {
+		std::cout << "RenderObjWithTextureTiled: About to draw..." << std::endl;
+		std::cout << "  Binding VAO: " << objData->VAO << std::endl;
+		std::cout << "  Drawing " << objData->indexCount << " indices" << std::endl;
+		drawDebugPrinted = true;
+	}
+
+	glBindVertexArray(objData->VAO);
+	GLenum err = glGetError();
+	if (err != GL_NO_ERROR) {
+		std::cerr << "OpenGL Error after glBindVertexArray: " << err << std::endl;
+	}
+
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(objData->indexCount), GL_UNSIGNED_INT, 0);
+	err = glGetError();
+	if (err != GL_NO_ERROR) {
+		std::cerr << "OpenGL Error after glDrawElements: " << err << std::endl;
+	}
+
+	glBindVertexArray(0);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	shader->Unuse();
+}
+
+// ============================================
+// FBX 렌더링 함수 (텍스처 포함)
+// ============================================
+
+// FBX 정적 메시 렌더링 (텍스처 포함)
+// FBX 정적 메시 렌더링 (텍스처 포함)
+void Renderer::RenderFBX(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix)
+{
+	const FBXModel* model = resourceManager->GetFBXModel(modelName);
+	if (!model || model->meshes.empty()) {
+		std::cerr << "RenderFBX: Model '" << modelName << "' not found or empty!" << std::endl;
+		return;
+	}
+
+	GLuint textureID = resourceManager->GetTexture(textureName);
+	if (textureID == 0) {
+		std::cerr << "RenderFBX: Texture '" << textureName << "' not found (ID=0)" << std::endl;
+		return;
+	}
+
+	Shader* shader = GetShader("basic");
+	if (!shader) return;
+
+	shader->Use();
+
+	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
+	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+
+	shader->setUniform("uModel", modelMatrix);
+	shader->setUniform("uView", view);
+	shader->setUniform("uProjection", projection);
+
+	glm::vec3 lightPos = light ? light->GetPosition() : glm::vec3(0.0f, 10.0f, 0.0f);
+	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
+	glm::vec3 lightColor = light ? light->GetDiffuse() : glm::vec3(1.0f, 1.0f, 1.0f);
+	shader->setUniform("uLightPos", lightPos);
+	shader->setUniform("uViewPos", viewPos);
+	shader->setUniform("uLightColor", lightColor);
+	shader->setUniform("uColor", glm::vec3(1.0f, 1.0f, 1.0f));
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	shader->setUniform("uTexture", 0);
+	shader->setUniform("uUseTexture", true);
+	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f));
 
 	for (const auto& mesh : model->meshes) {
 		glBindVertexArray(mesh.VAO);
@@ -306,25 +351,27 @@ void Renderer::RenderFBXModelWithTexture(const std::string_view& modelName, cons
 	shader->Unuse();
 }
 
-void Renderer::RenderFBXModelWithAnimationAndTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms)
+// FBX 애니메이션 메시 렌더링 (텍스처 포함)
+void Renderer::RenderFBXAnimated(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms)
 {
 	const FBXModel* model = resourceManager->GetFBXModel(modelName);
 	if (!model || model->meshes.empty()) {
-		std::cerr << "RenderFBXModelWithAnimationAndTexture: Model '" << modelName << "' not found or empty" << std::endl;
+		std::cerr << "RenderFBXAnimated: Model '" << modelName << "' not found or empty" << std::endl;
 		return;
 	}
 
 	GLuint textureID = resourceManager->GetTexture(textureName);
 	if (textureID == 0) {
-		std::cerr << "RenderFBXModelWithAnimationAndTexture: Texture '" << textureName << "' not found (ID=0), falling back to no texture" << std::endl;
-		RenderFBXModelWithAnimation(modelName, modelMatrix, boneTransforms);
+		std::cerr << "RenderFBXAnimated: Texture '" << textureName << "' not found (ID=0)" << std::endl;
 		return;
 	}
 
-	std::cout << "RenderFBXModelWithAnimationAndTexture: Using texture ID " << textureID << " for model '" << modelName << "'" << std::endl;
-
-	Shader* shader = GetShader("basic");
-	if (!shader) return;
+	Shader* shader = GetShader("professor");
+	if (!shader) {
+		std::cerr << "Professor shader not found, falling back to basic" << std::endl;
+		shader = GetShader("basic");
+		if (!shader) return;
+	}
 
 	shader->Use();
 
@@ -335,18 +382,18 @@ void Renderer::RenderFBXModelWithAnimationAndTexture(const std::string_view& mod
 	shader->setUniform("uView", view);
 	shader->setUniform("uProjection", projection);
 
-	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
+	glm::vec3 lightPos = light ? light->GetPosition() : glm::vec3(0.0f, 10.0f, 0.0f);
 	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
+	glm::vec3 lightColor = light ? light->GetDiffuse() : glm::vec3(1.0f, 1.0f, 1.0f);
 	shader->setUniform("uLightPos", lightPos);
 	shader->setUniform("uViewPos", viewPos);
-	shader->setUniform("uLightColor", glm::vec3(1.0f));
+	shader->setUniform("uLightColor", lightColor);
+	shader->setUniform("uColor", glm::vec3(1.0f, 1.0f, 1.0f));
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	shader->setUniform("uTexture", 0);
 	shader->setUniform("uUseTexture", true);
-	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f)); // 기본 타일링
-	std::cout << "DEBUG: Texture bound to GL_TEXTURE0, uUseTexture set to TRUE" << std::endl;
 
 	bool useSkinning = !boneTransforms.empty();
 	shader->setUniform("uUseSkinning", useSkinning);
@@ -357,61 +404,6 @@ void Renderer::RenderFBXModelWithAnimationAndTexture(const std::string_view& mod
 			shader->setUniform("uBoneTransforms[" + std::to_string(i) + "]", boneTransforms[i]);
 		}
 	}
-
-	for (const auto& mesh : model->meshes) {
-		glBindVertexArray(mesh.VAO);
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-	}
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	shader->Unuse();
-}
-
-void Renderer::RenderFBXModelWithTextureTiled(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const glm::vec2& tiling)
-{
-	const FBXModel* model = resourceManager->GetFBXModel(modelName);
-	if (!model || model->meshes.empty()) {
-		std::cerr << "RenderFBXModelWithTextureTiled: Model '" << modelName << "' not found or empty" << std::endl;
-		return;
-	}
-
-	GLuint textureID = resourceManager->GetTexture(textureName);
-	if (textureID == 0) {
-		std::cerr << "RenderFBXModelWithTextureTiled: Texture '" << textureName << "' not found (ID=0)" << std::endl;
-		return;
-	}
-
-	Shader* shader = GetShader("basic");
-	if (!shader) return;
-
-	shader->Use();
-
-	glm::mat4 view = camera ? camera->GetViewMat() : glm::mat4(1.0f);
-	glm::mat4 projection = camera ? camera->GetProjMat() : glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
-
-	shader->setUniform("uModel", modelMatrix);
-	shader->setUniform("uView", view);
-	shader->setUniform("uProjection", projection);
-
-	glm::vec3 lightPos(5.0f, 5.0f, 5.0f);
-	glm::vec3 viewPos = camera ? camera->GetPosition() : glm::vec3(0.0f, 0.0f, 5.0f);
-	shader->setUniform("uLightPos", lightPos);
-	shader->setUniform("uViewPos", viewPos);
-	shader->setUniform("uLightColor", glm::vec3(1.0f));
-
-	// 텍스처 타일링 설정
-	shader->setUniform("uTextureTiling", tiling);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textureID);
-
-	// 텍스처 래핑 모드 설정 (타일링을 위해 REPEAT 모드 사용)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	shader->setUniform("uTexture", 0);
-	shader->setUniform("uUseTexture", true);
 
 	for (const auto& mesh : model->meshes) {
 		glBindVertexArray(mesh.VAO);

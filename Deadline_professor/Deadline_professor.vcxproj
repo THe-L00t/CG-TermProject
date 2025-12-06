@@ -160,9 +160,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CollisionManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CollisionManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Light.h" />
@@ -176,6 +178,7 @@
     <ClCompile Include="LoadPng.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Wall.cpp" />
+    <ClCompile Include="MapGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Player.h" />
@@ -186,6 +189,7 @@
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Wall.h" />
     <ClInclude Include="GameConstants.h" />
+    <ClInclude Include="MapGenerator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\basic.vert" />

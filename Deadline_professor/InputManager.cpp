@@ -54,6 +54,9 @@ void InputManager::Keyboard(unsigned char key, int x, int y)
 	case'D':case'd':
 		if (onceInstance->ActionD) onceInstance->ActionD();
 		break;
+	case' ':  // Space bar - 위로 이동
+		if (onceInstance->ActionSpace) onceInstance->ActionSpace();
+		break;
 	case'0':
 		if (onceInstance->Action0) onceInstance->Action0();
 		break;
@@ -78,8 +81,17 @@ void InputManager::Keyboard(unsigned char key, int x, int y)
 	}
 }
 
-void InputManager::SKeyboard(int, int, int)
+void InputManager::SKeyboard(int key, int x, int y)
 {
+	if (!onceInstance) return;
+
+	// Special keys (GLUT_KEY_*)
+	switch (key) {
+	case GLUT_KEY_SHIFT_L:  // Left Shift - 아래로 이동
+	case GLUT_KEY_SHIFT_R:  // Right Shift
+		if (onceInstance->ActionShift) onceInstance->ActionShift();
+		break;
+	}
 }
 
 void InputManager::Mouse(int button, int state, int x, int y)

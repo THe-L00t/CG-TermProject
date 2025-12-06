@@ -34,8 +34,8 @@ class Scene
 public:
 	virtual ~Scene() = default;
 
-	virtual void Enter();
-	virtual void Exit();
+	virtual void Enter() = 0;
+	virtual void Exit() = 0;
 	virtual void Update(float) = 0;
 	virtual void Draw() = 0;
 private:
@@ -54,6 +54,8 @@ private:
 	float alpha{1.0f};
 	bool fadeOut{true};
 	bool keyPressed{false};
+	std::unique_ptr<class Plane> titlePlane;  // 타이틀 텍스트용 Plane
+	std::unique_ptr<Light> light;
 };
 
 class Floor1Scene : public Scene
@@ -69,6 +71,7 @@ private:
 	std::unique_ptr<class Plane> floor;
 	std::unique_ptr<class Plane> ceiling;
 	std::unique_ptr<class Wall> testWall;  // 테스트용 벽
+	std::unique_ptr<Light> light;
 };
 
 class Floor2Scene : public Scene
@@ -82,6 +85,7 @@ private:
 	std::unique_ptr<class Professor> professor;
 	std::unique_ptr<class Plane> floor;
 	std::unique_ptr<class Plane> ceiling;
+	std::unique_ptr<Light> light;
 };
 
 class Floor3Scene : public Scene
@@ -95,6 +99,7 @@ private:
 	std::unique_ptr<class Professor> professor;
 	std::unique_ptr<class Plane> floor;
 	std::unique_ptr<class Plane> ceiling;
+	std::unique_ptr<Light> light;
 };
 
 class TestScene : public Scene
@@ -105,6 +110,11 @@ public:
 	void Update(float) override;
 	void Draw() override;
 private:
+	std::unique_ptr<Player> player;
 	std::unique_ptr<Professor> lee;
 	std::unique_ptr<Light> light;
+	std::unique_ptr<class MapGenerator> mapGenerator;
+	std::vector<std::unique_ptr<class Wall>> walls;
+	std::unique_ptr<class Plane> floor;
+	std::unique_ptr<class Plane> ceiling;
 };

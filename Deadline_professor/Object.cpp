@@ -115,3 +115,12 @@ glm::vec2 Object::GetTextureTiling() const
 	return textureTiling;
 }
 
+void Object::GetBoundingBox(glm::vec3& outMin, glm::vec3& outMax) const
+{
+	// 기본 바운딩 박스: cube.obj는 2x2x2 크기 (-1.0 ~ 1.0)
+	// scale이 실제 월드 크기이므로 그대로 사용
+	glm::vec3 halfScale = scale;
+	outMin = position - halfScale;
+	outMax = position + halfScale;
+}
+

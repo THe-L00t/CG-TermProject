@@ -4,6 +4,7 @@
 #include "ResourceManager.h"
 
 class Camera;
+class Light;
 
 class Renderer
 {
@@ -18,6 +19,7 @@ public:
 	void Active();
 	void Deactive();
 	void SetCamera(Camera* cam);
+	void SetLight(Light* l);
 
 	void OnWindowResize(int, int);
 
@@ -29,17 +31,15 @@ public:
 	bool LoadShader(const std::string&, const std::filesystem::path&, const std::filesystem::path&);
 	Shader* GetShader(const std::string&);
 
-	// FBX 모델 렌더링
-	void RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
-	void RenderFBXModel(const std::string_view& modelName, const glm::mat4& modelMatrix, const glm::vec3& color);
-	void RenderFBXModelWithAnimation(const std::string_view& modelName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms);
+	// OBJ 모델 렌더링
+	void RenderObj(const std::string_view& objName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
+	void RenderObj(const std::string_view& objName, const glm::mat4& modelMatrix, const glm::vec3& color);
+	void RenderObjWithTexture(const std::string_view& objName, const std::string_view& textureName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
+	void RenderObjWithTextureTiled(const std::string_view& objName, const std::string_view& textureName, const glm::mat4& modelMatrix, const glm::vec2& tiling = glm::vec2(1.0f));
 
-	// 텍스처 적용 렌더링
-	void RenderFBXModelWithTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix = glm::mat4(1.0f));
-	void RenderFBXModelWithAnimationAndTexture(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms);
-
-	// 텍스처 타일링 렌더링
-	void RenderFBXModelWithTextureTiled(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const glm::vec2& tiling = glm::vec2(1.0f));
+	// FBX 모델 렌더링 (텍스처 포함)
+	void RenderFBX(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix);
+	void RenderFBXAnimated(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms);
 
 private:
 	static Renderer* activeInstance;
@@ -47,5 +47,6 @@ private:
 	std::unordered_map<std::string, Shader> shaders;
 	ResourceManager* resourceManager;
 	Camera* camera;
+	Light* light;
 };
 

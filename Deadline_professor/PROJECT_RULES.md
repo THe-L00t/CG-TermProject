@@ -39,6 +39,11 @@
 - 로드된 모든 리소스(모델, 텍스처, 사운드 등)를 저장 및 관리
 - 다른 시스템에 리소스 접근 제공
 - 리소스 생명주기 관리 (로딩, 캐싱, 언로딩)
+- **FBX 로딩 설정** (확정 - 수정 금지):
+  - Assimp 플래그: `aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_LimitBoneWeights | aiProcess_FlipWindingOrder`
+  - **aiProcess_FlipWindingOrder**: FBX의 CW(Clockwise) 와인딩 오더를 OpenGL의 CCW(Counter-Clockwise)로 변환 (백페이스 컬링과 호환)
+  - **텍스처 V축 플립**: `1.0f - mesh->mTextureCoords[0][i].y` (OpenGL 텍스처 좌표계에 맞춤)
+  - 이 설정들은 검증 완료되었으므로 절대 변경하지 말 것
 
 ### SceneManager
 - **모든** 게임 씬을 관리
@@ -153,6 +158,25 @@
 - GLUT/FreeGLUT 윈도우 생성 및 관리
 - 윈도우 이벤트 처리
 - OpenGL 컨텍스트 초기화
+
+## OpenGL 렌더링 설정 (확정 - 수정 금지)
+
+### 백페이스 컬링
+- **기본 상태**: `glEnable(GL_CULL_FACE)` - 활성화 (Engine.cpp line 52)
+- **Plane 렌더링 시**:
+  - 바닥/천장 렌더링 **직전**에 `glDisable(GL_CULL_FACE)` 호출
+  - 렌더링 **직후**에 `glEnable(GL_CULL_FACE)` 호출하여 복원
+  - **위치**: SceneManager.cpp의 모든 Scene Draw 함수 (Floor1, Floor2, Floor3, Test)
+- **이유**:
+  - Plane 객체(바닥/천장)는 와인딩 오더 문제로 양면 렌더링 필요
+  - FBX 모델(Professor, Player)은 성능을 위해 백페이스 컬링 유지
+  - OBJ Plane과 OpenGL CCW 설정 간의 호환성 보장
+- **절대 변경 금지**: Plane 렌더링 시 백페이스 컬링을 비활성화하지 않으면 바닥/천장이 보이지 않음
+
+### 깊이 테스트
+- **상태**: `glEnable(GL_DEPTH_TEST)` - 활성화
+- **위치**: Engine.cpp 초기화 (line 51)
+- **필수 유지**: 3D 렌더링의 올바른 깊이 처리를 위해 반드시 활성화
 
 ## 핵심 규칙
 

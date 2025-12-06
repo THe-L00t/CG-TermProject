@@ -14,8 +14,6 @@ ResourceManager* ResourceManager::onceInstance = nullptr;
 
 ResourceManager::ResourceManager()
 {
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
 }
 
 ResourceManager::~ResourceManager()
@@ -31,11 +29,10 @@ ResourceManager::~ResourceManager()
 
 	// OBJ 데이터 정리
 	for (auto& obj : dataList) {
+		if (obj.VAO) glDeleteVertexArrays(1, &obj.VAO);
 		if (obj.VBO) glDeleteBuffers(1, &obj.VBO);
 		if (obj.EBO) glDeleteBuffers(1, &obj.EBO);
 	}
-
-	if (VAO) glDeleteVertexArrays(1, &VAO);
 
 	// 텍스처 정리
 	for (auto& [name, texID] : textureMap) {
@@ -91,15 +88,13 @@ bool ResourceManager::LoadFBX(const std::string_view& name, const std::filesyste
 	// FBX 파일 로드 (최적화 플래그 적용)
 	unsigned int flags = aiProcess_Triangulate |
 		aiProcess_GenNormals |
-		aiProcess_FlipUVs |
 		aiProcess_CalcTangentSpace |
 		aiProcess_JoinIdenticalVertices |
-		aiProcess_LimitBoneWeights;      // 최대 4개 본 가중치
+		aiProcess_LimitBoneWeights |     // 최대 4개 본 가중치
+		aiProcess_FlipWindingOrder;      // FBX의 CW를 OpenGL의 CCW로 변환
 
 	std::cout << "Loading FBX with flags: " << flags << std::endl;
-	std::cout << "aiProcess_MakeLeftHanded: " << ((flags & aiProcess_MakeLeftHanded) ? "YES" : "NO") << std::endl;
-	std::cout << "aiProcess_FlipUVs: " << ((flags & aiProcess_FlipUVs) ? "YES" : "NO") << std::endl;
-	std::cout << "aiProcess_FlipWindingOrder: " << ((flags & aiProcess_FlipWindingOrder) ? "YES" : "NO") << std::endl;
+	std::cout << "aiProcess_FlipWindingOrder: YES (FBX CW -> OpenGL CCW)" << std::endl;
 
 	const aiScene* scene = importer.ReadFile(path.string(), flags);
 
@@ -222,7 +217,7 @@ FBXMesh ResourceManager::ProcessMesh(aiMesh* mesh, const aiScene* scene, FBXMode
 		if (mesh->mTextureCoords[0]) {
 			vertex.texcoord = glm::vec2(
 				mesh->mTextureCoords[0][i].x,
-				mesh->mTextureCoords[0][i].y
+				1.0f - mesh->mTextureCoords[0][i].y
 			);
 		} else {
 			// UV 좌표가 없으면 기본값 설정
@@ -739,9 +734,14 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
 		}
 	}
 
-	GLuint VBO, EBO;
+	// OBJ 데이터 저장 - 개별 VAO 생성
+	GLuint VAO, VBO, EBO;
+	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
+
+	// VAO 바인딩
+	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
@@ -758,15 +758,20 @@ bool ResourceManager::LoadObj(const std::string_view& name, const std::filesyste
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 	glEnableVertexAttribArray(2);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
 	ObjData objData;
 	objData.name = std::string(name);
+	objData.VAO = VAO;
 	objData.VBO = VBO;
 	objData.EBO = EBO;
 	objData.indexCount = indices.size();
 
 	dataList.push_back(std::move(objData));
+
+	std::cout << "LoadObj SUCCESS: " << name << std::endl;
+	std::cout << "  Vertices: " << vertices.size() << ", Indices: " << indices.size() << std::endl;
+	std::cout << "  VAO: " << VAO << ", VBO: " << VBO << ", EBO: " << EBO << std::endl;
 
 	return true;
 }

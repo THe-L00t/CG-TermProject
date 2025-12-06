@@ -20,7 +20,7 @@ void Plane::SetOrientation(Orientation newOrientation)
 	orientation = newOrientation;
 	needsUpdate = true;
 
-	// Orientation에 따라 자동으로 회전값 설정
+	// Orientation에 따라 자동으로 회전값 설정 (도 단위로 저장)
 	switch (orientation)
 	{
 	case Orientation::UP:
@@ -30,27 +30,27 @@ void Plane::SetOrientation(Orientation newOrientation)
 
 	case Orientation::DOWN:
 		// 천장: X축으로 180도 회전
-		SetRotation(glm::vec3(glm::radians(180.0f), 0.0f, 0.0f));
+		SetRotation(glm::vec3(180.0f, 0.0f, 0.0f));
 		break;
 
 	case Orientation::FRONT:
 		// 앞면: X축으로 -90도 회전
-		SetRotation(glm::vec3(glm::radians(-90.0f), 0.0f, 0.0f));
+		SetRotation(glm::vec3(-90.0f, 0.0f, 0.0f));
 		break;
 
 	case Orientation::BACK:
 		// 뒷면: X축으로 90도 회전
-		SetRotation(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
+		SetRotation(glm::vec3(90.0f, 0.0f, 0.0f));
 		break;
 
 	case Orientation::LEFT:
 		// 왼쪽: Z축으로 90도 회전
-		SetRotation(glm::vec3(0.0f, 0.0f, glm::radians(90.0f)));
+		SetRotation(glm::vec3(0.0f, 0.0f, 90.0f));
 		break;
 
 	case Orientation::RIGHT:
 		// 오른쪽: Z축으로 -90도 회전
-		SetRotation(glm::vec3(0.0f, 0.0f, glm::radians(-90.0f)));
+		SetRotation(glm::vec3(0.0f, 0.0f, -90.0f));
 		break;
 	}
 }

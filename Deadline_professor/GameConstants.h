@@ -21,20 +21,21 @@ namespace GameConstants
 	constexpr float PROFESSOR_DETECTION_RANGE = 15.0f; // 교수님 감지 범위 (m)
 
 	// ===== 환경 관련 =====
-	constexpr float FLOOR_DEFAULT_WIDTH = 200.0f;    // 바닥 기본 너비 (m)
-	constexpr float FLOOR_DEFAULT_HEIGHT = 200.0f;   // 바닥 기본 깊이 (m)
-	constexpr float CEILING_HEIGHT = 3.0f;          // 천장 높이 (m)
-	constexpr float WALL_THICKNESS = 0.2f;          // 벽 두께 (m)
+	constexpr float FLOOR_DEFAULT_WIDTH = 100.0f;    // 바닥 기본 너비 (m) - 2배 확장
+	constexpr float FLOOR_DEFAULT_HEIGHT = 100.0f;   // 바닥 기본 깊이 (m) - 2배 확장
+	constexpr float CEILING_HEIGHT = 2.5f;          // 천장 높이 (m)
+	constexpr float WALL_THICKNESS = 0.1f;          // 벽 두께 (m)
 	constexpr float CEILING_TEXTURE_TILE_X = 20.0f;  // 천장 텍스처 타일링 X축 반복 횟수
 	constexpr float CEILING_TEXTURE_TILE_Y = 20.0f;  // 천장 텍스처 타일링 Y축 반복 횟수
 	constexpr float FLOOR_TEXTURE_TILE_X = 20.0f;    // 바닥 텍스처 타일링 X축 반복 횟수
 	constexpr float FLOOR_TEXTURE_TILE_Y = 20.0f;    // 바닥 텍스처 타일링 Y축 반복 횟수
 
 	// ===== 맵/타일 관련 =====
-	constexpr float TILE_SIZE = 2.0f;               // 한 타일의 크기 (m) - 정사각형
-	constexpr float WALL_HEIGHT = 3.0f;             // 벽 높이 (m) - 바닥부터 천장까지
-	constexpr int MAP_GRID_WIDTH = 20;              // 맵 그리드 가로 크기 (타일 개수)
-	constexpr int MAP_GRID_DEPTH = 20;              // 맵 그리드 세로 크기 (타일 개수)
+	constexpr float TILE_SIZE = 4.0f;               // 한 타일의 그리드 간격 (m) - 벽 중심 간 거리
+	constexpr float WALL_SIZE = 2.f;               // 벽 객체의 실제 크기 (m) - 인접 벽과 0.2m 간격
+	constexpr float WALL_HEIGHT = 2.5f;             // 벽 높이 (m) - 바닥부터 천장까지
+	constexpr int MAP_GRID_WIDTH = 25;              // 맵 그리드 가로 크기 (타일 개수) - 100m / 4m = 25
+	constexpr int MAP_GRID_DEPTH = 25;              // 맵 그리드 세로 크기 (타일 개수) - 100m / 4m = 25
 
 	// ===== 카메라 관련 =====
 	constexpr float CAMERA_FOV = 60.0f;             // 시야각 (degrees)

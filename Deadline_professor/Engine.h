@@ -9,6 +9,7 @@ class Camera;
 class InputManager;
 class SceneManager;
 class FBXAnimationPlayer;
+class CollisionManager;
 
 class Engine
 {
@@ -30,6 +31,7 @@ public:
 	InputManager* GetInputManager() const { return inputManager.get(); }
 	GameTimer* GetGameTimer() const { return gameTimer.get(); }
 	SceneManager* GetSceneManager() const { return sceneManager.get(); }
+	CollisionManager* GetCollisionManager() const { return collisionManager.get(); }
 
 	static void TimerCallback(int value);
 
@@ -46,6 +48,7 @@ private:
 	std::unique_ptr<InputManager> inputManager;
 	std::unique_ptr<SceneManager> sceneManager;
 	std::unique_ptr<FBXAnimationPlayer> animationPlayer;
+	std::unique_ptr<CollisionManager> collisionManager;
 };
 
 // 전역 엔진 포인터 (Scene에서 접근용)

@@ -23,6 +23,8 @@ public:
 	std::function<void()> ActionA;
 	std::function<void()> ActionS;
 	std::function<void()> ActionD;
+	std::function<void()> ActionSpace;  // 위로 이동 (자유 비행)
+	std::function<void()> ActionShift;  // 아래로 이동 (자유 비행)
 	std::function<void()> ActionWheelUp;
 	std::function<void()> ActionWheelDown;
 

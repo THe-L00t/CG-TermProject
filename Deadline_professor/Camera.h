@@ -28,11 +28,19 @@ public:
 	glm::vec3 GetDirection() const { return direction; }
 	float GetMoveSpeed() const { return moveSpd; }
 	float GetRotateSpeed() const { return dirSpd; }
+	float GetFOV() const { return fov; }
+	float GetAspect() const { return aspect; }
+	float GetNearPlane() const { return n; }
+	float GetFarPlane() const { return f; }
 
 	// Setters
 	void SetMoveSpeed(float speed) { moveSpd = speed; }
 	void SetRotateSpeed(float speed) { dirSpd = speed; }
 	void SetPosition(const glm::vec3& pos) { position = pos; UpdateVectors(); }
+	void SetDirection(const glm::vec3& dir) { direction = dir; UpdateVectors(); }
+
+	// Frustum Culling
+	bool IsBoxInFrustum(const glm::vec3& minBound, const glm::vec3& maxBound) const;
 
 private:
 	void UpdateVectors();
