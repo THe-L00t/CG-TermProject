@@ -1068,6 +1068,16 @@ void TestScene::Enter()
 	floor->SetTextureID("FloorTexture");
 	floor->SetTextureTiling(glm::vec2(GameConstants::FLOOR_TEXTURE_TILE_X, GameConstants::FLOOR_TEXTURE_TILE_Y));
 
+	// 천장 생성 및 초기화
+	ceiling = std::make_unique<Plane>();
+	ceiling->SetOrientation(Plane::Orientation::DOWN);
+	ceiling->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f)); // 천장을 y=5 위치에 배치
+	ceiling->SetSize(GameConstants::FLOOR_DEFAULT_WIDTH, GameConstants::FLOOR_DEFAULT_HEIGHT); // 천장 크기
+	ceiling->SetResourceID("PlaneModel"); // Plane 메쉬 리소스 ID
+	ceiling->SetTextureID("CeilingTexture"); // 천장 텍스처 설정
+	ceiling->SetTextureTiling(glm::vec2(GameConstants::CEILING_TEXTURE_TILE_X, GameConstants::CEILING_TEXTURE_TILE_Y)); // 타일링 설정
+	ceiling->SetColor(glm::vec3(0.7f, 0.7f, 0.7f)); // 밝은 회색 (천장)
+
 	// 천장 제거 (맵을 위에서 볼 수 있도록)
 	// ceiling은 생성하지 않음
 	std::cout << "TestScene: Ceiling removed for top-down view" << std::endl;
@@ -1337,7 +1347,7 @@ void TestScene::Draw()
 			wall->GetBoundingBox(minBound, maxBound);
 
 			// 임시로 항상 렌더링 (frustum culling 비활성화)
-			//if (camera->IsBoxInFrustum(minBound, maxBound)) {
+			if (camera->IsBoxInFrustum(minBound, maxBound)) {
 				renderedWalls++;
 				glm::mat4 wallMatrix = wall->GetModelMat();
 				if (!wall->GetTextureID().empty()) {
@@ -1346,7 +1356,7 @@ void TestScene::Draw()
 				else {
 					renderer->RenderObj(wall->GetResourceID(), wallMatrix, wall->GetColor());
 				}
-			//}
+			}
 		}
 	}
 

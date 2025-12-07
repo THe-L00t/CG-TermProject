@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 #include "GameConstants.h"
 
 Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 worldUp, float fov, float aspect)
@@ -16,9 +16,10 @@ Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 worldUp, float fov, fl
 	f = GameConstants::CAMERA_FAR_PLANE;
 
 	// right 벡터 계산
-	glm::vec3 forward = glm::normalize(direction - position);
+	/*glm::vec3 forward = glm::normalize(direction - position);
 	right = glm::normalize(glm::cross(forward, worldUp));
-	up = glm::normalize(glm::cross(right, forward));
+	up = glm::normalize(glm::cross(right, forward));*/
+	UpdateVectors();
 }
 
 glm::mat4 Camera::GetViewMat() const
@@ -51,6 +52,7 @@ void Camera::MoveForward(float deltaTime)
 	glm::vec3 forward = glm::normalize(direction - position);
 	position += forward * moveSpd * deltaTime;
 	direction += forward * moveSpd * deltaTime;
+	UpdateVectors();
 }
 
 void Camera::MoveBackward(float deltaTime)
@@ -58,30 +60,35 @@ void Camera::MoveBackward(float deltaTime)
 	glm::vec3 forward = glm::normalize(direction - position);
 	position -= forward * moveSpd * deltaTime;
 	direction -= forward * moveSpd * deltaTime;
+	UpdateVectors();
 }
 
 void Camera::MoveLeft(float deltaTime)
 {
 	position -= right * moveSpd * deltaTime;
 	direction -= right * moveSpd * deltaTime;
+	UpdateVectors();
 }
 
 void Camera::MoveRight(float deltaTime)
 {
 	position += right * moveSpd * deltaTime;
 	direction += right * moveSpd * deltaTime;
+	UpdateVectors();
 }
 
 void Camera::MoveUp(float deltaTime)
 {
 	position += worldUp * moveSpd * deltaTime;
 	direction += worldUp * moveSpd * deltaTime;
+	UpdateVectors();
 }
 
 void Camera::MoveDown(float deltaTime)
 {
 	position -= worldUp * moveSpd * deltaTime;
 	direction -= worldUp * moveSpd * deltaTime;
+	UpdateVectors();
 }
 
 void Camera::Rotate(float yawDelta, float pitchDelta)
