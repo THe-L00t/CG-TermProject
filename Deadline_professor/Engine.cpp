@@ -132,6 +132,7 @@ void Engine::Initialize(int argc, char** argv)
 	glutDisplayFunc(Renderer::DrawScene);
 	glutReshapeFunc(Window::Resize);
 	glutKeyboardFunc(InputManager::Keyboard);
+	glutKeyboardUpFunc(InputManager::KeyboardUp);
 	glutSpecialFunc(InputManager::SKeyboard);
 	glutMouseFunc(InputManager::Mouse);
 	glutPassiveMotionFunc(InputManager::PassiveMotion);
@@ -202,6 +203,9 @@ void Engine::Update()
 {
 	gameTimer->Update();
 	float deltaTime = gameTimer->elapsedTime;
+
+	// 키 상태 업데이트 및 카메라 이동
+	inputManager->UpdateKeyStates(deltaTime);
 
 	// AnimationPlayer 업데이트
 	if (animationPlayer) {

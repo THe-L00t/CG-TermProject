@@ -37,9 +37,31 @@ void InputManager::SetMouseControlActive(bool active)
 
 }
 
+void InputManager::UpdateKeyStates(float deltaTime)
+{
+	if (!onceInstance || !onceInstance->cmr) return;
+
+	// 현재 누르고 있는 키들에 따라 카메라 이동
+	if (onceInstance->keyStates['W'] || onceInstance->keyStates['w']) {
+		onceInstance->cmr->MoveForward(deltaTime);
+	}
+	if (onceInstance->keyStates['A'] || onceInstance->keyStates['a']) {
+		onceInstance->cmr->MoveLeft(deltaTime);
+	}
+	if (onceInstance->keyStates['S'] || onceInstance->keyStates['s']) {
+		onceInstance->cmr->MoveBackward(deltaTime);
+	}
+	if (onceInstance->keyStates['D'] || onceInstance->keyStates['d']) {
+		onceInstance->cmr->MoveRight(deltaTime);
+	}
+}
+
 void InputManager::Keyboard(unsigned char key, int x, int y)
 {
 	if (!onceInstance || !onceInstance->cmr) return;
+
+	// 키 눌림 상태 업데이트
+	onceInstance->keyStates[key] = true;
 
 	switch (key) {
 	case'W':case'w':
@@ -83,6 +105,15 @@ void InputManager::Keyboard(unsigned char key, int x, int y)
 		break;
 	}
 }
+
+void InputManager::KeyboardUp(unsigned char key, int x, int y)
+{
+	if (!onceInstance) return;
+
+	// 키가 릴리스 상태 업데이트
+	onceInstance->keyStates[key] = false;
+}
+
 
 void InputManager::SKeyboard(int, int, int)
 {
