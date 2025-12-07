@@ -234,6 +234,11 @@
   <ItemGroup>
     <ClCompile Include="InputManager.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Object Include="Resources\Plane.obj">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Object>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

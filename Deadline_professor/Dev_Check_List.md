@@ -21,111 +21,106 @@
 
 ## 🚧 필수 구현 작업 (우선순위순)
 
-### Phase 1: AIController 핵심 기능 (필수)
+### Phase 1: AIController 핵심 기능 ✅ 완료
 
-#### 1-1. UpdateMovement 메서드 구현 ⭐⭐⭐ (가장 중요)
+#### 1-1. UpdateMovement 메서드 구현 ✅
 
 목표: NPC가 경로를 따라 이동하도록 구현
 
-- [X] Waypoint 도달 판정
+- [x] Waypoint 도달 판정
   - 현재 waypoint와 NPC 위치 거리 계산
-  - 도달 거리 임계값 설정 (예: 0.5m)
+  - 도달 거리 임계값 설정 (0.5m)
   - 다음 waypoint로 진행
 
-- [X] 경로 완료 판정
+- [x] 경로 완료 판정
   - 마지막 waypoint 도달 시 완료 처리
-  - hasReachedTarget = true 또는 IDLE로 전환
+  - IDLE로 전환
 
-- [X] 실제 이동 적용
+- [x] 실제 이동 적용
   - GetNextMoveDirection()으로 이동 방향 구하기
   - PROFESSOR_MOVE_SPEED (5.5 m/s) 적용
   - NPC 위치 업데이트
 
-#### 1-2. GetNextMoveDirection 메서드 구현 ⭐⭐⭐ (가장 중요)
+#### 1-2. GetNextMoveDirection 메서드 구현 ✅
 
 목표: 현재→다음 waypoint로 향하는 방향 벡터 반환
 
-- [X] 현재 waypoint 조회
+- [x] 현재 waypoint 조회
   - Path.GetNextWaypoint() 사용
   - 경로가 없으면 vec3(0,0,0) 반환
 
-- [X] 방향 벡터 계산
+- [x] 방향 벡터 계산
   - 다음 waypoint - 현재 위치
   - glm::normalize() 정규화
 
-- [X] 속도 벡터 변환
-  - 방향 × PROFESSOR_MOVE_SPEED
-  - 또는 방향만 반환해서 외부에서 속도 곱하기 (권장)
+- [x] 속도 벡터 변환
+  - 방향만 반환 (외부에서 속도 곱함)
 
-#### 1-3. ChaseTarget 메서드 구현 ⭐⭐ (2번째 중요)
+#### 1-3. ChaseTarget 메서드 구현 ⏸️ 보류
 
-목표: 플레이어 위치를 목표로 설정하고 추격
+- [x] 구현 완료 (현재 게임 요구사항에 맞게 비활성화)
+- [ ] 나중에 필요시 활용 (주석 처리됨)
 
-- [X] 거리 계산
-  - NPC 위치 → 플레이어 위치 거리
-  - glm::distance() 사용
+#### 1-4. ValidateAndUpdatePath 메서드 구현 ✅
 
-- [X] 감지 범위 체크
-  - 거리 ≤ PROFESSOR_DETECTION_RANGE (15m)
-    → 목표 설정, CHASING 모드로 전환
-  - 거리 > maxChaseDistance
-    → 추격 포기, IDLE로 전환
+목표: 경로가 여전히 유효한지 확인
 
-- [X] 경로 계산
-  - PathFinder::FindPath(현재위치, 플레이어위치) 호출
-  - 경로 유효하면 currentPath 업데이트
-  - 경로 없으면 STUCK 상태 (그냥 가만히 있음)
-
-#### 1-4. ValidateAndUpdatePath 메서드 구현 ⭐ (부가)
-
-목표: 경로가 여전히 유효한지 확인 (게임 중 맵 변경 대비)
-
-- [X] 경로 유효성 확인
+- [x] 경로 유효성 확인
   - PathFinder::IsPathValid(currentPath) 호출
 
-- [X] 경로 무효 시 재계산
-  - 현재 위치와 목표 위치로 새 경로 계산
-  - 새 경로가 없으면 STUCK 상태 유지
+- [x] 경로 무효 시 재계산
+  - 새 경로 계산
+  - STUCK 상태 처리
 
-- [X] 호출 시기
-  - 주기적 호출 (0.5초~1초마다) 추천
-  - UpdateMovement 내부에 통합 가능
+- [x] 호출 시기
+  - 0.5초마다 주기적 갱신
 
-#### 1-5. HasReachedTarget 메서드 구현 (간단)
+#### 1-5. HasReachedTarget 메서드 구현 ✅
 
-- [X] Path 완료 여부 확인
+- [x] Path 완료 여부 확인
   - currentPath.IsComplete() 반환
 
 ---
 
-### Phase 2: Professor 클래스 연동 ⭐⭐
+### Phase 2: Professor 클래스 연동 ✅ 완료
 
-#### 2-1. Professor에서 AIController 사용
-// Professor.h/cpp 에서
-•	[ ] AIController 멤버 변수 추가
-•	[ ] Professor::Update()에서 AIController 업데이트
-•	SetTargetPosition(playerPos) 호출
-•	UpdateMovement(deltaTime) 호출
-•	GetNextMoveDirection()으로 이동 벡터 획득
-•	[ ] 이동 적용
-•	Position += GetNextMoveDirection() * deltaTime
-•	또는: Position += GetNextMoveDirection()
+#### 2-1. Professor에서 AIController 사용 ✅
 
+- [x] AIController 멤버 변수 추가
+  - `AIController* aiController{nullptr};`
+  - `glm::vec3 patrolTarget{0.0f};`
 
-#### 2-2. NPC 3명 각각 AIController 할당
+- [x] Professor::Update()에서 AIController 업데이트
+  - SetCurrentPosition()으로 현재 위치 전달
+  - 플레이어 감지 범위 확인
+  - SetTargetPosition() 또는 ClearTarget() 호출
+  - UpdateMovement() 호출
+
+- [x] 이동 적용
+  - GetNextMoveDirection() 으로 방향 벡터 획득
+  - Position 업데이트
+  - direction 업데이트 (애니메이션용)
+
+- [x] 새 메서드 추가
+  - SetAIController(AIController* controller)
+  - GetAIController() const
+  - SetPatrolTarget(const glm::vec3& targetPos)
+
+#### 2-2. NPC 3명 각각 AIController 할당 (준비됨)
 
 - [ ] Lee 교수님: AIController 인스턴스 1
 - [ ] Dragon 교수님: AIController 인스턴스 2
 - [ ] Song 교수님: AIController 인스턴스 3
 - [ ] 각 AIController는 동일한 NavMesh/PathFinder 공유
+- 📌 **상태**: Scene에서 구현 필요
 
 ---
 
-### Phase 3: 기본 테스트 및 검증 ⭐⭐
+### Phase 3: 기본 테스트 및 검증 🚧 진행 중
 
 #### 3-1. 단일 NPC 경로 추적 테스트
 
-- [ ] Floor1에서 NPC가 플레이어를 따라가는지 확인
+- [ ] Floor1에서 NPC가 플레이어를 피해 이동하는지 확인
   - 경로 이동이 자연스러운지
   - waypoint 도달이 정확한지
   - 목표 도달 시 멈추는지
@@ -137,7 +132,7 @@
 
 #### 3-3. 다중 NPC 테스트
 
-- [ ] 3명의 교수님이 동시에 추격하는지 확인
+- [ ] 3명의 교수님이 동시에 도망치는지 확인
 - [ ] 경로 계산 중복 최소화 확인 (FPS 영향 없는지)
 
 #### 3-4. 맵별 테스트
@@ -154,3 +149,79 @@ Step 3: ChaseTarget 구현 (15분) ↓
 Step 4: ValidateAndUpdatePath 구현 (10분) ↓ 
 Step 5: Professor 클래스에 AIController 연동 (15분) ↓ 
 Step 6: 테스트 및 디버깅 (30분+)
+
+## 📊 구현 상태
+
+| Step | 작업 | 상태 | 소요시간 |
+|------|------|------|---------|
+| 1 | GetNextMoveDirection 구현 | ✅ 완료 | 10분 |
+| 2 | UpdateMovement 구현 | ✅ 완료 | 20분 |
+| 3 | ChaseTarget 구현 | ⏸️ 보류 | - |
+| 4 | ValidateAndUpdatePath 구현 | ✅ 완료 | 10분 |
+| 5 | Professor 클래스 연동 | ✅ 완료 | 15분 |
+| 6 | 테스트 및 디버깅 | 🚧 진행 중 | 30분+ |
+
+**총 소요 시간**: ~55분 (Step 1-5 완료) / 예상 ~90분 (전체)
+
+---
+
+## 🎮 프레젠테이션 시 보여줄 것
+
+1. **"맵 기반 경로 탐색 시스템"** ✅
+   - 플레이어가 이동하면 NPC가 경로를 찾아 도망
+   - 맵의 복잡한 구조(벽, 복도)를 피해서 이동
+
+2. **"A* 알고리즘 적용"** ✅
+   - NavMesh 그리드 상에서 최적 경로 계산
+   - 시각적으로 경로가 효율적임을 보여줌
+
+3. **"3개 층 실시간 경로 탐색"** 🚧
+   - Floor1, 2, 3 각각에서 경로 탐색이 작동
+   - NPC 3명이 동시에 지능형 도망
+
+4. **"예외 처리"** ✅
+   - 경로가 없으면 NPC가 가만히 있음 (적절한 처리)
+
+---
+
+## 🔄 다음 단계: Scene 연동
+
+### Floor1Scene에서 구현 필요:
+
+// NavMesh 생성 NavMeshBuilder builder; auto navMesh = builder.Build(mapGenerator);
+// PathFinder 생성 PathFinder* pathFinder = new PathFinder(navMesh.get());
+// 3명의 교수님 생성 및 AIController 연동 Professor* lee = new Professor("RunLee", "RunLee"); AIController* leeAI = new AIController(pathFinder); lee->SetAIController(leeAI); lee->SetPlayerReference(player); lee->SetPatrolTarget(glm::vec3(15.0f, 0.0f, 15.0f));
+// Dragon, Song 교수님도 동일하게 설정
+// Scene에 추가 AddObject(lee);
+
+---
+
+## ✨ 완료 항목 요약
+
+### ✅ 완료됨
+- NavMesh 시스템 전체
+- PathFinder (A* 알고리즘)
+- AIController (모든 메서드)
+- Professor 클래스 연동
+- 인코딩 문제 (UTF-8)
+
+### 🚧 진행 중
+- Scene에서 3명 교수님 생성 및 초기화
+- 실제 게임 환경에서 테스트
+
+### ⏸️ 보류
+- ChaseTarget (나중에 필요시 활용)
+
+---
+
+## 💡 주의사항
+
+1. **PathFinder/NavMesh**: Scene에서 생성해야 함
+2. **AIController**: Professor마다 독립적인 인스턴스 필요
+3. **patrolTarget**: 각 교수님의 도망칠 방향 설정 필요
+4. **Player 참조**: Professor가 Player를 추적할 수 있도록 설정
+
+---
+
+이 체크리스트를 따르면 **AI 시스템 구현의 90% 완료** 상태입니다! 🚀
+마지막은 **실제 Scene에서 테스트**만 남았습니다.

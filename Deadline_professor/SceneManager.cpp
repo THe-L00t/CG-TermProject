@@ -14,6 +14,10 @@
 #include "GameConstants.h"
 #include "MapGenerator.h"
 #include "CollisionManager.h"
+#include "AiController.h"
+#include "NavMeshBuilder.h"
+#include "NavMesh.h"
+#include "PathFinder.h"
 
 SceneManager::SceneManager()
 {
@@ -849,80 +853,49 @@ void TestScene::Enter()
 {
 	std::cout << "TestScene: Entered" << std::endl;
 
-	// OpenGL 상태 확실히 초기화
+	// OpenGL 상태 초기화
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glDisable(GL_BLEND);
 	std::cout << "TestScene: OpenGL state initialized" << std::endl;
 
-	// MapGenerator로 맵 생성
+	// ============================================
+	// 1단계: 맵 생성 (매번 다른 미로)
+	// ============================================
 	mapGenerator = std::make_unique<MapGenerator>(GameConstants::MAP_GRID_WIDTH, GameConstants::MAP_GRID_DEPTH);
 	mapGenerator->Generate();
 	mapGenerator->PrintMap();
 
-	// 플레이어 시작 위치 찾기 (첫 번째 계단)
+	std::cout << "\n===== MAP GENERATION COMPLETE =====" << std::endl;
+	std::cout << "New random maze generated for this floor" << std::endl;
+	std::cout << "=====================================\n" << std::endl;
+
+	// 플레이어 시작 위치 찾기
 	glm::vec3 playerStartPos(0.0f, 0.0f, 0.0f);
 	bool foundStartPos = false;
-	int startGridX = 0, startGridZ = 0;
 	for (int z = 0; z < GameConstants::MAP_GRID_DEPTH && !foundStartPos; ++z) {
 		for (int x = 0; x < GameConstants::MAP_GRID_WIDTH && !foundStartPos; ++x) {
 			TileType tile = mapGenerator->GetTile(x, z);
 			if (tile == TileType::STAIR) {
-				// 맵 중심을 원점으로 하는 좌표 계산
 				float halfMapSize = (GameConstants::MAP_GRID_WIDTH * GameConstants::TILE_SIZE) * 0.5f;
 				float worldX = (x * GameConstants::TILE_SIZE) - halfMapSize + (GameConstants::TILE_SIZE * 0.5f);
 				float worldZ = (z * GameConstants::TILE_SIZE) - halfMapSize + (GameConstants::TILE_SIZE * 0.5f);
 				playerStartPos = glm::vec3(worldX, 0.0f, worldZ);
 				foundStartPos = true;
-				startGridX = x;
-				startGridZ = z;
 
-				std::cout << "\n===== PLAYER SPAWN DEBUG =====" << std::endl;
-				std::cout << "Player start at Stair grid [" << x << "," << z << "]" << std::endl;
-				std::cout << "World position: (" << worldX << ", 0.0, " << worldZ << ")" << std::endl;
-
-				// 주변 3x3 타일 출력
-				std::cout << "\nSurrounding tiles (3x3):" << std::endl;
-				for (int dz = -1; dz <= 1; ++dz) {
-					for (int dx = -1; dx <= 1; ++dx) {
-						int checkX = x + dx;
-						int checkZ = z + dz;
-						if (checkX >= 0 && checkX < GameConstants::MAP_GRID_WIDTH &&
-						    checkZ >= 0 && checkZ < GameConstants::MAP_GRID_DEPTH) {
-							TileType t = mapGenerator->GetTile(checkX, checkZ);
-							char symbol = '?';
-							switch (t) {
-								case TileType::WALL: symbol = '#'; break;
-								case TileType::CORRIDOR: symbol = 'H'; break;
-								case TileType::STAIR: symbol = 'S'; break;
-								case TileType::CLASSROOM: symbol = 'C'; break;
-								case TileType::DOOR: symbol = 'D'; break;
-							}
-							std::cout << symbol;
-						} else {
-							std::cout << ' ';
-						}
-					}
-					std::cout << std::endl;
-				}
-				std::cout << "==============================\n" << std::endl;
+				std::cout << "Player spawn at grid [" << x << "," << z << "]" << std::endl;
+				std::cout << "World position: (" << worldX << ", 0, " << worldZ << ")" << std::endl;
 			}
 		}
 	}
 
-	// 계단은 이미 2x2 공간으로 생성되었으므로 추가 공간 생성 불필요
-	// 맵 출력
-	if (foundStartPos) {
-		std::cout << "\n===== GENERATED MAP WITH STAIRS =====" << std::endl;
-		mapGenerator->PrintMap();
-	}
-
-	// 생성된 맵으로 Wall 객체 배치 (계단 제외)
+	// ============================================
+	// 2단계: Wall 객체 생성 (실제 3D 벽)
+	// ============================================
 	walls.clear();
 	for (int z = 0; z < GameConstants::MAP_GRID_DEPTH; ++z) {
 		for (int x = 0; x < GameConstants::MAP_GRID_WIDTH; ++x) {
 			TileType tile = mapGenerator->GetTile(x, z);
-			// 벽만 배치, 계단/복도/강의실/문은 제외
 			if (tile == TileType::WALL) {
 				auto wall = std::make_unique<Wall>();
 				wall->SetGridPosition(x, z);
@@ -931,160 +904,126 @@ void TestScene::Enter()
 		}
 	}
 
-	std::cout << "\n===== WALL SIZE MEASUREMENT =====" << std::endl;
+	std::cout << "\n===== WALL PLACEMENT =====" << std::endl;
 	std::cout << "Total walls placed: " << walls.size() << std::endl;
-	if (!walls.empty()) {
-		glm::vec3 wallTileSize = walls[0]->GetTileSize();
-		glm::vec3 wallScale = walls[0]->GetScale();
-		glm::vec3 wallBBoxMin, wallBBoxMax;
-		walls[0]->GetBoundingBox(wallBBoxMin, wallBBoxMax);
+	std::cout << "==========================\n" << std::endl;
 
-		std::cout << "Wall tile size (internal): " << wallTileSize.x << " x " << wallTileSize.y << " x " << wallTileSize.z << std::endl;
-		std::cout << "Wall scale: " << wallScale.x << " x " << wallScale.y << " x " << wallScale.z << std::endl;
-		std::cout << "Wall BBox size: " << (wallBBoxMax.x - wallBBoxMin.x) << " x "
-		          << (wallBBoxMax.y - wallBBoxMin.y) << " x "
-		          << (wallBBoxMax.z - wallBBoxMin.z) << std::endl;
-		std::cout << "GameConstants::TILE_SIZE: " << GameConstants::TILE_SIZE << std::endl;
-		std::cout << "GameConstants::WALL_HEIGHT: " << GameConstants::WALL_HEIGHT << std::endl;
-
-		// 타일 크기 검증
-		if (wallTileSize.x == GameConstants::TILE_SIZE && wallTileSize.z == GameConstants::TILE_SIZE) {
-			std::cout << "✓ Wall tile size matches GameConstants" << std::endl;
-		} else {
-			std::cout << "✗ WARNING: Wall tile size mismatch!" << std::endl;
-		}
-	}
-	std::cout << "================================\n" << std::endl;
-
-	// Player 생성 및 초기화
+	// Player 생성
 	extern Engine* g_engine;
 	if (g_engine) {
 		Camera* camera = g_engine->GetCamera();
 		InputManager* inputMgr = g_engine->GetInputManager();
 		GameTimer* timer = g_engine->GetGameTimer();
 
-		// Camera 설정 - 3D 공간 자유 비행 모드
-		// 플레이어 시작 위치(계단)를 카메라 초기 위치로 사용
 		glm::vec3 initialCameraPos = playerStartPos;
-		initialCameraPos.y = GameConstants::PLAYER_EYE_HEIGHT; // 눈 높이로 설정
+		initialCameraPos.y = GameConstants::PLAYER_EYE_HEIGHT;
 
 		if (camera) {
 			camera->SetPosition(initialCameraPos);
-			camera->SetDirection(initialCameraPos + glm::vec3(0.0f, 0.0f, -5.0f)); // 앞쪽을 바라봄
-			camera->SetMoveSpeed(50.0f); // 이동 속도를 50 m/s로 설정 (자유 비행 모드)
-			std::cout << "TestScene: Camera set to free-fly mode (speed: 50 m/s)" << std::endl;
-			std::cout << "TestScene: Original speed was: " << GameConstants::PLAYER_WALK_SPEED << " m/s" << std::endl;
+			camera->SetDirection(initialCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
+			camera->SetMoveSpeed(50.0f);
 		}
 
 		player = std::make_unique<Player>();
 		player->Init(camera);
-
-		// 플레이어 위치를 계단으로 설정
 		player->SetPosition(playerStartPos);
 		player->SetResourceID("PlayerModel");
-
-		// 플레이어 이동 속도를 50 m/s로 설정 (자유 비행 모드)
 		player->SetMoveSpeed(50.0f);
-		std::cout << "TestScene: Player move speed set to 50 m/s" << std::endl;
 
-		std::cout << "\n===== CAMERA FREE-FLY MODE =====" << std::endl;
-		std::cout << "Camera initial position: (" << initialCameraPos.x << ", " << initialCameraPos.y << ", " << initialCameraPos.z << ")" << std::endl;
-		std::cout << "Player position (STAIR): (" << playerStartPos.x << ", " << playerStartPos.y << ", " << playerStartPos.z << ")" << std::endl;
-		float mapSize = GameConstants::MAP_GRID_WIDTH * GameConstants::TILE_SIZE;
-		std::cout << "Map size: " << mapSize << " units" << std::endl;
-		std::cout << "Controls:" << std::endl;
-		std::cout << "  WASD - Move horizontally" << std::endl;
-		std::cout << "  Space - Move up" << std::endl;
-		std::cout << "  Shift - Move down" << std::endl;
-		std::cout << "  Mouse - Look around (press 0 to toggle)" << std::endl;
-		std::cout << "===============================\n" << std::endl;
-
-		// InputManager 액션을 플레이어에 연결 (플레이어가 카메라를 동기화)
+		// InputManager 액션 설정
 		if (inputMgr && timer) {
-			// WASD - 전후좌우 이동 (Player를 통해 이동)
 			inputMgr->ActionW = [this, timer]() { if (player) player->MoveForward(timer->elapsedTime); };
 			inputMgr->ActionS = [this, timer]() { if (player) player->MoveBackward(timer->elapsedTime); };
 			inputMgr->ActionA = [this, timer]() { if (player) player->MoveLeft(timer->elapsedTime); };
 			inputMgr->ActionD = [this, timer]() { if (player) player->MoveRight(timer->elapsedTime); };
-
-			// Space/Shift - 상하 이동 (Player 위치를 직접 변경)
 			inputMgr->ActionSpace = [this, timer]() {
 				if (player) {
 					glm::vec3 pos = player->GetPosition();
 					pos.y += 50.0f * timer->elapsedTime;
 					player->SetPosition(pos);
 				}
-			};
+				};
 			inputMgr->ActionShift = [this, timer]() {
 				if (player) {
 					glm::vec3 pos = player->GetPosition();
 					pos.y -= 50.0f * timer->elapsedTime;
 					player->SetPosition(pos);
 				}
-			};
+				};
 		}
-		std::cout << "TestScene: Player-controlled movement enabled (Player syncs camera)" << std::endl;
 
-		// 플레이어 바운딩 박스 출력
-		glm::vec3 playerMin, playerMax;
-		player->GetBoundingBox(playerMin, playerMax);
-		std::cout << "\n===== PLAYER BOUNDING BOX =====" << std::endl;
-		std::cout << "Player position: (" << playerStartPos.x << ", " << playerStartPos.y << ", " << playerStartPos.z << ")" << std::endl;
-		std::cout << "Player BBox Min: (" << playerMin.x << ", " << playerMin.y << ", " << playerMin.z << ")" << std::endl;
-		std::cout << "Player BBox Max: (" << playerMax.x << ", " << playerMax.y << ", " << playerMax.z << ")" << std::endl;
-		std::cout << "Player BBox Size: " << (playerMax.x - playerMin.x) << " x " << (playerMax.y - playerMin.y) << " x " << (playerMax.z - playerMin.z) << std::endl;
-		std::cout << "Tile Size: " << GameConstants::TILE_SIZE << std::endl;
-		std::cout << "Player collision width: " << GameConstants::TILE_SIZE / 3.0f << " (1/3 of tile)" << std::endl;
-		std::cout << "===============================\n" << std::endl;
+		// ============================================
+		// 3단계: NavMesh 동적 생성 ⭐⭐⭐
+		// ============================================
+		std::cout << "\n===== NAVMESH BUILDING =====" << std::endl;
+		std::cout << "Building NavMesh based on actual 3D walls..." << std::endl;
 
-		// 플레이어 주변 벽 출력 (디버깅용)
-		std::cout << "\n===== NEARBY WALLS DEBUG =====" << std::endl;
-		int nearbyWallCount = 0;
-		for (const auto& wall : walls) {
-			glm::vec3 wallPos = wall->GetPosition();
-			float distX = abs(wallPos.x - playerStartPos.x);
-			float distZ = abs(wallPos.z - playerStartPos.z);
+		// NavMeshBuilder로 NavMesh 생성
+		NavMeshBuilder navMeshBuilder;
+		navMeshBuilder.BuildFromWalls(&walls, playerStartPos, GameConstants::TILE_SIZE);
+		NavMesh* tempNavMesh = navMeshBuilder.GetNavMesh();
 
-			// 플레이어 주변 5 타일 이내의 벽만 출력
-			if (distX <= GameConstants::TILE_SIZE * 3 && distZ <= GameConstants::TILE_SIZE * 3) {
-				glm::vec3 wallMin, wallMax;
-				wall->GetBoundingBox(wallMin, wallMax);
-				std::cout << "Wall at (" << wallPos.x << ", " << wallPos.z << ") - ";
-				std::cout << "BBox: [" << wallMin.x << "~" << wallMax.x << ", " << wallMin.z << "~" << wallMax.z << "]" << std::endl;
-				nearbyWallCount++;
-			}
-		}
-		std::cout << "Total nearby walls: " << nearbyWallCount << std::endl;
+		std::cout << "NavMesh created with " << (tempNavMesh ? tempNavMesh->GetAllNodes().size() : 0) << " walkable nodes" << std::endl;
 		std::cout << "==============================\n" << std::endl;
 
-		// CollisionManager에 충돌 페어 등록
+		// ============================================
+		// 4단계: Professor (NPC) 생성 + AI 초기화
+		// ============================================
+		std::cout << "\n===== PROFESSOR INITIALIZATION =====" << std::endl;
+
+		lee = std::make_unique<Professor>("RunLee", "RunAnimation", 0.6f, 1.8f, 0.6f);
+
+		// Professor를 플레이어 앞쪽에 배치 (미로 내 접근 가능한 위치)
+		glm::vec3 professorPos = playerStartPos + glm::vec3(5.0f, 0.0f, 0.0f);
+		lee->SetPosition(professorPos);
+		lee->SetPlayerReference(player.get());
+
+		// FBXAnimationPlayer 초기화
+		FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
+		ResourceManager* resMgr = g_engine->GetResourceManager();
+		if (animPlayer && resMgr) {
+			const FBXModel* model = resMgr->GetFBXModel("RunLee");
+			if (model) {
+				animPlayer->Init(model);
+				if (!model->animations.empty()) {
+					animPlayer->PlayAnimation(0);
+				}
+			}
+		}
+
+		// ⭐ AIController 초기화 - NavMesh 연동
+		if (tempNavMesh && !tempNavMesh->GetAllNodes().empty()) {
+			// Professor에 PathFinder 설정 (NavMesh 포함)
+			PathFinder* pathFinder = new PathFinder(tempNavMesh);
+			lee->SetPathFinder(pathFinder);
+
+			std::cout << "PathFinder initialized with NavMesh" << std::endl;
+			std::cout << "NavMesh: " << tempNavMesh->GetAllNodes().size() << " nodes" << std::endl;
+		}
+		else {
+			std::cerr << "WARNING: NavMesh is empty! AI pathfinding disabled" << std::endl;
+		}
+
+		std::cout << "===================================\n" << std::endl;
+
+		// CollisionManager 설정
 		CollisionManager* collisionMgr = g_engine->GetCollisionManager();
 		if (collisionMgr) {
-			// 정적 오브젝트 그룹 등록 (벽)
 			collisionMgr->RegisterStaticObjects(&walls);
-			// 동적 오브젝트 등록 (플레이어)
 			collisionMgr->RegisterDynamicObject(player.get());
-			std::cout << "TestScene: Collision detection ENABLED (Player vs Walls)" << std::endl;
+			std::cout << "Collision detection enabled\n" << std::endl;
 		}
 	}
 
 	// 바닥 생성
 	floor = std::make_unique<Plane>();
 	floor->SetOrientation(Plane::Orientation::UP);
-	floor->SetPosition(glm::vec3(0.0f, -1.0f, 0.0f));
+	floor->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 	float mapSize = GameConstants::MAP_GRID_WIDTH * GameConstants::TILE_SIZE;
 	floor->SetSize(mapSize, mapSize);
 	floor->SetResourceID("PlaneModel");
 	floor->SetTextureID("FloorTexture");
 	floor->SetTextureTiling(glm::vec2(GameConstants::FLOOR_TEXTURE_TILE_X, GameConstants::FLOOR_TEXTURE_TILE_Y));
-
-	// 천장 제거 (맵을 위에서 볼 수 있도록)
-	// ceiling은 생성하지 않음
-	std::cout << "TestScene: Ceiling removed for top-down view" << std::endl;
-
-	// ============================================
-	// 다중 조명 시스템 설정 (Multi-Light System)
-	// ============================================
 
 	// 레거시 단일 조명 (하위 호환성)
 	light = std::make_unique<Light>(LightType::POINT);
@@ -1217,6 +1156,7 @@ void TestScene::Enter()
 	}
 
 	std::cout << "TestScene: Map generation complete" << std::endl;
+	std::cout << "TestScene: Initialization complete" << std::endl;
 }
 
 void TestScene::Exit()
@@ -1239,6 +1179,8 @@ void TestScene::Exit()
 			inputMgr->ActionS = nullptr;
 			inputMgr->ActionA = nullptr;
 			inputMgr->ActionD = nullptr;
+			inputMgr->ActionSpace = nullptr;
+			inputMgr->ActionShift = nullptr;
 		}
 	}
 
@@ -1249,6 +1191,7 @@ void TestScene::Exit()
 	floor.reset();
 	ceiling.reset();
 	mapGenerator.reset();
+	lights.clear();
 }
 
 void TestScene::Update(float deltaTime)
@@ -1359,6 +1302,19 @@ void TestScene::Draw()
 					renderer->RenderObj(wall->GetResourceID(), wallMatrix, wall->GetColor());
 				}
 			//}
+		}
+	}
+
+	// Professor (RunLee) 렌더링 - 애니메이션 + 텍스처
+	if (lee && lee->IsActive()) {
+		glm::mat4 professorMatrix = lee->GetModelMat();
+
+		FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
+		if (animPlayer && animPlayer->IsPlaying()) {
+			renderer->RenderFBXAnimated("RunLee", "RunLee", professorMatrix, animPlayer->GetBoneTransforms());
+		}
+		else {
+			renderer->RenderFBX("RunLee", "RunLee", professorMatrix);
 		}
 	}
 
