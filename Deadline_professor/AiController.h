@@ -46,6 +46,11 @@ public:
 	void SetCurrentPosition(const glm::vec3& pos) { currentPosition = pos; }
 	glm::vec3 GetCurrentPosition() const { return currentPosition; }
 
+	// ⭐ 다음 waypoint 방향 가져오기 (회전 예측용)
+	glm::vec3 GetUpcomingMoveDirection() const;
+	// ⭐ 다음 waypoint까지의 남은 거리
+	float GetDistanceToNextWaypoint() const;
+
 private:
 	PathFinder* pathFinder = nullptr;
 	glm::vec3 currentPosition = glm::vec3(0.0f);  // NPC의 현재 위치

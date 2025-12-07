@@ -74,7 +74,7 @@ void Professor::Update(float deltaTime)
 		// 현재 위치를 AIController에 설정
 		aiController->SetCurrentPosition(GetPosition());
 
-		// ⭐ 디버그: 플레이어와의 거리 출력
+		// ⭐ 플레이어 감지 및 목표 설정
 		float distanceToPlayer = glm::distance(GetPosition(), playerPosition);
 		static int debugCounter = 0;
 		if (debugCounter++ % 60 == 0) {
@@ -83,50 +83,79 @@ void Professor::Update(float deltaTime)
 				<< " / Behavior: " << (int)aiController->GetBehaviorMode() << std::endl;
 		}
 
-		// ⭐ 테스트용: 감지 범위를 무시하고 항상 도망
-		if (true)  // ← 테스트용으로 항상 true
+		// ⭐ 테스트용: 항상 도망
+		// if (distanceToPlayer <= detectionRange)
+		if (true)
 		{
-			// IDLE 상태일 때만 목표 설정
 			if (aiController->GetBehaviorMode() == AIController::BehaviorMode::IDLE)
 			{
 				std::cout << "Professor: Starting to flee (TEST MODE)..." << std::endl;
-				std::cout << "  Current position: (" << GetPosition().x << ", " << GetPosition().y << ", " << GetPosition().z << ")" << std::endl;
-				std::cout << "  Target position: (" << patrolTarget.x << ", " << patrolTarget.y << ", " << patrolTarget.z << ")" << std::endl;
 				aiController->SetTargetPosition(patrolTarget);
-			}
-		}
-		else
-		{
-			// 플레이어가 감지 범위 밖 - 목표 해제
-			if (aiController->GetBehaviorMode() != AIController::BehaviorMode::IDLE)
-			{
-				std::cout << "Professor: Player out of range. Stopping." << std::endl;
-				aiController->ClearTarget();
 			}
 		}
 
 		// AI 업데이트 (이동 계산)
 		aiController->UpdateMovement(deltaTime);
 
-		// ⭐ AIController가 계산한 새 위치를 Professor에 적용
+		// ⭐ 위치 업데이트
 		glm::vec3 oldPosition = GetPosition();
 		glm::vec3 newPosition = aiController->GetCurrentPosition();
 
-		// ⭐ 위치가 실제로 변경되었는지 확인
 		if (glm::length(newPosition - oldPosition) > 0.001f) {
 			SetPosition(newPosition);
-			static int moveDebugCounter = 0;
-			if (moveDebugCounter++ % 30 == 0) {
-				std::cout << "Professor: MOVED from (" << oldPosition.x << ", " << oldPosition.z
-					<< ") to (" << newPosition.x << ", " << newPosition.z << ")" << std::endl;
-			}
 		}
 
-		// 이동 방향 적용 (애니메이션용)
-		glm::vec3 moveDirection = aiController->GetNextMoveDirection();
-		if (glm::length(moveDirection) > 0.001f)
+		// ⭐⭐⭐ 예측 회전 구현!
+		glm::vec3 currentMoveDirection = aiController->GetNextMoveDirection();
+		glm::vec3 upcomingMoveDirection = aiController->GetUpcomingMoveDirection();
+		float distanceToWaypoint = aiController->GetDistanceToNextWaypoint();
+
+		// ⭐ 회전할 방향 결정
+		const float LOOK_AHEAD_TIME = 0.35f; // 0.35초 전부터 회전 시작
+		const float LOOK_AHEAD_DISTANCE = GameConstants::PROFESSOR_MOVE_SPEED * LOOK_AHEAD_TIME;
+
+		glm::vec3 targetDirection;
+		if (distanceToWaypoint > 0.001f && distanceToWaypoint < LOOK_AHEAD_DISTANCE)
 		{
-			direction = moveDirection;
+			targetDirection = upcomingMoveDirection;
+		}
+		else
+		{
+			targetDirection = currentMoveDirection;
+		}
+
+		if (glm::length(targetDirection) > 0.001f)
+		{
+			direction = targetDirection;
+
+			// 목표 회전 각도 계산 (180도 반전 적용)
+			float targetAngleY = atan2f(-targetDirection.x, -targetDirection.z);
+			float targetAngleDegrees = glm::degrees(targetAngleY);
+
+			// 현재 회전 각도
+			glm::vec3 currentRotation = GetRotation();
+			float currentAngleDegrees = currentRotation.y;
+
+			// 각도 차이 계산 (최단 경로)
+			float angleDiff = targetAngleDegrees - currentAngleDegrees;
+			while (angleDiff > 180.0f) angleDiff -= 360.0f;
+			while (angleDiff < -180.0f) angleDiff += 360.0f;
+
+			// 부드러운 회전 (0.3초 동안 완료)
+			const float rotationSpeed = 3.33f; // 1.0 / 0.3
+			float lerpFactor = glm::min(deltaTime * rotationSpeed, 1.0f);
+
+			float newAngleDegrees = currentAngleDegrees + (angleDiff * lerpFactor);
+
+			SetRotation(glm::vec3(0.0f, newAngleDegrees, 0.0f));
+
+			// 디버그 출력
+			static int rotDebugCounter = 0;
+			if (rotDebugCounter++ % 60 == 0) {
+				std::cout << "Professor: Distance to waypoint: " << distanceToWaypoint
+					<< "m, Using " << (distanceToWaypoint < LOOK_AHEAD_DISTANCE ? "UPCOMING" : "CURRENT")
+					<< " direction" << std::endl;
+			}
 		}
 	}
 	else

@@ -263,3 +263,52 @@ bool AIController::HasReachedTarget() const
 {
 	return currentPath.IsComplete();
 }
+
+// ⭐ 다음 waypoint 방향 미리보기
+glm::vec3 AIController::GetUpcomingMoveDirection() const
+{
+	// 경로가 유효하지 않으면 현재 방향 반환
+	if (!currentPath.isValid || currentPath.waypoints.empty())
+	{
+		return GetNextMoveDirection();
+	}
+
+	// 현재 waypoint 인덱스
+	int currentIdx = currentPath.GetCurrentWaypointIndex();
+
+	// 다음 waypoint가 있는지 확인
+	if (currentIdx + 1 >= static_cast<int>(currentPath.waypoints.size()))
+	{
+		// 다음 waypoint가 없으면 현재 방향 반환
+		return GetNextMoveDirection();
+	}
+
+	// ⭐ 다음 waypoint 방향 계산
+	glm::vec3 nextWaypoint = currentPath.waypoints[currentIdx + 1];
+	glm::vec3 direction = nextWaypoint - currentPosition;
+
+	float distance = glm::length(direction);
+	if (distance < 0.001f)
+	{
+		return GetNextMoveDirection();
+	}
+
+	return glm::normalize(direction);
+}
+
+// ⭐ 다음 waypoint까지의 남은 거리
+float AIController::GetDistanceToNextWaypoint() const
+{
+	if (!currentPath.isValid || currentPath.waypoints.empty())
+	{
+		return 0.0f;
+	}
+
+	glm::vec3 nextWaypoint = currentPath.GetNextWaypoint();
+	if (nextWaypoint == glm::vec3(0.0f))
+	{
+		return 0.0f;
+	}
+
+	return glm::distance(currentPosition, nextWaypoint);
+}
