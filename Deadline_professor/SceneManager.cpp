@@ -839,6 +839,8 @@ void Floor1Scene::Draw()
 		}
 	}
 
+	player->DrawHands(renderer);
+
 	// Professor 렌더링 (1층: RunSong - 애니메이션 + 텍스처)
 	if (professor && professor->IsActive()) {
 		glm::mat4 professorMatrix = professor->GetModelMat();
@@ -1390,6 +1392,9 @@ void Floor2Scene::Draw()
 			}
 		}
 	}
+
+	player->DrawHands(renderer);
+
 	// Professor 렌더링 (2층: RunLee - 애니메이션 + 텍스처)
 	if (professor && professor->IsActive()) {
 		glm::mat4 professorMatrix = professor->GetModelMat();
@@ -1933,6 +1938,9 @@ void Floor3Scene::Draw()
 			}
 		}
 	}
+
+	player->DrawHands(renderer);
+
 	// Professor 렌더링 (3층: RunDragon - 애니메이션 + 텍스처)
 	if (professor && professor->IsActive()) {
 		glm::mat4 professorMatrix = professor->GetModelMat();
