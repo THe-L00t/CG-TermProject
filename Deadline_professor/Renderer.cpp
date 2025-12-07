@@ -207,7 +207,7 @@ void Renderer::RenderObjWithTexture(const std::string_view& objName, const std::
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	shader->setUniform("uTexture", 0);
 	shader->setUniform("uUseTexture", true);
-	shader->setUniform("uTextureTiling", glm::vec2(1.0f, 1.0f));
+	shader->setUniform("uTextureTiling", glm::vec2(1.0f, -1.0f));
 	shader->setUniform("uUseSkinning", false);
 
 	// 개별 VAO 사용

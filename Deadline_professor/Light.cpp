@@ -1,8 +1,8 @@
-#include "Light.h"
+﻿#include "Light.h"
 
 Light::Light(LightType type)
 	: type(type), enabled(true),
-	  ambient(0.2f, 0.2f, 0.2f),
+	  ambient(0.02f, 0.02f, 0.02f),
 	  diffuse(1.0f, 1.0f, 1.0f),
 	  specular(1.0f, 1.0f, 1.0f),
 	  direction(0.0f, -1.0f, 0.0f),

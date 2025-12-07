@@ -3,6 +3,7 @@
 #include "GameConstants.h"
 #include "Engine.h"
 #include "CollisionManager.h"
+#include "Renderer.h"
 
 Player::Player()
 {
@@ -13,6 +14,12 @@ Player::Player()
 
 	// 기본 이동 속도 설정 (걷기)
 	moveSpeed = GameConstants::PLAYER_WALK_SPEED;
+
+	// 손 모델 리소스 ID 초기화 (기본값)
+	leftHandResourceID = "LeftHandModel";
+	rightHandResourceID = "RightHandModel";
+	leftHandTextureID = "LeftHandTexture";
+	rightHandTextureID = "RightHandTexture";
 }
 
 Player::~Player()
@@ -180,4 +187,67 @@ bool Player::TryMove(const glm::vec3& newPos)
 	SetPosition(newPos);
 	SyncCameraPosition();
 	return true;
+}
+
+void Player::DrawHands(Renderer* renderer) const
+{
+	if (!renderer || !camera) return;
+
+	// 카메라 정보 가져오기
+	glm::vec3 cameraPos = camera->GetPosition();
+	glm::vec3 cameraDir = camera->GetDirection();
+	glm::vec3 forward = glm::normalize(cameraDir - cameraPos);
+	glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+	glm::vec3 up = glm::normalize(glm::cross(right, forward));
+
+	// 손 모델의 기본 크기 (적절히 조정)
+	float handScale = 0.08f;
+
+	// 왼손 위치 계산 (카메라 앞쪽, 약간 왼쪽 아래)
+	glm::vec3 leftHandPos = cameraPos
+		+ forward * 0.3f   // 앞으로
+		- right * 0.15f    // 왼쪽으로
+		- up * 0.12f;      // 아래로
+
+	// 오른손 위치 계산 (카메라 앞쪽, 약간 오른쪽 아래)
+	glm::vec3 rightHandPos = cameraPos
+		+ forward * 0.3f   // 앞으로
+		+ right * 0.15f    // 오른쪽으로
+		- up * 0.12f;      // 아래로
+
+	// 왼손 모델 행렬 생성
+	glm::mat4 leftHandMatrix = glm::mat4(1.0f);
+	leftHandMatrix = glm::translate(leftHandMatrix, leftHandPos);
+	// 카메라 방향에 맞춰 회전
+	glm::mat4 rotationMatrix = glm::lookAt(glm::vec3(0.0f), forward, up);
+	leftHandMatrix = leftHandMatrix * glm::inverse(rotationMatrix);
+	leftHandMatrix = glm::scale(leftHandMatrix, glm::vec3(handScale));
+
+	// 오른손 모델 행렬 생성
+	glm::mat4 rightHandMatrix = glm::mat4(1.0f);
+	rightHandMatrix = glm::translate(rightHandMatrix, rightHandPos);
+	rightHandMatrix = rightHandMatrix * glm::inverse(rotationMatrix);
+	rightHandMatrix = glm::scale(rightHandMatrix, glm::vec3(handScale));
+
+	// 왼손 렌더링
+	if (!leftHandResourceID.empty()) {
+		//renderer->RenderObj(leftHandResourceID, leftHandMatrix, glm::vec3(0.9f, 0.8f, 0.7f)); // 살색
+		renderer->RenderObjWithTexture(leftHandResourceID, leftHandTextureID, leftHandMatrix);
+	}
+
+	// 오른손 렌더링
+	if (!rightHandResourceID.empty()) {
+		//renderer->RenderObj(rightHandResourceID, rightHandMatrix, glm::vec3(0.9f, 0.8f, 0.7f)); // 살색
+		renderer->RenderObjWithTexture(rightHandResourceID, rightHandTextureID, rightHandMatrix);
+	}
+}
+
+void Player::SetLeftHandResourceID(const std::string& id)
+{
+	leftHandResourceID = id;
+}
+
+void Player::SetRightHandResourceID(const std::string& id)
+{
+	rightHandResourceID = id;
 }

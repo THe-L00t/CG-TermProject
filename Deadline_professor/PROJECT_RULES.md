@@ -27,12 +27,23 @@
 - 셰이더 객체들을 내부적으로 관리
 - 모든 렌더링 파이프라인 작업 처리
 - 다른 클래스는 OpenGL draw 함수를 직접 호출하지 않음
+- **다중 조명 시스템 관리** (최대 8개 동시 지원):
+  - `AddLight(Light*)`: 렌더링 시스템에 조명 추가
+  - `RemoveLight(Light*)`: 특정 조명 제거
+  - `ClearLights()`: 모든 조명 제거
+  - `GetLights()`: 등록된 조명 목록 반환
+  - `ApplyLightsToShader(Shader*)`: 모든 활성 조명을 셰이더에 전달
+  - `RenderLightDebugPoints()`: 디버그용 조명 위치 시각화 (흰색 점으로 표시)
 - **주요 렌더링 함수**:
-  - `RenderFBXModel()`: 기본 FBX 모델 렌더링 (색상 지원)
-  - `RenderFBXModelWithTexture()`: 텍스처가 적용된 FBX 모델 렌더링
-  - `RenderFBXModelWithAnimation()`: 스켈레탈 애니메이션이 적용된 FBX 모델 렌더링
-  - `RenderFBXModelWithAnimationAndTexture()`: 애니메이션 + 텍스처 렌더링
-  - `RenderFBXModelWithTextureTiled()`: 텍스처 타일링이 적용된 렌더링 (바닥/천장용)
+  - `RenderObj()`: OBJ 모델 렌더링 (색상 지원)
+  - `RenderObjWithTexture()`: 텍스처가 적용된 OBJ 모델 렌더링
+  - `RenderObjWithTextureTiled()`: 텍스처 타일링이 적용된 OBJ 렌더링
+  - `RenderFBX()`: 텍스처가 적용된 FBX 모델 렌더링
+  - `RenderFBXAnimated()`: 스켈레탈 애니메이션 + 텍스처 렌더링
+- **조명 통합**: 모든 렌더링 함수는 자동으로 다중 조명 시스템을 적용
+  - 렌더링 함수 호출 시 `ApplyLightsToShader()` 자동 호출
+  - 레거시 단일 조명(`SetLight()`)과 하위 호환성 유지
+  - 다중 조명이 없을 때 기본 조명 자동 사용
 
 ### ResourceManager
 - **모든** 리소스 로딩은 이 클래스에서만 관리
@@ -76,6 +87,21 @@
 - Uniform 변수 설정
 - **Renderer에 의해 관리됨**
 - 다른 클래스는 Shader를 직접 생성하거나 관리하지 않음
+- **다중 조명 셰이더 시스템** (basic.vert / basic.frag):
+  - **Vertex Shader (basic.vert)**:
+    - 스켈레탈 애니메이션 지원 (최대 100개 본)
+    - 본 가중치 기반 정점 변환
+    - Normal 변환 행렬 계산
+  - **Fragment Shader (basic.frag)**:
+    - 최대 8개 조명 동시 처리
+    - 조명 타입별 계산 함수:
+      - `CalculateDirectionalLight()`: 방향성 조명 계산
+      - `CalculatePointLight()`: 점광원 + 거리 감쇠 계산
+      - `CalculateSpotLight()`: 스포트라이트 + 원뿔 강도 + 감쇠 계산
+    - Phong 조명 모델 (Ambient + Diffuse + Specular)
+    - 텍스처 타일링 지원 (`uTextureTiling`)
+    - 하위 호환성: `uLightCount == 0`일 때 레거시 조명 사용
+- **셰이더 프로그램 접근**: `GetProgram()` 메서드로 프로그램 ID 반환
 
 ### Object (베이스 클래스)
 - 게임 내 모든 오브젝트의 기본 클래스
@@ -104,9 +130,29 @@
 
 ### Light
 - Object를 상속받은 조명 클래스
-- 방향광(Directional), 점광원(Point), 스포트라이트(Spot) 지원
-- 조명 속성(Ambient, Diffuse, Specular) 관리
-- 셰이더에 조명 정보 전달 (ApplyToShader 메서드)
+- **3가지 조명 타입 지원**:
+  - **DIRECTIONAL (방향성 조명)**: 태양광처럼 무한히 먼 곳에서 비추는 평행광
+    - `SetDirection()`: 빛의 방향 설정 (위치가 아닌 방향 벡터)
+    - 감쇠(Attenuation) 없음
+  - **POINT (점광원)**: 모든 방향으로 빛을 발산하는 전구형 조명
+    - `SetPosition()`: 조명의 위치 설정
+    - `SetAttenuation()`: 거리에 따른 밝기 감쇠 설정 (상수, 선형, 이차)
+    - 감쇠 공식: `1.0 / (constant + linear × distance + quadratic × distance²)`
+  - **SPOT (스포트라이트)**: 원뿔 모양으로 빛을 비추는 손전등형 조명
+    - `SetPosition()`: 조명의 위치 설정
+    - `SetDirection()`: 빛이 향하는 방향 설정
+    - `SetSpotAngle()` / `SetCutOff()`: 내부 각도와 외부 경계 각도 설정 (코사인 값)
+    - `SetAttenuation()`: 거리에 따른 감쇠 설정
+- **조명 속성 관리**:
+  - `SetAmbient()`: 주변광 색상 (항상 존재하는 최소 밝기)
+  - `SetDiffuse()`: 확산광 색상 (표면에 직접 닿는 빛의 색)
+  - `SetSpecular()`: 반사광 색상 (반짝이는 하이라이트 색)
+  - `SetIntensity()`: 조명 강도 (0.0 ~ 무제한, 기본 1.0)
+  - `SetEnabled()`: 조명 활성화/비활성화
+- **셰이더 통합**:
+  - `ApplyToShader(shaderProgram, lightIndex)`: 지정된 인덱스의 조명 유니폼에 데이터 전달
+  - Phong 조명 모델 기반 계산 (Ambient + Diffuse + Specular)
+- **다중 조명 시스템**: Renderer에 등록하여 최대 8개 조명 동시 사용 가능
 
 ### Plane
 - Object를 상속받은 평면 오브젝트 클래스
@@ -210,6 +256,70 @@
   - 기타 테스트/디버깅용 임시 파일
 - 프로젝트 디렉토리를 깨끗하게 유지
 - 커밋 전 불필요한 파일이 없는지 확인
+
+## 다중 조명 시스템 가이드
+
+### 조명 설정 예시
+
+```cpp
+// 1. Directional Light (태양광)
+auto dirLight = std::make_unique<Light>(LightType::DIRECTIONAL);
+dirLight->SetDirection(glm::vec3(-0.2f, -1.0f, -0.3f));
+dirLight->SetAmbient(glm::vec3(0.2f, 0.2f, 0.25f));
+dirLight->SetDiffuse(glm::vec3(0.5f, 0.5f, 0.6f));
+dirLight->SetSpecular(glm::vec3(0.3f, 0.3f, 0.3f));
+dirLight->SetIntensity(0.8f);
+dirLight->SetEnabled(true);
+
+// 2. Point Light (전구)
+auto pointLight = std::make_unique<Light>(LightType::POINT);
+pointLight->SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
+pointLight->SetAmbient(glm::vec3(0.1f, 0.1f, 0.1f));
+pointLight->SetDiffuse(glm::vec3(1.0f, 0.9f, 0.8f));
+pointLight->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+pointLight->SetIntensity(1.5f);
+pointLight->SetAttenuation(1.0f, 0.09f, 0.032f);  // 약 50m 범위
+pointLight->SetEnabled(true);
+
+// 3. Spot Light (손전등)
+auto spotLight = std::make_unique<Light>(LightType::SPOT);
+spotLight->SetPosition(glm::vec3(0.0f, 2.0f, 0.0f));
+spotLight->SetDirection(glm::vec3(0.0f, -0.8f, -0.6f));
+spotLight->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));
+spotLight->SetDiffuse(glm::vec3(1.0f, 1.0f, 0.9f));
+spotLight->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+spotLight->SetIntensity(2.0f);
+spotLight->SetAttenuation(1.0f, 0.09f, 0.032f);
+spotLight->SetSpotAngle(
+    glm::cos(glm::radians(12.5f)),  // 내부 각도
+    glm::cos(glm::radians(17.5f))   // 외부 각도
+);
+spotLight->SetEnabled(true);
+
+// Renderer에 등록
+renderer->AddLight(dirLight.get());
+renderer->AddLight(pointLight.get());
+renderer->AddLight(spotLight.get());
+```
+
+### 감쇠(Attenuation) 거리 참고표
+
+| Constant | Linear | Quadratic | 유효 범위 |
+|----------|--------|-----------|----------|
+| 1.0 | 0.7 | 1.8 | ~7m |
+| 1.0 | 0.35 | 0.44 | ~13m |
+| 1.0 | 0.22 | 0.20 | ~20m |
+| 1.0 | 0.14 | 0.07 | ~30m |
+| 1.0 | 0.09 | 0.032 | ~50m |
+| 1.0 | 0.07 | 0.017 | ~70m |
+| 1.0 | 0.045 | 0.0075 | ~100m |
+
+### 주의사항
+
+- **최대 조명 개수**: 8개 (셰이더 `MAX_LIGHTS` 제한)
+- **성능**: 조명이 많을수록 프래그먼트 셰이더 연산 증가
+- **조명 우선순위**: 먼저 추가된 조명부터 처리
+- **하위 호환성**: 레거시 `SetLight()` 사용 시 다중 조명 무시됨
 
 ## 개발 가이드라인
 

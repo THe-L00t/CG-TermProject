@@ -176,6 +176,20 @@ void Engine::LoadAssets()
 		std::cout << "SUCCESS: cube.obj loaded" << std::endl;
 	}
 
+	if (!resourceManager->LoadObj("RightHandModel", "Resources/rightHand.obj")) {
+		std::cerr << "ERROR: Failed to load rightHand.obj" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: rightHand.obj loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadObj("LeftHandModel", "Resources/leftHand.obj")) {
+		std::cerr << "ERROR: Failed to load leftHand.obj" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: leftHabd.obj loaded" << std::endl;
+	}
+
 	if (!resourceManager->LoadFBX("RunLee", "Resources/RunLee.fbx")) {
 		std::cerr << "ERROR: Failed to load RunLee.fbx" << std::endl;
 	} else {
@@ -232,6 +246,20 @@ void Engine::LoadAssets()
 		std::cerr << "Warning: Failed to load wall.png" << std::endl;
 	} else {
 		std::cout << "SUCCESS: wall.png loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadTexture("LeftHandTexture", "Textures/leftHand.png")) {
+		std::cerr << "Warning: Failed to load leftHand.png" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: leftHand.png loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadTexture("RightHandTexture", "Textures/rightHand.png")) {
+		std::cerr << "Warning: Failed to load rightHand.png" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: rightHand.png loaded" << std::endl;
 	}
 
 	std::cout << "=== Assets Loaded ===" << std::endl;

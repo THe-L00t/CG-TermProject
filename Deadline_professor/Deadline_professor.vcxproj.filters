@@ -45,6 +45,15 @@
     <ClCompile Include="Professor.cpp">
       <Filter>소스 파일\Professor</Filter>
     </ClCompile>
+    <ClCompile Include="CollisionManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="LoadPng.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MapGenerator.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TotalHeader.h">
@@ -66,6 +75,15 @@
       <UniqueIdentifier>{a1b2c3d4-e5f6-4a5b-8c7d-9e8f7a6b5c4d}</UniqueIdentifier>
     </Filter>
     <ClInclude Include="FBXAnimationPlayer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="LoadPng.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MapGenerator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -92,18 +110,33 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="basic.vert">
-      <Filter>리소스 파일</Filter>
-    </None>
-    <None Include="basic.frag">
-      <Filter>리소스 파일</Filter>
-    </None>
-    <None Include="cube.obj">
-      <Filter>리소스 파일</Filter>
-    </None>
     <Filter Include="소스 파일\GameTimer">
       <UniqueIdentifier>{9bf98e59-2f13-4bee-aa2c-0f746bafdb87}</UniqueIdentifier>
     </Filter>
+    <None Include="Shaders\basic.vert" />
+    <None Include="Shaders\basic.frag" />
+    <None Include="Resources\cube.obj" />
+    <None Include="Resources\desk.obj" />
+    <None Include="Resources\leftHand.obj" />
+    <None Include="Resources\rightHand.obj" />
+    <None Include="Resources\RunDragon.fbx" />
+    <None Include="Resources\RunLee.fbx" />
+    <None Include="Resources\RunSong.fbx" />
+    <None Include="Textures\desk.png">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Textures\leaftHand.png">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Textures\leftHand.png">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Textures\rightHand.png">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Textures\RunLee.png">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameTimer.cpp">
