@@ -2,6 +2,7 @@
 #include "Engine.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
+#include "Object.h"
 #include "Player.h"
 #include "Professor.h"
 #include "Light.h"
@@ -1365,4 +1366,8 @@ void TestScene::Draw()
 	if (frameCount++ % 60 == 0) {
 		std::cout << "Frustum Culling: " << renderedWalls << " / " << totalWalls << " walls rendered" << std::endl;
 	}
+
+	// DEBUG: 조명 위치 렌더링
+	renderer->RenderLightDebugPoints();
 }
+

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "TotalHeader.h"
 
 class Scene;
@@ -7,6 +7,7 @@ class Floor1Scene;
 class Floor2Scene;
 class Floor3Scene;
 class TestScene;
+class Object;
 class Player;
 class Professor;
 class Light;
@@ -109,6 +110,7 @@ public:
 	void Exit() override;
 	void Update(float) override;
 	void Draw() override;
+
 private:
 	std::unique_ptr<Player> player;
 	std::unique_ptr<Professor> lee;

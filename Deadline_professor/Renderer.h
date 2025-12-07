@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "TotalHeader.h"
 #include "Shader.h"
 #include "ResourceManager.h"
@@ -57,6 +57,9 @@ public:
 	void InituiQuad(const glm::vec2& RT, const glm::vec2& LB);
 	void Renderui(const std::string_view& textureName, float deltatime);
 private:
+	// OBJ 렌더링 헬퍼 함수
+	void ConfigureSharedVAOForOBJ(const ObjData* objData) const;
+
 	static Renderer* activeInstance;
 
 	std::unordered_map<std::string, Shader> shaders;

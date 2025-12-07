@@ -19,6 +19,8 @@ public:
 	void Use() const;
 	void Unuse() const;
 
+	GLuint GetProgram() const { return program; }
+
 	void setUniform(const std::string_view&, int);
 	void setUniform(const std::string_view&, bool);
 	void setUniform(const std::string_view&, float);
