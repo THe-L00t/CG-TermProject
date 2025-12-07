@@ -76,18 +76,21 @@ void NavMeshBuilder::BuildFromWalls(const std::vector<std::unique_ptr<Wall>>* wa
 			// 타일 중심 월드 좌표 계산
 			float worldX = (x * tileSize) - halfMapSize + (tileSize * 0.5f);
 			float worldZ = (z * tileSize) - halfMapSize + (tileSize * 0.5f);
-			glm::vec3 tileCenter(worldX, 0.5f, worldZ);
+			glm::vec3 tileCenter(worldX, 0.0f, worldZ);
 
 			// 이 타일이 벽과 겹치는지 확인
 			bool isWalkable = !IsPointInsideAnyWall(tileCenter, walls, collisionRadius);
 
-			if (isWalkable) {
-				walkableNodeCount++;
-			}
-			else {
-				// 벽이 있는 위치의 노드를 비이동으로 표시
-				NavNode* node = builtNavMesh->GetNode(x, z);
-				if (node) {
+			// ⭐ NavMesh 노드 가져오기 및 설정
+			NavNode* node = builtNavMesh->GetNode(x, z);
+			if (node) {
+				if (isWalkable) {
+					// ✅ 이동 가능한 노드로 설정 (이 부분이 누락되어 있었음!)
+					node->SetWalkable(true);
+					walkableNodeCount++;
+				}
+				else {
+					// 벽이 있는 위치는 비이동
 					node->SetWalkable(false);
 				}
 			}
@@ -96,8 +99,10 @@ void NavMeshBuilder::BuildFromWalls(const std::vector<std::unique_ptr<Wall>>* wa
 
 	std::cout << "Walkable nodes: " << walkableNodeCount << std::endl;
 
-	// 3단계: 인접 노드 연결 (내부적으로 처리됨)
+	// 3단계: 인접 노드 연결
 	std::cout << "Connecting neighbors..." << std::endl;
+	// ⭐ NavMesh의 RebuildConnections 호출
+	builtNavMesh->RebuildConnections();
 
 	// 4단계: 디버그 정보 출력
 	PrintNavMeshStats(builtNavMesh.get());

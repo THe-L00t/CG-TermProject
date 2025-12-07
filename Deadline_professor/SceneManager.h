@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "TotalHeader.h"
+#include "NavMesh.h"
 
 class Scene;
 class TitleScene;
@@ -119,5 +120,6 @@ private:
 	std::unique_ptr<class Plane> floor;
 	std::unique_ptr<class Plane> ceiling;
 
-
+	// ⭐ NavMesh 추가 (소유권을 TestScene이 가짐)
+	std::unique_ptr<NavMesh> navMesh;
 };

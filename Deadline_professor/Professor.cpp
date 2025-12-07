@@ -1,4 +1,4 @@
-#include "Professor.h"
+﻿#include "Professor.h"
 #include "GameConstants.h"
 #include "PathFinder.h"
 
@@ -42,6 +42,27 @@ void Professor::Update(float deltaTime)
 {
 	Object::Update(deltaTime);
 
+	// ⭐ 디버그: Professor와 Player 위치 출력
+	static int posDebugCounter = 0;
+	if (posDebugCounter++ % 120 == 0) {
+		std::cout << "\n===== PROFESSOR DEBUG =====" << std::endl;
+		std::cout << "Professor position: (" << GetPosition().x << ", " << GetPosition().y << ", " << GetPosition().z << ")" << std::endl;
+		if (playerRef != nullptr) {
+			std::cout << "Player position: (" << playerRef->GetPosition().x << ", " << playerRef->GetPosition().y << ", " << playerRef->GetPosition().z << ")" << std::endl;
+		}
+		else {
+			std::cout << "Player reference: NULL!" << std::endl;
+		}
+		if (aiController != nullptr) {
+			std::cout << "AIController state: " << (int)aiController->GetBehaviorMode() << std::endl;
+			std::cout << "AIController position: (" << aiController->GetCurrentPosition().x << ", " << aiController->GetCurrentPosition().y << ", " << aiController->GetCurrentPosition().z << ")" << std::endl;
+		}
+		else {
+			std::cout << "AIController: NULL!" << std::endl;
+		}
+		std::cout << "============================\n" << std::endl;
+	}
+
 	if (playerRef != nullptr)
 	{
 		playerPosition = playerRef->GetPosition();
@@ -53,37 +74,68 @@ void Professor::Update(float deltaTime)
 		// 현재 위치를 AIController에 설정
 		aiController->SetCurrentPosition(GetPosition());
 
-		// 플레이어 감지 범위 내에서만 도망
+		// ⭐ 디버그: 플레이어와의 거리 출력
 		float distanceToPlayer = glm::distance(GetPosition(), playerPosition);
-		if (distanceToPlayer <= detectionRange)
+		static int debugCounter = 0;
+		if (debugCounter++ % 60 == 0) {
+			std::cout << "Professor: Distance to player = " << distanceToPlayer
+				<< " / Detection range = " << detectionRange
+				<< " / Behavior: " << (int)aiController->GetBehaviorMode() << std::endl;
+		}
+
+		// ⭐ 테스트용: 감지 범위를 무시하고 항상 도망
+		if (true)  // ← 테스트용으로 항상 true
 		{
-			// 플레이어가 감지 범위 내 - 목표 설정
-			aiController->SetTargetPosition(patrolTarget);
+			// IDLE 상태일 때만 목표 설정
+			if (aiController->GetBehaviorMode() == AIController::BehaviorMode::IDLE)
+			{
+				std::cout << "Professor: Starting to flee (TEST MODE)..." << std::endl;
+				std::cout << "  Current position: (" << GetPosition().x << ", " << GetPosition().y << ", " << GetPosition().z << ")" << std::endl;
+				std::cout << "  Target position: (" << patrolTarget.x << ", " << patrolTarget.y << ", " << patrolTarget.z << ")" << std::endl;
+				aiController->SetTargetPosition(patrolTarget);
+			}
 		}
 		else
 		{
 			// 플레이어가 감지 범위 밖 - 목표 해제
-			aiController->ClearTarget();
+			if (aiController->GetBehaviorMode() != AIController::BehaviorMode::IDLE)
+			{
+				std::cout << "Professor: Player out of range. Stopping." << std::endl;
+				aiController->ClearTarget();
+			}
 		}
 
-		// AI 업데이트
+		// AI 업데이트 (이동 계산)
 		aiController->UpdateMovement(deltaTime);
 
-		// 이동 방향 적용
+		// ⭐ AIController가 계산한 새 위치를 Professor에 적용
+		glm::vec3 oldPosition = GetPosition();
+		glm::vec3 newPosition = aiController->GetCurrentPosition();
+
+		// ⭐ 위치가 실제로 변경되었는지 확인
+		if (glm::length(newPosition - oldPosition) > 0.001f) {
+			SetPosition(newPosition);
+			static int moveDebugCounter = 0;
+			if (moveDebugCounter++ % 30 == 0) {
+				std::cout << "Professor: MOVED from (" << oldPosition.x << ", " << oldPosition.z
+					<< ") to (" << newPosition.x << ", " << newPosition.z << ")" << std::endl;
+			}
+		}
+
+		// 이동 방향 적용 (애니메이션용)
 		glm::vec3 moveDirection = aiController->GetNextMoveDirection();
 		if (glm::length(moveDirection) > 0.001f)
 		{
-			// 방향 설정 (회전 애니메이션에 필요)
 			direction = moveDirection;
-
-			// 위치 업데이트
-			glm::vec3 newPosition = GetPosition() + moveDirection * moveSpeed * deltaTime;
-			SetPosition(newPosition);
 		}
 	}
 	else
 	{
-		// AIController가 없으면 기존 로직 사용
+		static bool warnedOnce = false;
+		if (!warnedOnce) {
+			std::cout << "WARNING: Professor has no AIController!" << std::endl;
+			warnedOnce = true;
+		}
 		FleeFromPlayer(deltaTime);
 	}
 }

@@ -961,9 +961,15 @@ void TestScene::Enter()
 		// NavMeshBuilder로 NavMesh 생성
 		NavMeshBuilder navMeshBuilder;
 		navMeshBuilder.BuildFromWalls(&walls, playerStartPos, GameConstants::TILE_SIZE);
-		NavMesh* tempNavMesh = navMeshBuilder.GetNavMesh();
 
-		std::cout << "NavMesh created with " << (tempNavMesh ? tempNavMesh->GetAllNodes().size() : 0) << " walkable nodes" << std::endl;
+		// ⭐⭐⭐ 소유권 이전! (NavMeshBuilder가 소멸되어도 NavMesh는 유지됨)
+		navMesh = navMeshBuilder.ReleaseMesh();
+
+		// ⚠️ 주의: GetNavMesh()가 포인터를 반환하므로, 
+		// NavMeshBuilder가 소멸될 때 NavMesh도 같이 소멸됨!
+		// 해결책: NavMeshBuilder에서 소유권을 이전하도록 수정 필요
+
+		std::cout << "NavMesh created with " << (navMesh ? navMesh->GetAllNodes().size() : 0) << " walkable nodes" << std::endl;
 		std::cout << "==============================\n" << std::endl;
 
 		// ============================================
@@ -973,8 +979,45 @@ void TestScene::Enter()
 
 		lee = std::make_unique<Professor>("RunLee", "RunAnimation", 0.6f, 1.8f, 0.6f);
 
-		// Professor를 플레이어 앞쪽에 배치 (미로 내 접근 가능한 위치)
-		glm::vec3 professorPos = playerStartPos + glm::vec3(5.0f, 0.0f, 0.0f);
+		// ⭐ Professor를 NavMesh에서 이동 가능한 위치에 배치
+		glm::vec3 professorPos = playerStartPos; // 일단 플레이어 위치에서 시작
+
+		// NavMesh에서 이동 가능한 근처 타일 찾기
+		if (navMesh) {  // ⭐ tempNavMesh → navMesh로 변경!
+			bool foundWalkableTile = false;
+
+			// ⭐ 플레이어 바로 옆 (반경 2 타일 이내)에서 이동 가능한 타일 찾기
+			for (int offsetZ = -2; offsetZ <= 2 && !foundWalkableTile; ++offsetZ) {
+				for (int offsetX = -2; offsetX <= 2 && !foundWalkableTile; ++offsetX) {
+					// 플레이어와 최소 1타일은 떨어지도록 (너무 가까우면 겹침)
+					if (std::abs(offsetX) < 1 && std::abs(offsetZ) < 1) {
+						continue;
+					}
+
+					// ⭐ 월드 좌표 계산 (TILE_SIZE 사용!)
+					float testX = playerStartPos.x + (offsetX * GameConstants::TILE_SIZE);
+					float testZ = playerStartPos.z + (offsetZ * GameConstants::TILE_SIZE);
+					glm::vec3 testPos(testX, 0.0f, testZ);
+
+					// NavMesh에서 이 위치의 노드 확인
+					NavNode* testNode = navMesh->GetNodeFromWorldPos(testPos);
+					if (testNode && testNode->IsWalkable()) {
+						// 이동 가능한 타일 발견!
+						professorPos = testNode->GetWorldPosition();
+						foundWalkableTile = true;
+						std::cout << "[V] Found walkable tile for Professor at: ("
+							<< professorPos.x << ", " << professorPos.y << ", " << professorPos.z << ")" << std::endl;
+					}
+				}
+			}
+
+			if (!foundWalkableTile) {
+				std::cerr << "[!!] WARNING: Could not find walkable tile for Professor near player!" << std::endl;
+				// ⭐ 플레이어 위치 그대로 사용 (최후의 수단)
+				professorPos = playerStartPos;
+			}
+		}
+
 		lee->SetPosition(professorPos);
 		lee->SetPlayerReference(player.get());
 
@@ -992,16 +1035,60 @@ void TestScene::Enter()
 		}
 
 		// ⭐ AIController 초기화 - NavMesh 연동
-		if (tempNavMesh && !tempNavMesh->GetAllNodes().empty()) {
-			// Professor에 PathFinder 설정 (NavMesh 포함)
-			PathFinder* pathFinder = new PathFinder(tempNavMesh);
+		if (navMesh && !navMesh->GetAllNodes().empty()) {  // ⭐ tempNavMesh → navMesh
+			// PathFinder 생성 (NavMesh 포인터 전달)
+			PathFinder* pathFinder = new PathFinder(navMesh.get());  // ⭐ .get() 사용
 			lee->SetPathFinder(pathFinder);
 
-			std::cout << "PathFinder initialized with NavMesh" << std::endl;
-			std::cout << "NavMesh: " << tempNavMesh->GetAllNodes().size() << " nodes" << std::endl;
+			// AIController 생성
+			AIController* aiController = new AIController(pathFinder);
+			aiController->SetCurrentPosition(professorPos);
+			lee->SetAIController(aiController);
+
+			// 도망칠 목표 지점 설정
+			glm::vec3 escapeTarget = professorPos;
+
+			// ⭐ Professor 주변 가까운 곳에서 목표 지점 찾기 (5~8 타일 거리)
+			bool foundEscapeTarget = false;
+			for (int offsetZ = -8; offsetZ <= 8 && !foundEscapeTarget; ++offsetZ) {
+				for (int offsetX = -8; offsetX <= 8 && !foundEscapeTarget; ++offsetX) {
+					// 거리 확인 (최소 5 타일 이상 떨어진 곳)
+					if (std::abs(offsetX) < 5 || std::abs(offsetZ) < 5) {
+						continue;
+					}
+
+					// ⭐ 월드 좌표 계산 (TILE_SIZE 사용!)
+					float testX = professorPos.x + (offsetX * GameConstants::TILE_SIZE);
+					float testZ = professorPos.z + (offsetZ * GameConstants::TILE_SIZE);
+					glm::vec3 testPos(testX, 0.0f, testZ);
+
+					NavNode* testNode = navMesh->GetNodeFromWorldPos(testPos);
+					if (testNode && testNode->IsWalkable()) {
+						escapeTarget = testNode->GetWorldPosition();
+						foundEscapeTarget = true;
+						std::cout << "[V] Found escape target at: ("
+							<< escapeTarget.x << ", " << escapeTarget.y << ", " << escapeTarget.z << ")" << std::endl;
+					}
+				}
+			}
+
+			if (!foundEscapeTarget) {
+				std::cerr << "[!!] WARNING: Could not find escape target! Using random direction." << std::endl;
+				// 최후의 수단: Professor에서 임의 방향으로 20m
+				escapeTarget = professorPos + glm::vec3(20.0f, 0.0f, 20.0f);
+			}
+
+			lee->SetPatrolTarget(escapeTarget);
+
+			std::cout << "[V] AIController initialized" << std::endl;
+			std::cout << "[V] PathFinder initialized with NavMesh" << std::endl;
+			std::cout << "[V] NavMesh: " << navMesh->GetAllNodes().size() << " nodes" << std::endl;
+			std::cout << "[V] Professor position: (" << professorPos.x << ", " << professorPos.y << ", " << professorPos.z << ")" << std::endl;
+			std::cout << "[V] AIController position: (" << aiController->GetCurrentPosition().x << ", " << aiController->GetCurrentPosition().y << ", " << aiController->GetCurrentPosition().z << ")" << std::endl;
+			std::cout << "[V] Patrol target set to: (" << escapeTarget.x << ", " << escapeTarget.y << ", " << escapeTarget.z << ")" << std::endl;
 		}
 		else {
-			std::cerr << "WARNING: NavMesh is empty! AI pathfinding disabled" << std::endl;
+			std::cerr << "[X] WARNING: NavMesh is empty! AI pathfinding disabled" << std::endl;
 		}
 
 		std::cout << "===================================\n" << std::endl;
@@ -1192,6 +1279,7 @@ void TestScene::Exit()
 	ceiling.reset();
 	mapGenerator.reset();
 	lights.clear();
+	navMesh.reset();
 }
 
 void TestScene::Update(float deltaTime)

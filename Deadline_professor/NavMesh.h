@@ -1,31 +1,31 @@
-#pragma once
+ï»¿#pragma once
 
 #include "TotalHeader.h"
 #include "MapGenerator.h"
 
 // ========================================
-// ³×ºñ°ÔÀÌ¼Ç ³ëµå (ÇÑ Å¸ÀÏ = ÇÑ ³ëµå)
-// ========================================¤·
+// ë„¤ë¹„ê²Œì´ì…˜ ë…¸ë“œ (í•œ íƒ€ì¼ = í•œ ë…¸ë“œ)
+// ========================================
 class NavNode
 {
 public:
 	NavNode(int gridX, int gridZ, bool walkable = true);
 
-	// ±âº» Á¤º¸
+	// ê¸°ë³¸ ì •ë³´
 	int GetGridX() const { return gridX; }
 	int GetGridZ() const { return gridZ; }
 	bool IsWalkable() const { return walkable; }
 	void SetWalkable(bool value) { walkable = value; }
 
-	// ¿ùµå ÁÂÇ¥ °è»ê (Å¸ÀÏ Áß½É)
+	// ì›”ë“œ ì¢Œí‘œ ê³„ì‚° (íƒ€ì¼ ì¤‘ì‹¬)
 	glm::vec3 GetWorldPosition() const;
 
-	// ÀÎÁ¢ ³ëµå
+	// ì¸ì ‘ ë…¸ë“œ
 	void AddNeighbor(NavNode* neighbor) { neighbors.push_back(neighbor); }
 	const std::vector<NavNode*>& GetNeighbors() const { return neighbors; }
 	void ClearNeighbors() { neighbors.clear(); }
 
-	// A* ¾Ë°í¸®Áò¿ë (°æ·Î Å½»ö ½Ã¸¶´Ù ÃÊ±âÈ­ ÇÊ¿ä)
+	// A* ì•Œê³ ë¦¬ì¦˜ìš© (ê²½ë¡œ íƒìƒ‰ ì‹œë§ˆë‹¤ ì´ˆê¸°í™” í•„ìš”)
 	float GetGCost() const { return gCost; }
 	float GetHCost() const { return hCost; }
 	float GetFCost() const { return gCost + hCost; }
@@ -35,25 +35,25 @@ public:
 	NavNode* GetParent() const { return parent; }
 	void SetParent(NavNode* node) { parent = node; }
 
-	// ³ëµå »óÅÂ
+	// ë…¸ë“œ ìƒíƒœ
 	enum class State { NONE, OPEN, CLOSED };
 	State GetState() const { return state; }
 	void SetState(State s) { state = s; }
 
 private:
-	int gridX, gridZ;           // ±×¸®µå ÁÂÇ¥
-	bool walkable;              // ÀÌµ¿ °¡´É ¿©ºÎ
-	std::vector<NavNode*> neighbors; // ÀÎÁ¢ ³ëµå (ÃÖ´ë 4°³: »óÇÏÁÂ¿ì)
+	int gridX, gridZ;           // ê·¸ë¦¬ë“œ ì¢Œí‘œ
+	bool walkable;              // ì´ë™ ê°€ëŠ¥ ì—¬ë¶€
+	std::vector<NavNode*> neighbors; // ì¸ì ‘ ë…¸ë“œ (ìµœëŒ€ 4ê°œ: ìƒí•˜ì¢Œìš°)
 
-	// A* ¾Ë°í¸®Áò °ü·Ã
-	float gCost = 0.0f;         // ½ÃÀÛÁ¡À¸·ÎºÎÅÍÀÇ ºñ¿ë
-	float hCost = 0.0f;         // ¸ñÇ¥Á¡±îÁöÀÇ ÈŞ¸®½ºÆ½ ºñ¿ë
-	NavNode* parent = nullptr;  // ºÎ¸ğ ³ëµå (°æ·Î ÃßÀû)
-	State state = State::NONE;  // ³ëµå »óÅÂ
+	// A* ì•Œê³ ë¦¬ì¦˜ ê´€ë ¨
+	float gCost = 0.0f;         // ì‹œì‘ì ìœ¼ë¡œë¶€í„°ì˜ ë¹„ìš©
+	float hCost = 0.0f;         // ëª©í‘œì ê¹Œì§€ì˜ íœ´ë¦¬ìŠ¤í‹± ë¹„ìš©
+	NavNode* parent = nullptr;  // ë¶€ëª¨ ë…¸ë“œ (ê²½ë¡œ ì¶”ì )
+	State state = State::NONE;  // ë…¸ë“œ ìƒíƒœ
 };
 
 // ========================================
-// ³×ºñ°ÔÀÌ¼Ç ¸Ş½Ã (Å¸ÀÏ ±â¹İ ±×·¡ÇÁ)
+// ë„¤ë¹„ê²Œì´ì…˜ ë©”ì‹œ (íƒ€ì¼ ê¸°ë°˜ ê·¸ë˜í”„)
 // ========================================
 class NavMesh
 {
@@ -61,37 +61,40 @@ public:
 	NavMesh(int gridWidth, int gridDepth);
 	~NavMesh();
 
-	// ÃÊ±âÈ­ (¸Ê µ¥ÀÌÅÍ ±â¹İ ¸Ş½Ã »ı¼º)
+	// ì´ˆê¸°í™” (ë§µ ë°ì´í„° ê¸°ë°˜ ë©”ì‹œ ìƒì„±)
 	void Initialize(const std::vector<std::vector<TileType>>& mapData);
 
-	// ³ëµå Á¢±Ù
+	// ë…¸ë“œ ì ‘ê·¼
 	NavNode* GetNode(int gridX, int gridZ) const;
 	NavNode* GetNodeFromWorldPos(const glm::vec3& worldPos) const;
 
-	// ¸Ş½Ã Á¤º¸
+	// ë©”ì‹œ ì •ë³´
 	int GetGridWidth() const { return gridWidth; }
 	int GetGridDepth() const { return gridDepth; }
 	const std::vector<std::unique_ptr<NavNode>>& GetAllNodes() const { return nodes; }
 
-	// Å¸ÀÏ Å©±â
+	// íƒ€ì¼ í¬ê¸°
 	float GetTileSize() const;
 
-	// ÀÎÁ¢ °ËÁõ (NPC Ãæµ¹ ¿µ¿ª ±â¹İ)
+	// ì¸ì ‘ ê²€ì¦ (NPC ì¶©ëŒ ì˜ì—­ ê¸°ë°˜)
 	bool IsWalkableArea(int gridX, int gridZ) const;
 	bool CanMoveBetween(int fromX, int fromZ, int toX, int toZ) const;
 
-private:
-	int gridWidth, gridDepth;                   // ±×¸®µå Å©±â
-	std::vector<std::unique_ptr<NavNode>> nodes; // ¸ğµç ³ëµå (1D ¹è¿­·Î °ü¸®)
+	// â­ ì¸ì ‘ ë…¸ë“œ ì—°ê²° (ì™¸ë¶€ì—ì„œ í˜¸ì¶œ ê°€ëŠ¥í•˜ë„ë¡ ì¶”ê°€)
+	void RebuildConnections() { ConnectNeighbors(); }
 
-	// ³ëµå °ü¸®
+private:
+	int gridWidth, gridDepth;                   // ê·¸ë¦¬ë“œ í¬ê¸°
+	std::vector<std::unique_ptr<NavNode>> nodes; // ëª¨ë“  ë…¸ë“œ (1D ë°°ì—´ë¡œ ê´€ë¦¬)
+
+	// ë…¸ë“œ ê´€ë¦¬
 	NavNode* GetNodeInternal(int index) const;
 	int CoordToIndex(int gridX, int gridZ) const;
 	void CoordFromIndex(int index, int& gridX, int& gridZ) const;
 
-	// ÀÎÁ¢ ³ëµå °ü°è ¼³Á¤
+	// ì¸ì ‘ ë…¸ë“œ ê´€ê³„ ì„¤ì •
 	void ConnectNeighbors();
 
-	// NPC Ãæµ¹ ¿µ¿ª °ËÁõ
+	// NPC ì¶©ëŒ ì˜ì—­ ê²€ì¦
 	bool IsCollisionFree(int centerX, int centerZ) const;
 };

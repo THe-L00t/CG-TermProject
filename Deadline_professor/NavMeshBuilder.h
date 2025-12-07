@@ -24,8 +24,8 @@ public:
 		const glm::vec3& playerStartPos,
 		float tileSize);
 
-	// NavMesh 포인터 반환 (BuildFromWalls 후 접근)
-	NavMesh* GetNavMesh() const { return builtNavMesh.get(); }
+	// ⭐⭐⭐ NavMesh 소유권 이전 메서드
+	std::unique_ptr<NavMesh> ReleaseMesh() { return std::move(builtNavMesh); }
 
 	// 디버그 정보 출력
 	void PrintNavMeshStats(const NavMesh* navMesh) const;

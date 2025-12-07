@@ -88,11 +88,30 @@ NavNode* NavMesh::GetNode(int gridX, int gridZ) const
 	// 범위 검증
 	if (gridX < 0 || gridX >= gridWidth || gridZ < 0 || gridZ >= gridDepth)
 	{
+		std::cerr << "[NavMesh::GetNode] Out of range: [" << gridX << ", " << gridZ
+			<< "] (range: 0~" << (gridWidth - 1) << ", 0~" << (gridDepth - 1) << ")" << std::endl;
 		return nullptr;
 	}
 
 	int index = CoordToIndex(gridX, gridZ);
-	return GetNodeInternal(index);
+
+	// ⭐ 디버깅 추가
+	static int getNodeDebug = 0;
+	if (getNodeDebug++ < 10) {
+		std::cout << "[NavMesh::GetNode] Grid[" << gridX << ", " << gridZ
+			<< "] -> Index: " << index << " (total nodes: " << nodes.size() << ")" << std::endl;
+	}
+
+	NavNode* result = GetNodeInternal(index);
+
+	if (getNodeDebug <= 10) {
+		std::cout << "  GetNodeInternal returned: " << (result ? "VALID" : "NULL") << std::endl;
+		if (result) {
+			std::cout << "  Node walkable: " << (result->IsWalkable() ? "YES" : "NO") << std::endl;
+		}
+	}
+
+	return result;
 }
 
 NavNode* NavMesh::GetNodeFromWorldPos(const glm::vec3& worldPos) const
@@ -101,14 +120,34 @@ NavNode* NavMesh::GetNodeFromWorldPos(const glm::vec3& worldPos) const
 	float halfMapWidth = (gridWidth * GameConstants::TILE_SIZE) * 0.5f;
 	float halfMapDepth = (gridDepth * GameConstants::TILE_SIZE) * 0.5f;
 
+	// ⭐ Y 좌표는 무시하고 XZ 평면만 사용
 	int gridX = static_cast<int>((worldPos.x + halfMapWidth) / GameConstants::TILE_SIZE);
 	int gridZ = static_cast<int>((worldPos.z + halfMapDepth) / GameConstants::TILE_SIZE);
 
-	// 경계값 보정 (음수 또는 범위 초과 방지) - 수동으로 범위 제한
+	// ⭐ 디버깅 추가
+	static int debugCounter = 0;
+	if (debugCounter++ < 5) {  // 처음 5번만 출력
+		std::cout << "\n[NavMesh DEBUG]" << std::endl;
+		std::cout << "  World pos: (" << worldPos.x << ", " << worldPos.z << ")" << std::endl;
+		std::cout << "  Half map size: " << halfMapWidth << " x " << halfMapDepth << std::endl;
+		std::cout << "  Calculated grid: [" << gridX << ", " << gridZ << "]" << std::endl;
+		std::cout << "  Grid range: 0~" << (gridWidth - 1) << ", 0~" << (gridDepth - 1) << std::endl;
+	}
+
+	// 경계값 보정 (음수 또는 범위 초과 방지)
 	gridX = std::max(0, std::min(gridX, gridWidth - 1));
 	gridZ = std::max(0, std::min(gridZ, gridDepth - 1));
 
-	return GetNode(gridX, gridZ);
+	NavNode* node = GetNode(gridX, gridZ);
+
+	if (debugCounter <= 5 && node) {
+		std::cout << "  Found node at grid[" << gridX << ", " << gridZ << "]" << std::endl;
+		std::cout << "  Node walkable: " << (node->IsWalkable() ? "YES" : "NO") << std::endl;
+		std::cout << "  Node world pos: (" << node->GetWorldPosition().x << ", "
+			<< node->GetWorldPosition().z << ")" << std::endl;
+	}
+
+	return node;
 }
 
 float NavMesh::GetTileSize() const
@@ -134,6 +173,8 @@ NavNode* NavMesh::GetNodeInternal(int index) const
 {
 	if (index < 0 || index >= static_cast<int>(nodes.size()))
 	{
+		std::cerr << "[NavMesh::GetNodeInternal] Invalid index: " << index
+			<< " (size: " << nodes.size() << ")" << std::endl;
 		return nullptr;
 	}
 	return nodes[index].get();

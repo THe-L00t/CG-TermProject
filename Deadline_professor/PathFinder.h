@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "TotalHeader.h"
 
@@ -6,13 +6,13 @@ class NavMesh;
 class NavNode;
 
 // ========================================
-// °æ·Î (³ëµåµéÀÇ ½ÃÄö½º)
+// ê²½ë¡œ (ë…¸ë“œë“¤ì˜ ì‹œí€€ìŠ¤)
 // ========================================
 struct Path
 {
-	std::vector<glm::vec3> waypoints;    // ¿ùµå ÁÂÇ¥ ±â¹İ °æ·ÎÁ¡
-	std::vector<NavNode*> nodeSequence;  // ³×ºñ°ÔÀÌ¼Ç ³ëµå ½ÃÄö½º
-	bool isValid = false;                // °æ·Î À¯È¿¼º
+	std::vector<glm::vec3> waypoints;    // ì›”ë“œ ì¢Œí‘œ ê¸°ë°˜ ê²½ë¡œì 
+	std::vector<NavNode*> nodeSequence;  // ë„¤ë¹„ê²Œì´ì…˜ ë…¸ë“œ ì‹œí€€ìŠ¤
+	bool isValid = false;                // ê²½ë¡œ ìœ íš¨ì„±
 
 	int GetCurrentWaypointIndex() const { return currentWaypointIndex; }
 	void SetCurrentWaypointIndex(int index) { currentWaypointIndex = index; }
@@ -23,7 +23,7 @@ struct Path
 		{
 			return waypoints[currentWaypointIndex];
 		}
-		return glm::vec3(0.0f); // °æ·Î ³¡
+		return glm::vec3(0.0f); // ê²½ë¡œ ë
 	}
 
 	bool IsComplete() const
@@ -36,7 +36,7 @@ private:
 };
 
 // ========================================
-// °æ·Î Å½»ö ¿£Áø
+// ê²½ë¡œ íƒìƒ‰ ì—”ì§„
 // ========================================
 class PathFinder
 {
@@ -44,26 +44,26 @@ public:
 	PathFinder(NavMesh* navMesh);
 	~PathFinder();
 
-	// °æ·Î Å½»ö
-	// startPos, goalPos: ¿ùµå ÁÂÇ¥
-	// goalDistance: ¸ñÇ¥±îÁö µµ´ŞÇØ¾ß ÇÏ´Â ÃÖ¼Ò °Å¸® (±âº»°ª: 0 = Á¤È®È÷ µµ´Ş)
+	// ê²½ë¡œ íƒìƒ‰
+	// startPos, goalPos: ì›”ë“œ ì¢Œí‘œ
+	// goalDistance: ëª©í‘œê¹Œì§€ ë„ë‹¬í•´ì•¼ í•˜ëŠ” ìµœì†Œ ê±°ë¦¬ (ê¸°ë³¸ê°’: 0 = ì •í™•íˆ ë„ë‹¬)
 	Path FindPath(const glm::vec3& startPos, const glm::vec3& goalPos, float goalDistance = 0.0f);
 
-	// °æ·Î À¯È¿¼º È®ÀÎ ¹× Àç°è»ê
+	// ê²½ë¡œ ìœ íš¨ì„± í™•ì¸ ë° ì¬ê³„ì‚°
 	bool IsPathValid(const Path& path) const;
 	Path RecalculatePath(const Path& currentPath, const glm::vec3& newStartPos);
 
-	// NavMesh ¾÷µ¥ÀÌÆ®
+	// NavMesh ì—…ë°ì´íŠ¸
 	void SetNavMesh(NavMesh* navMesh) { this->navMesh = navMesh; }
 	NavMesh* GetNavMesh() const { return navMesh; }
 
 private:
 	NavMesh* navMesh = nullptr;
 
-	// A* ¾Ë°í¸®Áò È£Ãâ
+	// A* ì•Œê³ ë¦¬ì¦˜ í˜¸ì¶œ
 	bool ExecuteAStar(NavNode* startNode, NavNode* goalNode, std::vector<NavNode*>& outPath, float goalDistance);
 
-	// À¯Æ¿¸®Æ¼
+	// ìœ í‹¸ë¦¬í‹°
 	float CalculateHeuristic(NavNode* from, NavNode* to) const;
 	void CleanupNodeStates();
 };

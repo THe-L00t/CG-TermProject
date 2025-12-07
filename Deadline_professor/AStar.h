@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "TotalHeader.h"
 #include <queue>
@@ -6,7 +6,7 @@
 class NavNode;
 
 // ========================================
-// A* ¾Ë°í¸®Áò ±¸Çö
+// A* ì•Œê³ ë¦¬ì¦˜ êµ¬í˜„
 // ========================================
 class AStarAlgorithm
 {
@@ -14,19 +14,19 @@ public:
 	AStarAlgorithm();
 	~AStarAlgorithm();
 
-	// A* Å½»ö ½ÇÇà
-	// goalDistance: ¸ñÇ¥±îÁö µµ´ŞÇØ¾ß ÇÏ´Â ÃÖ¼Ò °Å¸®
-	// ¹İÈ¯: °æ·Î Ã£±â ¼º°ø ¿©ºÎ
+	// A* íƒìƒ‰ ì‹¤í–‰
+	// goalDistance: ëª©í‘œê¹Œì§€ ë„ë‹¬í•´ì•¼ í•˜ëŠ” ìµœì†Œ ê±°ë¦¬
+	// ë°˜í™˜: ê²½ë¡œ ì°¾ê¸° ì„±ê³µ ì—¬ë¶€
 	bool Search(NavNode* startNode, NavNode* goalNode, std::vector<NavNode*>& outPath, float goalDistance = 0.0f);
 
 private:
-	// ºñ±³ ÇÔ¼ö (¿ì¼±¼øÀ§ Å¥¿ë)
+	// ë¹„êµ í•¨ìˆ˜ (ìš°ì„ ìˆœìœ„ íìš©)
 	struct CompareNode
 	{
 		bool operator()(NavNode* a, NavNode* b) const;
 	};
 
-	// À¯Æ¿¸®Æ¼
+	// ìœ í‹¸ë¦¬í‹°
 	float CalculateHeuristic(NavNode* from, NavNode* to) const;
 	float CalculateDistance(NavNode* from, NavNode* to) const;
 	void ReconstructPath(NavNode* currentNode, std::vector<NavNode*>& outPath) const;

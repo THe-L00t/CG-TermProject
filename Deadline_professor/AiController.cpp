@@ -20,6 +20,23 @@ void AIController::SetTargetPosition(const glm::vec3& targetPos)
 	if (pathFinder)
 	{
 		std::cout << "AIController: Target set at (" << targetPos.x << ", " << targetPos.y << ", " << targetPos.z << ")" << std::endl;
+
+		// ⭐ 디버그: 현재 위치 출력
+		std::cout << "AIController: Current position at (" << currentPosition.x << ", " << currentPosition.y << ", " << currentPosition.z << ")" << std::endl;
+
+		// 현재 위치에서 목표까지 경로 찾기
+		currentPath = pathFinder->FindPath(currentPosition, targetPosition);
+
+		if (currentPath.isValid && !currentPath.waypoints.empty())
+		{
+			std::cout << "AIController: Path found! " << currentPath.waypoints.size() << " waypoints" << std::endl;
+			behaviorMode = BehaviorMode::CHASING;
+		}
+		else
+		{
+			std::cout << "AIController: No path found to target. Stuck state." << std::endl;
+			behaviorMode = BehaviorMode::STUCK;
+		}
 	}
 }
 
@@ -113,18 +130,31 @@ void AIController::UpdateMovement(float deltaTime)
 		int nextIndex = currentPath.GetCurrentWaypointIndex() + 1;
 		currentPath.SetCurrentWaypointIndex(nextIndex);
 		std::cout << "AIController: Waypoint reached. Moving to next waypoint." << std::endl;
-		return;
+		// ✅ 여기는 return 제거! 계속 이동해야 함
 	}
 
-	// 이동 거리 계산 (속도 × 시간)
-	float moveDistance = GameConstants::PROFESSOR_MOVE_SPEED * deltaTime;
-
-	// 현재 위치 업데이트
+	// ⭐ 이동 로직 (항상 실행)
 	glm::vec3 moveDirection = GetNextMoveDirection();
-	currentPosition += moveDirection * moveDistance;
+	if (glm::length(moveDirection) > 0.001f)
+	{
+		// 이동 거리 계산 (속도 × 시간)
+		float moveDistance = GameConstants::PROFESSOR_MOVE_SPEED * deltaTime;
 
-	// 진행도 업데이트
-	moveProgress += deltaTime;
+		// 현재 위치 업데이트
+		currentPosition += moveDirection * moveDistance;
+
+		// 진행도 업데이트
+		moveProgress += deltaTime;
+
+		// ⭐ 디버그 출력 (주기적으로)
+		static int moveCounter = 0;
+		if (++moveCounter % 60 == 0) {
+			std::cout << "AIController: Moving to ("
+				<< currentPosition.x << ", "
+				<< currentPosition.y << ", "
+				<< currentPosition.z << ")" << std::endl;
+		}
+	}
 }
 
 // ========================================

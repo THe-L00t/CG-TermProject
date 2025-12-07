@@ -31,6 +31,30 @@ Path PathFinder::FindPath(const glm::vec3& startPos, const glm::vec3& goalPos, f
 	NavNode* startNode = navMesh->GetNodeFromWorldPos(startPos);
 	NavNode* goalNode = navMesh->GetNodeFromWorldPos(goalPos);
 
+	// ⭐ 디버깅 추가
+	std::cout << "\n===== PathFinder DEBUG =====" << std::endl;
+	std::cout << "Start position: (" << startPos.x << ", " << startPos.y << ", " << startPos.z << ")" << std::endl;
+	std::cout << "Goal position: (" << goalPos.x << ", " << goalPos.y << ", " << goalPos.z << ")" << std::endl;
+
+	if (startNode) {
+		std::cout << "Start node: Grid[" << startNode->GetGridX() << ", " << startNode->GetGridZ() << "]" << std::endl;
+		std::cout << "Start node walkable: " << (startNode->IsWalkable() ? "YES" : "NO") << std::endl;
+		std::cout << "Start node world pos: (" << startNode->GetWorldPosition().x << ", "
+			<< startNode->GetWorldPosition().y << ", " << startNode->GetWorldPosition().z << ")" << std::endl;
+	}
+	else {
+		std::cout << "Start node: NULL" << std::endl;
+	}
+
+	if (goalNode) {
+		std::cout << "Goal node: Grid[" << goalNode->GetGridX() << ", " << goalNode->GetGridZ() << "]" << std::endl;
+		std::cout << "Goal node walkable: " << (goalNode->IsWalkable() ? "YES" : "NO") << std::endl;
+	}
+	else {
+		std::cout << "Goal node: NULL" << std::endl;
+	}
+	std::cout << "============================\n" << std::endl;
+
 	if (!startNode || !startNode->IsWalkable())
 	{
 		std::cerr << "ERROR: PathFinder - Start position is not walkable" << std::endl;
