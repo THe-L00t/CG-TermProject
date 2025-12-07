@@ -47,6 +47,13 @@ void Renderer::Init()
 		std::cout << "Renderer: Shader 'professor' loaded successfully" << std::endl;
 	}
 
+	if (!LoadShader("screen", ".\\Shaders\\screen.vert", ".\\Shaders\\screen.frag")) {
+		std::cerr << "ERROR: Failed to load shader 'screen'" << std::endl;
+	}
+	else {
+		std::cout << "Renderer: Shader 'screen' loaded successfully" << std::endl;
+	}
+
 	std::cout << "Renderer: Initialization completed" << std::endl;
 }
 
@@ -437,6 +444,65 @@ void Renderer::RenderFBXAnimated(const std::string_view& modelName, const std::s
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	shader->Unuse();
+}
+
+void Renderer::InitScreenQuad(const glm::vec2& RT, const glm::vec2& LB)
+{
+	float quadVertices[] = {
+		// pos     // uv
+		LB.x, LB.y, 0.0f, 1.0f,
+		 RT.x, LB.y, 1.0f, 1.0f,
+		 RT.x,  RT.y, 1.0f, 0.0f,
+
+		LB.x, LB.y, 0.0f, 1.0f,
+		 RT.x, RT.y, 1.0f, 0.0f,
+		LB.x,  RT.y, 0.0f, 0.0f
+	};
+
+	glGenVertexArrays(1, &ScreenVAO);
+	glGenBuffers(1, &ScreenVBO);
+
+	glBindVertexArray(ScreenVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, ScreenVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+	// layout(location = 0) → position
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+	// layout(location = 1) → UV
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	glBindVertexArray(0);
+}
+
+void Renderer::RenderTextrue(const std::string_view& textureName)
+{
+	GLuint textureID = resourceManager->GetTexture(textureName);
+	if (textureID == 0) {
+		std::cerr << "RenderFBXAnimated: Texture '" << textureName << "' not found (ID=0)" << std::endl;
+		return;
+	}
+
+	Shader* shader = GetShader("screen");
+	if (!shader) {
+		std::cerr << "screen shader not found, falling back to basic" << std::endl;
+		shader = GetShader("basic");
+		if (!shader) return;
+	}
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	shader->setUniform("uTexture", 0);
+	shader->setUniform("uUseTexture", true);
+
+	glBindVertexArray(ScreenVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+
+	shader->Use();
 }
 
 // ============================================

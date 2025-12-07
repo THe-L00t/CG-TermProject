@@ -252,4 +252,10 @@
       <Filter>소스 파일\Environment</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\professor.frag" />
+    <None Include="Shaders\professor.vert" />
+    <None Include="Shaders\screen.frag" />
+    <None Include="Shaders\screen.vert" />
+  </ItemGroup>
 </Project>

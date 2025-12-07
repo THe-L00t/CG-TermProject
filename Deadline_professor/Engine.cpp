@@ -212,6 +212,13 @@ void Engine::LoadAssets()
 	std::cout << "\n--- Loading Textures ---" << std::endl;
 	std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
+	if (!resourceManager->LoadTexture("Title", "Textures/title.png")) {
+		std::cerr << "Warning: Failed to load title.png" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: title.png loaded" << std::endl;
+	}
+
 	if (!resourceManager->LoadTexture("RunLee", "Textures/RunLee.png")) {
 		std::cerr << "Warning: Failed to load RunLee.png" << std::endl;
 	} else {

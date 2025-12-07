@@ -229,13 +229,15 @@ void TitleScene::Draw()
 		renderer->SetLight(light.get());
 	}
 
+	renderer->InitScreenQuad(glm::vec2(1, 1), glm::vec2(-1, -1));
+	renderer->RenderTextrue("Title");
 	// 간단한 Plane을 렌더링해서 뭔가 보이는지 확인
-	if (titlePlane && titlePlane->IsActive()) {
-		glm::mat4 planeMatrix = titlePlane->GetModelMat();
-		// 깜빡이는 흰색 Plane 렌더링
-		glm::vec3 fadeColor(alpha, alpha, alpha);
-		renderer->RenderObj("PlaneModel", planeMatrix, fadeColor);
-	}
+	//if (titlePlane && titlePlane->IsActive()) {
+	//	glm::mat4 planeMatrix = titlePlane->GetModelMat();
+	//	// 깜빡이는 흰색 Plane 렌더링
+	//	glm::vec3 fadeColor(alpha, alpha, alpha);
+	//	renderer->RenderObj("PlaneModel", planeMatrix, fadeColor);
+	//}
 
 	// 콘솔에 메시지 출력
 	static bool messagePrinted = false;
@@ -1098,100 +1100,98 @@ void TestScene::Enter()
 
 	// 1. 방향성 조명 (Directional Light) - 태양광 같은 전역 조명
 	auto dirLight = std::make_unique<Light>(LightType::DIRECTIONAL);
-	dirLight->SetDirection(glm::vec3(-0.2f, -1.0f, -0.3f));  // 방향: 왼쪽 위에서 아래로 비추는 각도
-	dirLight->SetAmbient(glm::vec3(0.2f, 0.2f, 0.25f));      // 주변광: 약한 파란빛 (밤하늘 분위기)
-	dirLight->SetDiffuse(glm::vec3(0.5f, 0.5f, 0.6f));       // 확산광: 중간 강도의 차가운 흰색
-	dirLight->SetSpecular(glm::vec3(0.3f, 0.3f, 0.3f));      // 반사광: 약한 하이라이트
-	dirLight->SetIntensity(0.8f);                             // 강도: 80% (0.0 ~ 1.0)
+	dirLight->SetDirection(glm::vec3(-0.3f, -1.0f, -0.1f));  // 약간 왼쪽 위에서 아래로
+	dirLight->SetAmbient(glm::vec3(0.03f, 0.01f, 0.01f));    // 아주 약한 붉은 Ambient
+	dirLight->SetDiffuse(glm::vec3(0.15f, 0.12f, 0.12f));    // 약한 빛 (밤 + 혈흔 느낌)
+	dirLight->SetSpecular(glm::vec3(0.05f, 0.05f, 0.05f));   // 거의 없는 하이라이트
+	dirLight->SetIntensity(0.3f);                             // 전체는 어둡게
 	dirLight->SetEnabled(true);                               // 활성화
 	lights.push_back(std::move(dirLight));
 
 	// 2. 포인트 조명 1 (Point Light) - 맵 중앙 위쪽의 메인 조명
 	auto pointLight1 = std::make_unique<Light>(LightType::POINT);
-	pointLight1->SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));   // 위치: 맵 중앙, 높이 10m
-	pointLight1->SetAmbient(glm::vec3(0.1f, 0.1f, 0.1f));     // 주변광: 매우 약한 흰색
-	pointLight1->SetDiffuse(glm::vec3(1.0f, 0.9f, 0.8f));     // 확산광: 따뜻한 백색광 (전구 느낌)
-	pointLight1->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));    // 반사광: 밝은 하이라이트
-	pointLight1->SetIntensity(1.5f);                           // 강도: 150% (1.0 이상 가능)
-	// 감쇠 계산식: attenuation = 1.0 / (constant + linear * distance + quadratic * distance²)
-	pointLight1->SetAttenuation(1.0f, 0.09f, 0.032f);         // 감쇠: (상수, 선형, 이차) - 약 50m 범위
+	pointLight1->SetPosition(glm::vec3(0.0f, 7.0f, 0.0f));
+	pointLight1->SetAmbient(glm::vec3(0.02f, 0.02f, 0.02f));
+	pointLight1->SetDiffuse(glm::vec3(0.9f, 0.8f, 0.6f));     // 오래된 전구 느낌
+	pointLight1->SetSpecular(glm::vec3(0.8f, 0.8f, 0.7f));
+	pointLight1->SetIntensity(0.7f);
+	pointLight1->SetAttenuation(1.0f, 0.22f, 0.20f);          // 약 20m 범위
 	pointLight1->SetEnabled(true);
 	lights.push_back(std::move(pointLight1));
 
 	// 3. 포인트 조명 2 (Point Light) - 맵 왼쪽 위의 보조 조명
 	auto pointLight2 = std::make_unique<Light>(LightType::POINT);
-	pointLight2->SetPosition(glm::vec3(-15.0f, 8.0f, -15.0f)); // 위치: 왼쪽 위 코너
-	pointLight2->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));      // 주변광: 없음
-	pointLight2->SetDiffuse(glm::vec3(0.8f, 0.4f, 0.2f));      // 확산광: 오렌지색 (난로 불빛)
-	pointLight2->SetSpecular(glm::vec3(1.0f, 0.6f, 0.4f));     // 반사광: 주황빛 하이라이트
-	pointLight2->SetIntensity(1.0f);                            // 강도: 100%
-	pointLight2->SetAttenuation(1.0f, 0.14f, 0.07f);           // 감쇠: 약 30m 범위 (더 빨리 감쇠)
+	pointLight2->SetPosition(glm::vec3(-20.0f, 6.0f, -5.0f));
+	pointLight2->SetAmbient(glm::vec3(0.01f, 0.01f, 0.01f));
+	pointLight2->SetDiffuse(glm::vec3(0.85f, 0.5f, 0.3f));    // 주황빛
+	pointLight2->SetSpecular(glm::vec3(1.0f, 0.6f, 0.5f));
+	pointLight2->SetIntensity(0.9f);
+	pointLight2->SetAttenuation(1.0f, 0.22f, 0.20f);
 	pointLight2->SetEnabled(true);
 	lights.push_back(std::move(pointLight2));
 
 	// 4. 포인트 조명 3 (Point Light) - 맵 오른쪽 아래의 청록색 조명
 	auto pointLight3 = std::make_unique<Light>(LightType::POINT);
-	pointLight3->SetPosition(glm::vec3(15.0f, 6.0f, 15.0f));   // 위치: 오른쪽 아래 코너
-	pointLight3->SetAmbient(glm::vec3(0.0f, 0.05f, 0.05f));    // 주변광: 약간의 청록빛
-	pointLight3->SetDiffuse(glm::vec3(0.2f, 0.8f, 0.8f));      // 확산광: 밝은 청록색 (네온 느낌)
-	pointLight3->SetSpecular(glm::vec3(0.5f, 1.0f, 1.0f));     // 반사광: 밝은 청록빛 하이라이트
-	pointLight3->SetIntensity(1.2f);                            // 강도: 120%
-	pointLight3->SetAttenuation(1.0f, 0.14f, 0.07f);           // 감쇠: 약 30m 범위
+	pointLight3->SetPosition(glm::vec3(20.0f, 6.0f, 10.0f));
+	pointLight3->SetAmbient(glm::vec3(0.0f, 0.03f, 0.03f));
+	pointLight3->SetDiffuse(glm::vec3(0.25f, 0.9f, 0.9f));    // 네온 느낌
+	pointLight3->SetSpecular(glm::vec3(0.5f, 1.0f, 1.0f));
+	pointLight3->SetIntensity(0.9f);
+	pointLight3->SetAttenuation(1.0f, 0.22f, 0.20f);
 	pointLight3->SetEnabled(true);
 	lights.push_back(std::move(pointLight3));
 
 	// 5. 스팟 조명 1 (Spot Light) - 플레이어를 따라가는 손전등
 	auto spotLight1 = std::make_unique<Light>(LightType::SPOT);
-	spotLight1->SetPosition(playerStartPos + glm::vec3(0.0f, 2.0f, 0.0f)); // 위치: 플레이어 머리 위
-	spotLight1->SetDirection(glm::vec3(0.0f, -0.8f, -0.6f));    // 방향: 약간 아래를 향함
-	spotLight1->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));        // 주변광: 없음
-	spotLight1->SetDiffuse(glm::vec3(1.0f, 1.0f, 0.9f));        // 확산광: 약간 노란빛 흰색
-	spotLight1->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));       // 반사광: 밝은 하이라이트
-	spotLight1->SetIntensity(2.0f);                              // 강도: 200% (강한 손전등)
-	spotLight1->SetAttenuation(1.0f, 0.09f, 0.032f);            // 감쇠: 약 50m 범위
-	// 스팟라이트 원뿔 각도: cutOff는 내부 원뿔, outerCutOff는 외부 경계
+	spotLight1->SetPosition(playerStartPos + glm::vec3(0.0f, 1.9f, 0.0f));
+	spotLight1->SetDirection(glm::vec3(0.0f, -0.7f, 1.0f));     // 플레이어 전방
+	spotLight1->SetAmbient(glm::vec3(0.0f));
+	spotLight1->SetDiffuse(glm::vec3(1.0f, 0.95f, 0.85f));      // 따뜻한 손전등 색
+	spotLight1->SetSpecular(glm::vec3(1.0f));
+	spotLight1->SetIntensity(3.0f);                              // 매우 밝음
+	spotLight1->SetAttenuation(1.0f, 0.09f, 0.032f);             // 약 50m
 	spotLight1->SetSpotAngle(
-		glm::cos(glm::radians(12.5f)),  // cutOff: 내부 각도 12.5도 (밝은 중심부)
-		glm::cos(glm::radians(17.5f))   // outerCutOff: 외부 각도 17.5도 (부드러운 경계)
+		glm::cos(glm::radians(12.5f)),
+		glm::cos(glm::radians(18.0f))
 	);
 	spotLight1->SetEnabled(true);
 	lights.push_back(std::move(spotLight1));
 
 	// 6. 스팟 조명 2 (Spot Light) - 고정된 무대 조명 (빨간색)
 	auto spotLight2 = std::make_unique<Light>(LightType::SPOT);
-	spotLight2->SetPosition(glm::vec3(-10.0f, 15.0f, 0.0f));    // 위치: 왼쪽 높은 곳
-	spotLight2->SetDirection(glm::vec3(0.5f, -1.0f, 0.0f));     // 방향: 오른쪽 아래를 향함
-	spotLight2->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));        // 주변광: 없음
-	spotLight2->SetDiffuse(glm::vec3(1.0f, 0.1f, 0.1f));        // 확산광: 강한 빨간색
-	spotLight2->SetSpecular(glm::vec3(1.0f, 0.5f, 0.5f));       // 반사광: 붉은빛 하이라이트
-	spotLight2->SetIntensity(1.5f);                              // 강도: 150%
-	spotLight2->SetAttenuation(1.0f, 0.07f, 0.017f);            // 감쇠: 약 70m 범위
+	spotLight2->SetPosition(glm::vec3(-15.0f, 10.0f, 15.0f));
+	spotLight2->SetDirection(glm::vec3(0.2f, -1.0f, -0.1f));
+	spotLight2->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));
+	spotLight2->SetDiffuse(glm::vec3(1.0f, 0.1f, 0.1f));         // 경고등
+	spotLight2->SetSpecular(glm::vec3(1.0f, 0.5f, 0.5f));
+	spotLight2->SetIntensity(1.3f);
+	spotLight2->SetAttenuation(1.0f, 0.14f, 0.07f);              // 짧은 범위
 	spotLight2->SetSpotAngle(
-		glm::cos(glm::radians(20.0f)),  // cutOff: 내부 각도 20도
-		glm::cos(glm::radians(25.0f))   // outerCutOff: 외부 각도 25도
+		glm::cos(glm::radians(18.0f)),
+		glm::cos(glm::radians(25.0f))
 	);
 	spotLight2->SetEnabled(true);
 	lights.push_back(std::move(spotLight2));
 
 	// 7. 포인트 조명 4 (Point Light) - 맵 앞쪽의 보라색 액센트 조명
 	auto pointLight4 = std::make_unique<Light>(LightType::POINT);
-	pointLight4->SetPosition(glm::vec3(0.0f, 5.0f, -20.0f));    // 위치: 맵 앞쪽 중앙
-	pointLight4->SetAmbient(glm::vec3(0.05f, 0.0f, 0.05f));     // 주변광: 약간의 보라빛
-	pointLight4->SetDiffuse(glm::vec3(0.6f, 0.2f, 0.8f));       // 확산광: 보라색 (신비로운 느낌)
-	pointLight4->SetSpecular(glm::vec3(0.8f, 0.5f, 1.0f));      // 반사광: 밝은 보라빛 하이라이트
-	pointLight4->SetIntensity(1.0f);                             // 강도: 100%
-	pointLight4->SetAttenuation(1.0f, 0.14f, 0.07f);            // 감쇠: 약 30m 범위
+	pointLight4->SetPosition(glm::vec3(5.0f, 5.0f, -25.0f));
+	pointLight4->SetAmbient(glm::vec3(0.03f, 0.0f, 0.03f));
+	pointLight4->SetDiffuse(glm::vec3(0.5f, 0.2f, 0.8f));        // 보라색
+	pointLight4->SetSpecular(glm::vec3(0.8f, 0.5f, 1.0f));
+	pointLight4->SetIntensity(0.9f);
+	pointLight4->SetAttenuation(1.0f, 0.14f, 0.07f);
 	pointLight4->SetEnabled(true);
 	lights.push_back(std::move(pointLight4));
 
 	// 8. 포인트 조명 5 (Point Light) - 맵 뒤쪽의 녹색 조명
 	auto pointLight5 = std::make_unique<Light>(LightType::POINT);
-	pointLight5->SetPosition(glm::vec3(0.0f, 4.0f, 20.0f));     // 위치: 맵 뒤쪽 중앙
-	pointLight5->SetAmbient(glm::vec3(0.0f, 0.05f, 0.0f));      // 주변광: 약간의 녹색
-	pointLight5->SetDiffuse(glm::vec3(0.3f, 1.0f, 0.3f));       // 확산광: 밝은 녹색 (출구 표시등 느낌)
-	pointLight5->SetSpecular(glm::vec3(0.5f, 1.0f, 0.5f));      // 반사광: 연한 녹색 하이라이트
-	pointLight5->SetIntensity(0.8f);                             // 강도: 80%
-	pointLight5->SetAttenuation(1.0f, 0.22f, 0.20f);            // 감쇠: 약 20m 범위 (짧은 범위)
+	pointLight5->SetPosition(glm::vec3(0.0f, 4.0f, 25.0f));
+	pointLight5->SetAmbient(glm::vec3(0.0f, 0.03f, 0.0f));       // 초록 기운
+	pointLight5->SetDiffuse(glm::vec3(0.3f, 1.0f, 0.3f));        // 출구 표시등 색
+	pointLight5->SetSpecular(glm::vec3(0.5f, 1.0f, 0.5f));
+	pointLight5->SetIntensity(0.7f);
+	pointLight5->SetAttenuation(1.0f, 0.22f, 0.20f);             // 매우 짧은 범위
 	pointLight5->SetEnabled(true);
 	lights.push_back(std::move(pointLight5));
 

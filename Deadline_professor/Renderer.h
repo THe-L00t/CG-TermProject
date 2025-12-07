@@ -50,6 +50,9 @@ public:
 	void RenderFBX(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix);
 	void RenderFBXAnimated(const std::string_view& modelName, const std::string_view& textureName, const glm::mat4& modelMatrix, const std::vector<glm::mat4>& boneTransforms);
 
+	//화면에 텍스쳐 띄우기 
+	void InitScreenQuad(const glm::vec2& RT, const glm::vec2& LB);
+	void RenderTextrue(const std::string_view& textureName);
 private:
 	static Renderer* activeInstance;
 
@@ -58,5 +61,9 @@ private:
 	Camera* camera;
 	Light* light;  // 레거시 단일 조명 (하위호환성)
 	std::vector<Light*> lights;  // 다중 조명 시스템
+
+	// 전체 화면 출력 관리용
+	GLuint ScreenVAO{};
+	GLuint ScreenVBO{};
 };
 
