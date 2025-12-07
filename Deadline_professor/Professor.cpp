@@ -1,6 +1,7 @@
 ﻿#include "Professor.h"
 #include "GameConstants.h"
 #include "PathFinder.h"
+#include "NavMesh.h"
 
 Professor::Professor()
 {
@@ -74,23 +75,49 @@ void Professor::Update(float deltaTime)
 		// 현재 위치를 AIController에 설정
 		aiController->SetCurrentPosition(GetPosition());
 
-		// ⭐ 플레이어 감지 및 목표 설정
+		// ⭐ 플레이어 감지 및 동적 목표 업데이트
 		float distanceToPlayer = glm::distance(GetPosition(), playerPosition);
-		static int debugCounter = 0;
-		if (debugCounter++ % 60 == 0) {
-			std::cout << "Professor: Distance to player = " << distanceToPlayer
-				<< " / Detection range = " << detectionRange
-				<< " / Behavior: " << (int)aiController->GetBehaviorMode() << std::endl;
-		}
 
-		// ⭐ 테스트용: 항상 도망
-		// if (distanceToPlayer <= detectionRange)
-		if (true)
+		// ⭐⭐⭐ 목표 업데이트 타이머 (2초마다 한 번만 업데이트)
+		static float targetUpdateTimer = 0.0f;
+		const float TARGET_UPDATE_INTERVAL = 2.0f;  // 2초
+
+		targetUpdateTimer += deltaTime;
+
+		if (true)  // 테스트 모드
 		{
-			if (aiController->GetBehaviorMode() == AIController::BehaviorMode::IDLE)
+			AIController::BehaviorMode currentMode = aiController->GetBehaviorMode();
+
+			// ✅ IDLE 상태면 즉시 목표 설정
+			if (currentMode == AIController::BehaviorMode::IDLE)
 			{
-				std::cout << "Professor: Starting to flee (TEST MODE)..." << std::endl;
-				aiController->SetTargetPosition(patrolTarget);
+				std::cout << "Professor: IDLE state - Setting initial target!" << std::endl;
+				glm::vec3 dynamicEscapeTarget = CalculateEscapeTarget(GetPosition(), playerPosition);
+				aiController->SetTargetPosition(dynamicEscapeTarget);
+				targetUpdateTimer = 0.0f;  // 타이머 리셋
+			}
+			// ✅ STUCK 상태면 즉시 재시도
+			else if (currentMode == AIController::BehaviorMode::STUCK)
+			{
+				std::cout << "Professor: STUCK - Retrying!" << std::endl;
+				glm::vec3 dynamicEscapeTarget = CalculateEscapeTarget(GetPosition(), playerPosition);
+				aiController->SetTargetPosition(dynamicEscapeTarget);
+				targetUpdateTimer = 0.0f;  // 타이머 리셋
+			}
+			// ✅ CHASING 상태면 타이머 & 거리 조건 모두 확인
+			else if (currentMode == AIController::BehaviorMode::CHASING)
+			{
+				float distanceToWaypoint = aiController->GetDistanceToNextWaypoint();
+
+				// ⭐ 타이머가 지났고, 목표에 가까워졌을 때만 업데이트
+				if (targetUpdateTimer >= TARGET_UPDATE_INTERVAL && distanceToWaypoint < 8.0f)
+				{
+					std::cout << "Professor: Updating target (timer: " << targetUpdateTimer
+						<< "s, distance: " << distanceToWaypoint << "m)" << std::endl;
+					glm::vec3 dynamicEscapeTarget = CalculateEscapeTarget(GetPosition(), playerPosition);
+					aiController->SetTargetPosition(dynamicEscapeTarget);
+					targetUpdateTimer = 0.0f;  // 타이머 리셋
+				}
 			}
 		}
 
@@ -105,13 +132,12 @@ void Professor::Update(float deltaTime)
 			SetPosition(newPosition);
 		}
 
-		// ⭐⭐⭐ 예측 회전 구현!
+		// ⭐⭐⭐ 예측 회전 구현 (동일)
 		glm::vec3 currentMoveDirection = aiController->GetNextMoveDirection();
 		glm::vec3 upcomingMoveDirection = aiController->GetUpcomingMoveDirection();
 		float distanceToWaypoint = aiController->GetDistanceToNextWaypoint();
 
-		// ⭐ 회전할 방향 결정
-		const float LOOK_AHEAD_TIME = 0.35f; // 0.35초 전부터 회전 시작
+		const float LOOK_AHEAD_TIME = 0.35f;
 		const float LOOK_AHEAD_DISTANCE = GameConstants::PROFESSOR_MOVE_SPEED * LOOK_AHEAD_TIME;
 
 		glm::vec3 targetDirection;
@@ -128,34 +154,22 @@ void Professor::Update(float deltaTime)
 		{
 			direction = targetDirection;
 
-			// 목표 회전 각도 계산 (180도 반전 적용)
 			float targetAngleY = atan2f(-targetDirection.x, -targetDirection.z);
 			float targetAngleDegrees = glm::degrees(targetAngleY);
 
-			// 현재 회전 각도
 			glm::vec3 currentRotation = GetRotation();
 			float currentAngleDegrees = currentRotation.y;
 
-			// 각도 차이 계산 (최단 경로)
 			float angleDiff = targetAngleDegrees - currentAngleDegrees;
 			while (angleDiff > 180.0f) angleDiff -= 360.0f;
 			while (angleDiff < -180.0f) angleDiff += 360.0f;
 
-			// 부드러운 회전 (0.3초 동안 완료)
-			const float rotationSpeed = 3.33f; // 1.0 / 0.3
+			const float rotationSpeed = 3.33f;
 			float lerpFactor = glm::min(deltaTime * rotationSpeed, 1.0f);
 
 			float newAngleDegrees = currentAngleDegrees + (angleDiff * lerpFactor);
 
 			SetRotation(glm::vec3(0.0f, newAngleDegrees, 0.0f));
-
-			// 디버그 출력
-			static int rotDebugCounter = 0;
-			if (rotDebugCounter++ % 60 == 0) {
-				std::cout << "Professor: Distance to waypoint: " << distanceToWaypoint
-					<< "m, Using " << (distanceToWaypoint < LOOK_AHEAD_DISTANCE ? "UPCOMING" : "CURRENT")
-					<< " direction" << std::endl;
-			}
 		}
 	}
 	else
@@ -275,6 +289,101 @@ void Professor::SetPathFinder(PathFinder* pf)
 PathFinder* Professor::GetPathFinder() const
 {
 	return pathFinder;
+}
+
+// ⭐ 플레이어 반대 방향으로 탈출 목표 계산 (NavMesh 검증 포함)
+glm::vec3 Professor::CalculateEscapeTarget(const glm::vec3& npcPos, const glm::vec3& playerPos)
+{
+	// 플레이어 → NPC 방향 벡터
+	glm::vec3 fleeDirection = npcPos - playerPos;
+
+	// XZ 평면만 사용 (Y축 무시)
+	fleeDirection.y = 0.0f;
+
+	// 정규화
+	if (glm::length(fleeDirection) > 0.001f)
+	{
+		fleeDirection = glm::normalize(fleeDirection);
+	}
+	else
+	{
+		// 플레이어와 같은 위치면 랜덤 방향
+		fleeDirection = glm::vec3(1.0f, 0.0f, 0.0f);
+	}
+
+	// ⭐ 도망갈 거리 설정
+	const float FLEE_DISTANCE = 20.0f * GameConstants::TILE_SIZE; // 80m
+
+	// 이상적인 탈출 목표
+	glm::vec3 idealTarget = npcPos + (fleeDirection * FLEE_DISTANCE);
+	idealTarget.y = 0.0f;
+
+	// 맵 경계 내로 제한
+	float halfMapSize = (GameConstants::MAP_GRID_WIDTH * GameConstants::TILE_SIZE) * 0.5f;
+	idealTarget.x = glm::clamp(idealTarget.x, -halfMapSize + 4.0f, halfMapSize - 4.0f);
+	idealTarget.z = glm::clamp(idealTarget.z, -halfMapSize + 4.0f, halfMapSize - 4.0f);
+
+	// ⭐⭐⭐ NavMesh에서 가장 가까운 이동 가능한 노드 찾기
+	if (pathFinder && pathFinder->GetNavMesh())
+	{
+		NavMesh* navMesh = pathFinder->GetNavMesh();
+		NavNode* targetNode = navMesh->GetNodeFromWorldPos(idealTarget);
+
+		// 목표 노드가 이동 가능하면 그대로 사용
+		if (targetNode && targetNode->IsWalkable())
+		{
+			return targetNode->GetWorldPosition();
+		}
+
+		// ⭐ 목표 노드가 벽이면 주변에서 이동 가능한 노드 찾기
+		std::cout << "Professor: Ideal target is blocked. Searching nearby walkable node..." << std::endl;
+
+		// 반경을 점점 넓혀가며 검색 (1타일 → 10타일)
+		for (int radius = 1; radius <= 10; ++radius)
+		{
+			for (int dz = -radius; dz <= radius; ++dz)
+			{
+				for (int dx = -radius; dx <= radius; ++dx)
+				{
+					// 현재 반경의 테두리만 검사 (이미 검사한 내부는 스킵)
+					if (std::abs(dx) != radius && std::abs(dz) != radius)
+						continue;
+
+					// 테스트 위치 계산
+					glm::vec3 testPos = idealTarget + glm::vec3(
+						dx * GameConstants::TILE_SIZE,
+						0.0f,
+						dz * GameConstants::TILE_SIZE
+					);
+
+					// NavMesh에서 노드 확인
+					NavNode* testNode = navMesh->GetNodeFromWorldPos(testPos);
+					if (testNode && testNode->IsWalkable())
+					{
+						std::cout << "Professor: Found walkable node at radius " << radius
+							<< " tiles, position (" << testPos.x << ", " << testPos.z << ")" << std::endl;
+						return testNode->GetWorldPosition();
+					}
+				}
+			}
+		}
+
+		// ⭐ 최후의 수단: 현재 위치에서 같은 방향으로 더 가까운 거리
+		std::cout << "Professor: No walkable node found. Using shorter distance..." << std::endl;
+		glm::vec3 fallbackTarget = npcPos + (fleeDirection * (FLEE_DISTANCE * 0.5f));
+		fallbackTarget.x = glm::clamp(fallbackTarget.x, -halfMapSize + 4.0f, halfMapSize - 4.0f);
+		fallbackTarget.z = glm::clamp(fallbackTarget.z, -halfMapSize + 4.0f, halfMapSize - 4.0f);
+		fallbackTarget.y = 0.0f;
+
+		targetNode = navMesh->GetNodeFromWorldPos(fallbackTarget);
+		if (targetNode && targetNode->IsWalkable())
+		{
+			return targetNode->GetWorldPosition();
+		}
+	}
+
+	// ⭐ NavMesh가 없거나 모두 실패하면 이상적인 목표 반환
+	return idealTarget;
 }
 
 // 사용 예시

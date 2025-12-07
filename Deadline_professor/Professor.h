@@ -64,4 +64,8 @@ private:
 	AIController* aiController{ nullptr };
 	PathFinder* pathFinder{ nullptr };  // ⭐ NavMesh 기반 경로 탐색
 	glm::vec3 patrolTarget{ 0.0f };
+
+	// ⭐ 플레이어 반대 방향으로 탈출 목표 계산
+	glm::vec3 CalculateEscapeTarget(const glm::vec3& npcPos, const glm::vec3& playerPos);
+
 };
