@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "TotalHeader.h"
 class Shader
 {
@@ -33,7 +33,7 @@ public:
 	void setUniform(const std::string_view&, const glm::mat4&);
 
 	int getAttrib(const std::string_view&);
-	GLuint GetProgram() const { return program; }
+	
 
 private:
 	GLuint program{};
