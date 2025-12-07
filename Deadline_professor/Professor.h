@@ -1,5 +1,8 @@
 ﻿#pragma once
 #include "Object.h"
+#include "AIController.h"
+
+class PathFinder;
 
 class Professor : public Object
 {
@@ -32,6 +35,15 @@ public:
 	void SetSize(float width, float height, float depth);
 	glm::vec3 GetSize() const;
 
+	// AI 시스템
+	void SetAIController(AIController* aiController);
+	AIController* GetAIController() const;
+	void SetPatrolTarget(const glm::vec3& targetPos);
+
+	// PathFinder 설정 (NavMesh 기반 경로 탐색)
+	void SetPathFinder(PathFinder* pathFinder);
+	PathFinder* GetPathFinder() const;
+
 private:
 	void FleeFromPlayer(float deltaTime);
 
@@ -47,4 +59,13 @@ private:
 
 	float moveSpeed{5.5f};           // 기본값: 이동 속도 (m/s) - GameConstants::PROFESSOR_MOVE_SPEED 사용
 	float detectionRange{15.0f};     // 기본값: 감지 범위 (m) - GameConstants::PROFESSOR_DETECTION_RANGE 사용
+
+	// AI 시스템
+	AIController* aiController{ nullptr };
+	PathFinder* pathFinder{ nullptr };  // ⭐ NavMesh 기반 경로 탐색
+	glm::vec3 patrolTarget{ 0.0f };
+
+	// ⭐ 플레이어 반대 방향으로 탈출 목표 계산
+	glm::vec3 CalculateEscapeTarget(const glm::vec3& npcPos, const glm::vec3& playerPos);
+
 };

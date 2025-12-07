@@ -38,7 +38,7 @@ void Wall::SetGridPosition(int gridX, int gridZ)
 	// 맵의 중심을 원점(0,0,0)으로 만들기 위해 오프셋 적용
 	float halfMapSize = (GameConstants::MAP_GRID_WIDTH * GameConstants::TILE_SIZE) * 0.5f;
 	float worldX = (gridX * GameConstants::TILE_SIZE) - halfMapSize + (GameConstants::TILE_SIZE * 0.5f);
-	float worldY = tileSize.y * 0.5f; // 벽 높이의 절반 (바닥 기준)
+	float worldY = tileSize.y * 1.0f; // 벽 높이의 절반 (바닥 기준)
 	float worldZ = (gridZ * GameConstants::TILE_SIZE) - halfMapSize + (GameConstants::TILE_SIZE * 0.5f);
 
 	SetPosition(glm::vec3(worldX, worldY, worldZ));
