@@ -72,10 +72,15 @@ private:
 	std::unique_ptr<class Professor> professor;
 	std::unique_ptr<class Plane> floor;
 	std::unique_ptr<class Plane> ceiling;
-	std::unique_ptr<class Wall> testWall;  // 테스트용 벽
 	std::unique_ptr<Light> light;
+	std::vector<std::unique_ptr<Light>> lights;
+	std::unique_ptr<class MapGenerator> mapGenerator;
+	std::vector<std::unique_ptr<class Wall>> walls;
+	
 	bool proSoundPlaying{ false };
 	bool plaSoundPlaying{ false };
+
+	std::unique_ptr<NavMesh> navMesh;
 };
 
 class Floor2Scene : public Scene
@@ -86,10 +91,19 @@ public:
 	void Update(float) override;
 	void Draw() override;
 private:
+	std::unique_ptr<class Player> player;
 	std::unique_ptr<class Professor> professor;
 	std::unique_ptr<class Plane> floor;
 	std::unique_ptr<class Plane> ceiling;
 	std::unique_ptr<Light> light;
+	std::vector<std::unique_ptr<Light>> lights;
+	std::unique_ptr<class MapGenerator> mapGenerator;
+	std::vector<std::unique_ptr<class Wall>> walls;
+
+	bool proSoundPlaying{ false };
+	bool plaSoundPlaying{ false };
+
+	std::unique_ptr<NavMesh> navMesh;
 };
 
 class Floor3Scene : public Scene
@@ -100,10 +114,19 @@ public:
 	void Update(float) override;
 	void Draw() override;
 private:
+	std::unique_ptr<class Player> player;
 	std::unique_ptr<class Professor> professor;
 	std::unique_ptr<class Plane> floor;
 	std::unique_ptr<class Plane> ceiling;
 	std::unique_ptr<Light> light;
+	std::vector<std::unique_ptr<Light>> lights;
+	std::unique_ptr<class MapGenerator> mapGenerator;
+	std::vector<std::unique_ptr<class Wall>> walls;
+
+	bool proSoundPlaying{ false };
+	bool plaSoundPlaying{ false };
+
+	std::unique_ptr<NavMesh> navMesh;
 };
 
 class TestScene : public Scene

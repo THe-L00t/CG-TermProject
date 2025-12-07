@@ -1,4 +1,4 @@
-﻿#include "Professor.h"
+#include "Professor.h"
 #include "GameConstants.h"
 #include "PathFinder.h"
 #include "NavMesh.h"
@@ -327,62 +327,70 @@ glm::vec3 Professor::CalculateEscapeTarget(const glm::vec3& npcPos, const glm::v
 	if (pathFinder && pathFinder->GetNavMesh())
 	{
 		NavMesh* navMesh = pathFinder->GetNavMesh();
-		NavNode* targetNode = navMesh->GetNodeFromWorldPos(idealTarget);
-
-		// 목표 노드가 이동 가능하면 그대로 사용
-		if (targetNode && targetNode->IsWalkable())
+		if (navMesh)
 		{
-			return targetNode->GetWorldPosition();
-		}
+			NavNode* targetNode = navMesh->GetNodeFromWorldPos(idealTarget);
 
-		// ⭐ 목표 노드가 벽이면 주변에서 이동 가능한 노드 찾기
-		std::cout << "Professor: Ideal target is blocked. Searching nearby walkable node..." << std::endl;
-
-		// 반경을 점점 넓혀가며 검색 (1타일 → 10타일)
-		for (int radius = 1; radius <= 10; ++radius)
-		{
-			for (int dz = -radius; dz <= radius; ++dz)
+			if (targetNode)
 			{
-				for (int dx = -radius; dx <= radius; ++dx)
+				// 목표 노드가 이동 가능하면 그대로 사용
+				if (targetNode->IsWalkable())
 				{
-					// 현재 반경의 테두리만 검사 (이미 검사한 내부는 스킵)
-					if (std::abs(dx) != radius && std::abs(dz) != radius)
-						continue;
+					return targetNode->GetWorldPosition();
+				}
+				else
+				{
+					std::cout << "Professor: Ideal target node is blocked. Searching nearby nodes..." << std::endl;
+				}
+			}
+			else
+			{
+				std::cout << "Professor: Ideal target node is NULL. Searching nearby nodes..." << std::endl;
+			}
 
-					// 테스트 위치 계산
-					glm::vec3 testPos = idealTarget + glm::vec3(
-						dx * GameConstants::TILE_SIZE,
-						0.0f,
-						dz * GameConstants::TILE_SIZE
-					);
-
-					// NavMesh에서 노드 확인
-					NavNode* testNode = navMesh->GetNodeFromWorldPos(testPos);
-					if (testNode && testNode->IsWalkable())
+			// 주변 노드 검색 (1타일 → 10타일)
+			for (int radius = 1; radius <= 10; ++radius)
+			{
+				for (int dz = -radius; dz <= radius; ++dz)
+				{
+					for (int dx = -radius; dx <= radius; ++dx)
 					{
-						std::cout << "Professor: Found walkable node at radius " << radius
-							<< " tiles, position (" << testPos.x << ", " << testPos.z << ")" << std::endl;
-						return testNode->GetWorldPosition();
+						if (std::abs(dx) != radius && std::abs(dz) != radius)
+							continue;
+
+						glm::vec3 testPos = idealTarget + glm::vec3(
+							dx * GameConstants::TILE_SIZE,
+							0.0f,
+							dz * GameConstants::TILE_SIZE
+						);
+
+						NavNode* testNode = navMesh->GetNodeFromWorldPos(testPos);
+						if (testNode && testNode->IsWalkable())
+						{
+							std::cout << "Professor: Found walkable node at radius " << radius
+								<< ", position (" << testPos.x << ", " << testPos.z << ")" << std::endl;
+							return testNode->GetWorldPosition();
+						}
 					}
 				}
 			}
-		}
 
-		// ⭐ 최후의 수단: 현재 위치에서 같은 방향으로 더 가까운 거리
-		std::cout << "Professor: No walkable node found. Using shorter distance..." << std::endl;
-		glm::vec3 fallbackTarget = npcPos + (fleeDirection * (FLEE_DISTANCE * 0.5f));
-		fallbackTarget.x = glm::clamp(fallbackTarget.x, -halfMapSize + 4.0f, halfMapSize - 4.0f);
-		fallbackTarget.z = glm::clamp(fallbackTarget.z, -halfMapSize + 4.0f, halfMapSize - 4.0f);
-		fallbackTarget.y = 0.0f;
+			// 주변 노드 검색 실패 → fallback
+			std::cout << "Professor: No walkable node found. Using fallback target..." << std::endl;
+			glm::vec3 fallbackTarget = npcPos + (fleeDirection * (FLEE_DISTANCE * 0.5f));
+			fallbackTarget.x = glm::clamp(fallbackTarget.x, -halfMapSize + 4.0f, halfMapSize - 4.0f);
+			fallbackTarget.z = glm::clamp(fallbackTarget.z, -halfMapSize + 4.0f, halfMapSize - 4.0f);
+			fallbackTarget.y = 0.0f;
 
-		targetNode = navMesh->GetNodeFromWorldPos(fallbackTarget);
-		if (targetNode && targetNode->IsWalkable())
-		{
-			return targetNode->GetWorldPosition();
+			targetNode = navMesh->GetNodeFromWorldPos(fallbackTarget);
+			if (targetNode && targetNode->IsWalkable())
+			{
+				return targetNode->GetWorldPosition();
+			}
 		}
 	}
 
-	// ⭐ NavMesh가 없거나 모두 실패하면 이상적인 목표 반환
+	// NavMesh가 없거나 모두 실패하면 이상적인 목표 반환
 	return idealTarget;
 }
 

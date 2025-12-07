@@ -1,4 +1,4 @@
-﻿#include "Player.h"
+#include "Player.h"
 #include "Camera.h"
 #include "GameConstants.h"
 #include "Engine.h"
@@ -9,8 +9,8 @@ Player::Player()
 {
 	// 현실적인 스케일 적용 (1 unit = 1 meter)
 	SetScale(glm::vec3(GameConstants::PLAYER_WIDTH,
-	                   GameConstants::PLAYER_HEIGHT,
-	                   GameConstants::PLAYER_DEPTH));
+		GameConstants::PLAYER_HEIGHT,
+		GameConstants::PLAYER_DEPTH));
 
 	// 기본 이동 속도 설정 (걷기)
 	moveSpeed = GameConstants::PLAYER_WALK_SPEED;
@@ -138,7 +138,8 @@ void Player::SyncCameraPosition()
 			// 이전 방향 벡터를 유지
 			glm::vec3 newDirection = newCameraPos + viewVector;
 			camera->SetDirection(newDirection);
-		} else {
+		}
+		else {
 			// 방향이 설정되지 않았으면 앞쪽(-Z)을 바라보도록 설정
 			camera->SetDirection(newCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
 		}

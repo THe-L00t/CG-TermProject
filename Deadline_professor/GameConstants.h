@@ -34,7 +34,7 @@ namespace GameConstants
 	// ===== 맵/타일 관련 =====
 	constexpr float TILE_SIZE = 4.0f;               // 한 타일의 그리드 간격 (m) - 벽 중심 간 거리
 	constexpr float WALL_SIZE = 2.f;               // 벽 객체의 실제 크기 (m) - 인접 벽과 0.2m 간격
-	constexpr float WALL_HEIGHT = 2.5f;             // 벽 높이 (m) - 바닥부터 천장까지
+	constexpr float WALL_HEIGHT = 3.f;             // 벽 높이 (m) - 바닥부터 천장까지
 	constexpr int MAP_GRID_WIDTH = 25;              // 맵 그리드 가로 크기 (타일 개수) - 100m / 4m = 25
 	constexpr int MAP_GRID_DEPTH = 25;              // 맵 그리드 세로 크기 (타일 개수) - 100m / 4m = 25
 

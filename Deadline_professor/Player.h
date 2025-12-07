@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "TotalHeader.h"
 #include "Object.h"
 
@@ -40,8 +40,8 @@ private:
 
 	// 충돌 처리 (Object의 GetBoundingBox를 오버라이드)
 
-	Camera* camera{nullptr};
-	float moveSpeed{1.4f}; // 기본값: 걷기 속도 (m/s) - GameConstants::PLAYER_WALK_SPEED 사용
+	Camera* camera{ nullptr };
+	float moveSpeed{ 1.4f }; // 기본값: 걷기 속도 (m/s) - GameConstants::PLAYER_WALK_SPEED 사용
 
 	// 손 모델 리소스 ID
 	std::string leftHandResourceID;
