@@ -1,4 +1,4 @@
-#include "AIController.h"
+﻿#include "AIController.h"
 #include "PathFinder.h"
 #include "GameConstants.h"
 
@@ -30,64 +30,206 @@ void AIController::ClearTarget()
 	currentPath.isValid = false;
 }
 
+// ========================================
+// Phase 1-2: GetNextMoveDirection 구현
+// ========================================
+glm::vec3 AIController::GetNextMoveDirection() const
+{
+	// 경로가 유효하지 않거나 waypoint가 없으면 이동하지 않음
+	if (!currentPath.isValid || currentPath.waypoints.empty())
+	{
+		return glm::vec3(0.0f);
+	}
+
+	// 현재 waypoint 조회
+	glm::vec3 nextWaypoint = currentPath.GetNextWaypoint();
+	if (nextWaypoint == glm::vec3(0.0f))
+	{
+		// 경로가 끝남 (모든 waypoint 통과)
+		return glm::vec3(0.0f);
+	}
+
+	// 방향 벡터 계산 (다음 waypoint - 현재 위치)
+	glm::vec3 direction = nextWaypoint - currentPosition;
+
+	// 거리 확인
+	float distance = glm::length(direction);
+	if (distance < 0.001f)
+	{
+		// 이미 waypoint에 도달함
+		return glm::vec3(0.0f);
+	}
+
+	// 정규화된 방향 벡터 반환
+	return glm::normalize(direction);
+}
+
+// ========================================
+// Phase 1-1: UpdateMovement 구현
+// ========================================
 void AIController::UpdateMovement(float deltaTime)
 {
+	// 목표가 없거나 pathFinder가 없으면 IDLE
 	if (!hasTarget || !pathFinder)
 	{
 		behaviorMode = BehaviorMode::IDLE;
 		return;
 	}
 
-	// ��ΰ� ��ȿ���� ������ ���� ��� (���߿� ����)
-	// ��� ���൵ ������Ʈ
-	moveProgress += deltaTime;
-}
-
-glm::vec3 AIController::GetNextMoveDirection() const
-{
+	// 경로가 유효하지 않으면 STUCK
 	if (!currentPath.isValid || currentPath.waypoints.empty())
 	{
-		return glm::vec3(0.0f);
+		behaviorMode = BehaviorMode::STUCK;
+		return;
 	}
 
-	// ���� ��ǥ�� ���� ���
+	// 경로가 완료되었는지 확인
+	if (currentPath.IsComplete())
+	{
+		// 목표 도달 - 상태 업데이트
+		hasTarget = false;
+		behaviorMode = BehaviorMode::IDLE;
+		currentPath.isValid = false;
+		std::cout << "AIController: Target reached!" << std::endl;
+		return;
+	}
+
+	// 다음 waypoint 조회
 	glm::vec3 nextWaypoint = currentPath.GetNextWaypoint();
 	if (nextWaypoint == glm::vec3(0.0f))
 	{
-		return glm::vec3(0.0f);
+		// Waypoint 없음 - 경로 끝
+		currentPath.SetCurrentWaypointIndex(currentPath.GetCurrentWaypointIndex() + 1);
+		return;
 	}
 
-	// ���� ���� ����ȭ (��Ȯ�� ������ ���߿�)
-	return glm::normalize(nextWaypoint);
+	// 현재 위치에서 다음 waypoint까지의 거리
+	float distanceToWaypoint = glm::distance(currentPosition, nextWaypoint);
+
+	// Waypoint 도달 판정
+	if (distanceToWaypoint < WAYPOINT_REACH_DISTANCE)
+	{
+		// 다음 waypoint로 진행
+		int nextIndex = currentPath.GetCurrentWaypointIndex() + 1;
+		currentPath.SetCurrentWaypointIndex(nextIndex);
+		std::cout << "AIController: Waypoint reached. Moving to next waypoint." << std::endl;
+		return;
+	}
+
+	// 이동 거리 계산 (속도 × 시간)
+	float moveDistance = GameConstants::PROFESSOR_MOVE_SPEED * deltaTime;
+
+	// 현재 위치 업데이트
+	glm::vec3 moveDirection = GetNextMoveDirection();
+	currentPosition += moveDirection * moveDistance;
+
+	// 진행도 업데이트
+	moveProgress += deltaTime;
+}
+
+// ========================================
+// Phase 1-3: ChaseTarget 구현 (나중에 필요시 활용)
+// ========================================
+/*
+void AIController::ChaseTarget(const glm::vec3& currentPos, const glm::vec3& targetPos, float maxChaseDistance, float deltaTime)
+{
+	if (!pathFinder)
+		return;
+
+	// 현재 위치 업데이트
+	currentPosition = currentPos;
+
+	// 현재 위치에서 대상까지의 거리 계산
+	float distanceToTarget = glm::distance(currentPos, targetPos);
+
+	// 거리가 최대 추격 거리를 초과했는지 확인
+	if (distanceToTarget > maxChaseDistance)
+	{
+		// 최대 거리 초과 - 추격 포기
+		ClearTarget();
+		std::cout << "AIController: Target too far. Chase abandoned." << std::endl;
+		return;
+	}
+
+	// 감지 범위 내 확인 (PROFESSOR_DETECTION_RANGE)
+	if (distanceToTarget <= GameConstants::PROFESSOR_DETECTION_RANGE)
+	{
+		// 목표 설정
+		if (!hasTarget)
+		{
+			SetTargetPosition(targetPos);
+		}
+		else
+		{
+			// 이미 추격 중이면 목표 위치 업데이트
+			targetPosition = targetPos;
+		}
+
+		// 경로 계산 (주기적으로만 계산)
+		lastPathUpdateTime += deltaTime;
+		if (lastPathUpdateTime >= PATH_UPDATE_INTERVAL)
+		{
+			currentPath = pathFinder->FindPath(currentPos, targetPos);
+			lastPathUpdateTime = 0.0f;
+
+			if (!currentPath.isValid)
+			{
+				// 경로 찾기 실패 - STUCK 상태
+				behaviorMode = BehaviorMode::STUCK;
+				std::cout << "AIController: No path found. Stuck state." << std::endl;
+			}
+			else
+			{
+				// 경로 찾기 성공 - CHASING 모드 유지
+				behaviorMode = BehaviorMode::CHASING;
+				std::cout << "AIController: Path found. Chasing..." << std::endl;
+			}
+		}
+	}
+	else
+	{
+		// 감지 범위 밖 - IDLE
+		ClearTarget();
+		behaviorMode = BehaviorMode::IDLE;
+	}
+}
+*/
+
+// ========================================
+// Phase 1-4: ValidateAndUpdatePath 구현
+// ========================================
+void AIController::ValidateAndUpdatePath(const glm::vec3& currentPos)
+{
+	if (!pathFinder || !hasTarget)
+		return;
+
+	// 현재 위치 업데이트
+	currentPosition = currentPos;
+
+	// 경로 유효성 확인
+	if (!pathFinder->IsPathValid(currentPath))
+	{
+		std::cout << "AIController: Path is invalid. Recalculating..." << std::endl;
+
+		// 새 경로 계산
+		currentPath = pathFinder->FindPath(currentPos, targetPosition);
+
+		if (!currentPath.isValid)
+		{
+			// 재계산 실패 - STUCK 상태
+			behaviorMode = BehaviorMode::STUCK;
+			std::cout << "AIController: Path recalculation failed. Stuck state." << std::endl;
+		}
+		else
+		{
+			// 재계산 성공 - CHASING 모드 유지
+			behaviorMode = BehaviorMode::CHASING;
+			std::cout << "AIController: Path recalculated successfully." << std::endl;
+		}
+	}
 }
 
 bool AIController::HasReachedTarget() const
 {
 	return currentPath.IsComplete();
-}
-
-void AIController::ChaseTarget(const glm::vec3& targetPos, float maxChaseDistance, float deltaTime)
-{
-	if (!pathFinder)
-		return;
-
-	// �� �Լ��� ���� ����
-	// �÷��̾ ���� �Ÿ����� �����ϵ�, maxChaseDistance�� �ʰ��ϸ� ���� �ߴ�
-}
-
-void AIController::ValidateAndUpdatePath(const glm::vec3& currentPos)
-{
-	if (!pathFinder)
-		return;
-
-	// ���� ��ΰ� ��ȿ���� Ȯ��
-	if (!pathFinder->IsPathValid(currentPath))
-	{
-		// �� ��� ���
-		if (hasTarget)
-		{
-			currentPath = pathFinder->FindPath(currentPos, targetPosition,
-				GameConstants::PROFESSOR_DETECTION_RANGE);
-		}
-	}
 }

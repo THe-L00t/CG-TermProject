@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "TotalHeader.h"
 #include "PathFinder.h"
@@ -6,7 +6,7 @@
 class PathFinder;
 
 // ========================================
-// AI Ä³¸¯ÅÍ Á¦¾î ½Ã½ºÅÛ
+// AI ìºë¦­í„° ì œì–´ ì‹œìŠ¤í…œ
 // ========================================
 class AIController
 {
@@ -14,41 +14,49 @@ public:
 	AIController(PathFinder* pathFinder);
 	~AIController();
 
-	// Çàµ¿ ¸ğµå
+	// í–‰ë™ ëª¨ë“œ
 	enum class BehaviorMode
 	{
-		IDLE,           // ´ë±â Áß
-		CHASING,        // ÇÃ·¹ÀÌ¾î ÃßÀû Áß
-		PATROLLING,     // ¼øÂû Áß
-		STUCK           // ±æÀ» ÀÒÀ½
+		IDLE,           // ëŒ€ê¸° ì¤‘
+		CHASING,        // í”Œë ˆì´ì–´ ì¶”ì  ì¤‘
+		PATROLLING,     // ìˆœì°° ì¤‘
+		STUCK           // ê¸¸ì„ ìƒìŒ
 	};
 
-	// ¸ñÇ¥ ¼³Á¤
+	// ëª©í‘œ ì„¤ì •
 	void SetTargetPosition(const glm::vec3& targetPos);
 	void ClearTarget();
 
-	// °æ·Î ±â¹İ ÀÌµ¿
+	// ê²½ë¡œ ê¸°ë°˜ ì´ë™
 	void UpdateMovement(float deltaTime);
 	glm::vec3 GetNextMoveDirection() const;
 
-	// »óÅÂ °ü¸®
+	// ìƒíƒœ ê´€ë¦¬
 	BehaviorMode GetBehaviorMode() const { return behaviorMode; }
 	const Path& GetCurrentPath() const { return currentPath; }
 	bool HasReachedTarget() const;
 
-	// ÇÃ·¹ÀÌ¾î ÃßÀû (ÃÖ´ë °Å¸® ±â¹İ)
-	void ChaseTarget(const glm::vec3& targetPos, float maxChaseDistance, float deltaTime);
+	// í”Œë ˆì´ì–´ ì¶”ì  (ìµœëŒ€ ê±°ë¦¬ ê¸°ë°˜)
+	//void ChaseTarget(const glm::vec3& currentPos, const glm::vec3& targetPos, float maxChaseDistance, float deltaTime);
 
-	// °æ·Î À¯È¿¼º ÀçÈ®ÀÎ
+	// ê²½ë¡œ ìœ íš¨ì„± ì¬í™•ì¸
 	void ValidateAndUpdatePath(const glm::vec3& currentPos);
+
+	// NPC í˜„ì¬ ìœ„ì¹˜ ì„¤ì • (ê²½ë¡œ ê³„ì‚°ì— í•„ìš”)
+	void SetCurrentPosition(const glm::vec3& pos) { currentPosition = pos; }
+	glm::vec3 GetCurrentPosition() const { return currentPosition; }
 
 private:
 	PathFinder* pathFinder = nullptr;
+	glm::vec3 currentPosition = glm::vec3(0.0f);  // NPCì˜ í˜„ì¬ ìœ„ì¹˜
 	Path currentPath;
 	BehaviorMode behaviorMode = BehaviorMode::IDLE;
 	glm::vec3 targetPosition = glm::vec3(0.0f);
 	bool hasTarget = false;
 
-	// °æ·Î ÀÌµ¿ ÁøÇàµµ
+	// ê²½ë¡œ ì´ë™ ì§„í–‰ë„
 	float moveProgress = 0.0f;
+	float lastPathUpdateTime = 0.0f;  // ê²½ë¡œ ê°±ì‹  ì£¼ê¸° ê´€ë¦¬
+	const float PATH_UPDATE_INTERVAL = 0.5f;  // 0.5ì´ˆë§ˆë‹¤ ê²½ë¡œ ê²€ì¦
+	const float WAYPOINT_REACH_DISTANCE = 0.5f;  // waypoint ë„ë‹¬ ê±°ë¦¬
 };
