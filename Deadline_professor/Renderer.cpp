@@ -280,7 +280,7 @@ void Renderer::RenderFBXModelWithAnimationAndTexture(const std::string_view& mod
 		return;
 	}
 
-	std::cout << "RenderFBXModelWithAnimationAndTexture: Using texture ID " << textureID << " for model '" << modelName << "'" << std::endl;
+	//std::cout << "RenderFBXModelWithAnimationAndTexture: Using texture ID " << textureID << " for model '" << modelName << "'" << std::endl;
 
 	Shader* shader = GetShader("basic");
 	if (!shader) return;
@@ -307,7 +307,7 @@ void Renderer::RenderFBXModelWithAnimationAndTexture(const std::string_view& mod
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	shader->setUniform("uTexture", 0);
 	shader->setUniform("uUseTexture", true);
-	std::cout << "DEBUG: Texture bound to GL_TEXTURE0, uUseTexture set to TRUE" << std::endl;
+	//std::cout << "DEBUG: Texture bound to GL_TEXTURE0, uUseTexture set to TRUE" << std::endl;
 
 	bool useSkinning = !boneTransforms.empty();
 	shader->setUniform("uUseSkinning", useSkinning);
@@ -564,7 +564,7 @@ void Renderer::RenderLightDebugPoints()
 	shader->setUniform("uLightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 	shader->setUniform("uLightPos", glm::vec3(0.0f, 0.0f, 0.0f));
 
-	glPointSize(15.0f);
+	glPointSize(5.0f);
 	glDisable(GL_DEPTH_TEST);
 
 	// 모든 활성 광원의 위치 수집

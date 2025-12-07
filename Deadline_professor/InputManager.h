@@ -12,9 +12,14 @@ public:
 	void SetWindow(Window* window);
 	void SetMouseControlActive(bool);
 
+	// 키 상태 추적 함수
+	void UpdateKeyStates(float deltaTime);
+
 	//콜백용 함수
 	static void Keyboard(unsigned char, int, int);
+	static void KeyboardUp(unsigned char, int, int);
 	static void SKeyboard(int, int, int);
+	static void SKeyboardUp(int, int, int);
 	static void Mouse(int, int, int, int);
 	static void PassiveMotion(int, int);
 
@@ -25,6 +30,8 @@ public:
 	std::function<void()> ActionD;
 	std::function<void()> ActionWheelUp;
 	std::function<void()> ActionWheelDown;
+	std::function<void()> ActionSpace;
+	std::function<void()> ActionCtrl;
 
 	// 디버깅용 씬 전환 함수 객체
 	std::function<void()> Action1; // Title Scene
@@ -39,5 +46,13 @@ private:
 	Camera* cmr;
 	Window* window;
 	bool mouseControl{ false };
+
+	// 키 상태 맵
+	bool keyStates[256] = { false };
+	
+	// 특수 키 상태 (Ctrl, Shift, Alt)
+	bool ctrlPressed = false;
+	bool shiftPressed = false;
+	bool altPressed = false;
 };
 

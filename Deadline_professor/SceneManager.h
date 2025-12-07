@@ -105,5 +105,8 @@ private:
 	std::unique_ptr<Object> TestCube;
 	std::unique_ptr<Object> Ground;
 
-	std::unique_ptr<Light> light;
+	std::unique_ptr<Light> directionalLight;
+	std::unique_ptr<Light> ceilingLight1;
+	std::unique_ptr<Light> ceilingLight2;
+	std::unique_ptr<Light> spotLight;
 };
