@@ -1,4 +1,4 @@
-﻿#include "Renderer.h"
+#include "Renderer.h"
 #include "Camera.h"
 #include "Light.h"
 
@@ -39,6 +39,13 @@ void Renderer::Init()
 		std::cerr << "ERROR: Failed to load shader 'basic'" << std::endl;
 	} else {
 		std::cout << "Renderer: Shader 'basic' loaded successfully" << std::endl;
+	}
+
+	if (!LoadShader("ui", ".\\Shaders\\ui.vert", ".\\Shaders\\ui.frag")) {
+		std::cerr << "ERROR: Failed to load shader 'ui'" << std::endl;
+	}
+	else {
+		std::cout << "Renderer: Shader 'ui' loaded successfully" << std::endl;
 	}
 
 	if (!LoadShader("professor", ".\\Shaders\\professor.vert", ".\\Shaders\\professor.frag")) {
@@ -482,7 +489,7 @@ void Renderer::RenderTextrue(const std::string_view& textureName)
 {
 	GLuint textureID = resourceManager->GetTexture(textureName);
 	if (textureID == 0) {
-		std::cerr << "RenderFBXAnimated: Texture '" << textureName << "' not found (ID=0)" << std::endl;
+		std::cerr << "RenderTextrue: Texture '" << textureName << "' not found (ID=0)" << std::endl;
 		return;
 	}
 
@@ -493,6 +500,8 @@ void Renderer::RenderTextrue(const std::string_view& textureName)
 		if (!shader) return;
 	}
 
+	shader->Use();
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	shader->setUniform("uTexture", 0);
@@ -501,8 +510,71 @@ void Renderer::RenderTextrue(const std::string_view& textureName)
 	glBindVertexArray(ScreenVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
+	
+	shader->Unuse();
+	
+}
+
+void Renderer::InituiQuad(const glm::vec2& RT, const glm::vec2& LB)
+{
+	float quadVertices[] = {
+		// pos     // uv
+		LB.x, LB.y, 0.0f, 1.0f,
+		 RT.x, LB.y, 1.0f, 1.0f,
+		 RT.x,  RT.y, 1.0f, 0.0f,
+
+		LB.x, LB.y, 0.0f, 1.0f,
+		 RT.x, RT.y, 1.0f, 0.0f,
+		LB.x,  RT.y, 0.0f, 0.0f
+	};
+
+	glGenVertexArrays(1, &uiVAO);
+	glGenBuffers(1, &uiVBO);
+
+	glBindVertexArray(uiVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, uiVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+	// layout(location = 0) → position
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+	// layout(location = 1) → UV
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	glBindVertexArray(0);
+}
+
+void Renderer::Renderui(const std::string_view& textureName, float deltatime)
+{
+	GLuint textureID = resourceManager->GetTexture(textureName);
+	if (textureID == 0) {
+		std::cerr << "Renderui: Texture '" << textureName << "' not found (ID=0)" << std::endl;
+		return;
+	}
+
+	Shader* shader = GetShader("ui");
+	if (!shader) {
+		std::cerr << "ui shader not found, falling back to basic" << std::endl;
+		shader = GetShader("basic");
+		if (!shader) return;
+	}
 
 	shader->Use();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	shader->setUniform("uTexture", 0);
+	shader->setUniform("uUseTexture", true);
+	
+	shader->setUniform("uTime", deltatime);
+	glBindVertexArray(uiVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+
+	shader->Unuse();
 }
 
 // ============================================

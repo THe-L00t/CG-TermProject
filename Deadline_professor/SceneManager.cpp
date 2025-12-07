@@ -1,4 +1,4 @@
-﻿#include "SceneManager.h"
+#include "SceneManager.h"
 #include "Engine.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
@@ -135,12 +135,11 @@ void TitleScene::Enter()
 	if (g_engine) {
 		InputManager* inputMgr = g_engine->GetInputManager();
 		if (inputMgr) {
-			inputMgr->ActionW = [this]() { keyPressed = true; };
-			inputMgr->ActionA = [this]() { keyPressed = true; };
-			inputMgr->ActionS = [this]() { keyPressed = true; };
-			inputMgr->ActionD = [this]() { keyPressed = true; };
+			inputMgr->ActionSpace = [this]() { keyPressed = true; };
+
 		}
 	}
+	
 
 	std::cout << "TitleScene: Title plane and light initialized" << std::endl;
 }
@@ -177,28 +176,7 @@ void TitleScene::Exit()
 void TitleScene::Update(float deltaTime)
 {
 	// 페이드 효과 (1초 주기: 0.5초 페이드아웃 + 0.5초 페이드인)
-	const float fadeDuration = 1.0f;
-	const float fadeSpeed = 2.0f; // 1초에 1.0 변화 (0.0 ~ 1.0)
-
 	fadeTimer += deltaTime;
-
-	if (fadeOut) {
-		// 페이드 아웃 (1.0 -> 0.0)
-		alpha -= deltaTime * fadeSpeed;
-		if (alpha <= 0.0f) {
-			alpha = 0.0f;
-			fadeOut = false;
-			fadeTimer = 0.0f;
-		}
-	} else {
-		// 페이드 인 (0.0 -> 1.0)
-		alpha += deltaTime * fadeSpeed;
-		if (alpha >= 1.0f) {
-			alpha = 1.0f;
-			fadeOut = true;
-			fadeTimer = 0.0f;
-		}
-	}
 
 	// 키 입력 시 Floor1Scene으로 전환
 	if (keyPressed) {
@@ -217,6 +195,11 @@ void TitleScene::Draw()
 {
 	// OpenGL 3.3 코어 프로파일에서는 레거시 텍스트 렌더링 불가
 	// 임시로 색깔있는 화면으로 렌더링이 되는지 확인
+	// 투명도 활성화 위해서 
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	extern Engine* g_engine;
 	if (!g_engine) return;
@@ -231,6 +214,8 @@ void TitleScene::Draw()
 
 	renderer->InitScreenQuad(glm::vec2(1, 1), glm::vec2(-1, -1));
 	renderer->RenderTextrue("Title");
+	renderer->InituiQuad(glm::vec2(0.4, -0.5), glm::vec2(-0.4, -0.8));
+	renderer->Renderui("Press", fadeTimer);
 	// 간단한 Plane을 렌더링해서 뭔가 보이는지 확인
 	//if (titlePlane && titlePlane->IsActive()) {
 	//	glm::mat4 planeMatrix = titlePlane->GetModelMat();
@@ -248,6 +233,9 @@ void TitleScene::Draw()
 		std::cout << "========================================\n" << std::endl;
 		messagePrinted = true;
 	}
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
 }
 
 //---------------------------------------------------------------Floor1Scene

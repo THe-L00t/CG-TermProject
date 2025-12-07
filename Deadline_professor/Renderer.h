@@ -53,6 +53,9 @@ public:
 	//화면에 텍스쳐 띄우기 
 	void InitScreenQuad(const glm::vec2& RT, const glm::vec2& LB);
 	void RenderTextrue(const std::string_view& textureName);
+
+	void InituiQuad(const glm::vec2& RT, const glm::vec2& LB);
+	void Renderui(const std::string_view& textureName, float deltatime);
 private:
 	static Renderer* activeInstance;
 
@@ -65,5 +68,8 @@ private:
 	// 전체 화면 출력 관리용
 	GLuint ScreenVAO{};
 	GLuint ScreenVBO{};
+
+	GLuint uiVAO{};
+	GLuint uiVBO{};
 };
 

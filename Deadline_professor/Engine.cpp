@@ -219,6 +219,13 @@ void Engine::LoadAssets()
 		std::cout << "SUCCESS: title.png loaded" << std::endl;
 	}
 
+	if (!resourceManager->LoadTexture("Press", "Textures/press.png")) {
+		std::cerr << "Warning: Failed to load press.png" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: press.png loaded" << std::endl;
+	}
+
 	if (!resourceManager->LoadTexture("RunLee", "Textures/RunLee.png")) {
 		std::cerr << "Warning: Failed to load RunLee.png" << std::endl;
 	} else {

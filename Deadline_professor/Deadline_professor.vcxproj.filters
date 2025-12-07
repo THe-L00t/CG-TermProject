@@ -257,5 +257,7 @@
     <None Include="Shaders\professor.vert" />
     <None Include="Shaders\screen.frag" />
     <None Include="Shaders\screen.vert" />
+    <None Include="Shaders\ui.frag" />
+    <None Include="Shaders\ui.vert" />
   </ItemGroup>
 </Project>
