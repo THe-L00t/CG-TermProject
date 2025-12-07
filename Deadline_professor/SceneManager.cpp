@@ -15,6 +15,7 @@
 #include "GameConstants.h"
 #include "MapGenerator.h"
 #include "CollisionManager.h"
+#include "SoundManager.h"
 
 SceneManager::SceneManager()
 {
@@ -372,6 +373,31 @@ void Floor1Scene::Exit()
 
 void Floor1Scene::Update(float deltaTime)
 {
+	extern Engine* g_engine;
+	SoundManager* sm = g_engine->GetSoundManager();
+
+	glm::vec3 plPos = player->GetPosition();
+	glm::vec3 prPos = professor->GetPosition();
+	float distance = glm::distance(plPos, prPos);
+
+	float triggerDistance = 10.f;
+
+	if (distance <= triggerDistance) {
+		float normalVol = (triggerDistance - distance) / triggerDistance;
+		if (!sm->IsPlaying("RunSong")) {
+			sm->Play("RunSong", normalVol);
+		}
+		else {
+			FMOD::Channel* ch = sm->GetChannel("RunSong");
+			if (ch) ch->setVolume(normalVol); // 볼륨도 거리 반영
+		}
+	}
+	else {
+		if (sm->IsPlaying("RunSong")) {
+			sm->Stop("RunSong");
+		}
+	}
+
 	if (player) {
 		player->Update(deltaTime);
 	}

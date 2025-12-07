@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "TotalHeader.h"
 #include "FBXCommon.h"
 #include <assimp/Importer.hpp>
@@ -6,6 +6,7 @@
 #include <assimp/postprocess.h>
 #include <memory>
 #include <string_view>
+#include <fmod.hpp>
 
 // ============================================
 // 기본 정점 구조체
@@ -174,6 +175,10 @@ public:
 	const FBXModel* GetFBXModel(const std::string_view& name) const noexcept;
 	GLuint GetTexture(const std::string_view& name) const noexcept;
 
+	//사운드 관련
+	bool LoadSound(const std::string_view& name, const std::string_view& path, FMOD::System* system, bool is3D = false, bool loop = false);
+	FMOD::Sound* GetSound(const std::string& name);
+
 private:
 	// 헬퍼 함수들
 	void SortData();
@@ -191,4 +196,5 @@ private:
 	std::vector<ObjData> dataList;
 	std::vector<FBXModel> fbxModels;
 	std::unordered_map<std::string, GLuint> textureMap;
+	std::unordered_map<std::string, FMOD::Sound*> soundMap;
 };

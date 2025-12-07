@@ -73,6 +73,8 @@ private:
 	std::unique_ptr<class Plane> ceiling;
 	std::unique_ptr<class Wall> testWall;  // 테스트용 벽
 	std::unique_ptr<Light> light;
+	bool proSoundPlaying{ false };
+	bool plaSoundPlaying{ false };
 };
 
 class Floor2Scene : public Scene

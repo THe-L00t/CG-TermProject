@@ -1,54 +1,54 @@
 #include "SoundManager.h"
+#include "ResourceManager.h"
 #include <iostream>
+#include <fmod_errors.h>
 
-SoundManager::~SoundManager()
-{
-    Release();
-}
-
+// ----------------- Init -----------------
 bool SoundManager::Init()
 {
-    FMOD::System_Create(&system);
-    system->init(512, FMOD_INIT_NORMAL, nullptr);
-    return true;
-}
+    FMOD_RESULT result;
 
-void SoundManager::Update()
-{
-    if (system) system->update();
-}
-
-bool SoundManager::LoadSound(const std::string& name, const std::string& path, bool loop, bool is3D)
-{
-    if (sounds.find(name) != sounds.end())
-        return true;
-
-    FMOD_MODE mode = FMOD_DEFAULT;
-
-    mode |= is3D ? FMOD_3D : FMOD_2D;
-    mode |= loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
-
-    FMOD::Sound* sound = nullptr;
-    FMOD_RESULT res = system->createSound(path.c_str(), mode, nullptr, &sound);
-
-    if (res != FMOD_OK)
+    result = FMOD::System_Create(&system);
+    if (result != FMOD_OK)
     {
-        std::cerr << "FMOD Load Error: " << FMOD_ErrorString(res) << std::endl;
+        std::cerr << "FMOD::System_Create failed: " << FMOD_ErrorString(result) << std::endl;
         return false;
     }
 
-    sounds[name] = sound;
+    result = system->init(512, FMOD_INIT_NORMAL, nullptr);
+    if (result != FMOD_OK)
+    {
+        std::cerr << "FMOD system init failed: " << FMOD_ErrorString(result) << std::endl;
+        return false;
+    }
+
     return true;
 }
 
+// ----------------- Update -----------------
+void SoundManager::Update()
+{
+    if (system)
+        system->update();
+}
+
+// ----------------- Play -----------------
 void SoundManager::Play(const std::string& name, float volume)
 {
-    if (sounds.find(name) == sounds.end())
-        return;
+    if (!resourceManager) return;
+    FMOD::Sound* sound = resourceManager->GetSound(name);
+    if (!sound) return;
+
+    // 이전 채널 있으면 강제로 stop 후 제거
+    auto it = channels.find(name);
+    if (it != channels.end() && it->second)
+    {
+        it->second->stop();
+        channels.erase(it);
+    }
 
     FMOD::Channel* channel = nullptr;
-    system->playSound(sounds[name], nullptr, false, &channel);
-
+    system->playSound(sound, nullptr, false, &channel);
     if (channel)
     {
         channel->setVolume(volume);
@@ -56,22 +56,56 @@ void SoundManager::Play(const std::string& name, float volume)
     }
 }
 
+// ----------------- Stop -----------------
 void SoundManager::Stop(const std::string& name)
 {
-    if (channels.find(name) != channels.end())
+    auto it = channels.find(name);
+    if (it != channels.end() && it->second)
     {
-        channels[name]->stop();
+        it->second->stop();
+        channels.erase(it);
     }
 }
 
+// ----------------- Release -----------------
 void SoundManager::Release()
 {
-    for (auto& s : sounds)
-        s.second->release();
-
+    // 채널은 FMOD가 자동 관리, 해제할 필요 없음
     if (system)
     {
-        system->close();
         system->release();
+        system = nullptr;
     }
+}
+
+// ----------------- Destructor -----------------
+SoundManager::~SoundManager()
+{
+    Release();
+}
+
+FMOD::Channel* SoundManager::GetChannel(const std::string& name)
+{
+    auto it = channels.find(name);
+    if (it != channels.end())
+        return it->second;
+    return nullptr;
+}
+
+// ----------------- IsPlaying -----------------
+bool SoundManager::IsPlaying(const std::string& name)
+{
+    FMOD::Channel* channel = GetChannel(name);
+    if (!channel)
+        return false;
+
+    bool playing = false;
+    FMOD_RESULT result = channel->isPlaying(&playing);
+    if (result != FMOD_OK)
+    {
+        std::cerr << "Failed to get playing state for sound: " << name
+            << " Error: " << FMOD_ErrorString(result) << std::endl;
+        return false;
+    }
+    return playing;
 }

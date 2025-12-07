@@ -1,10 +1,10 @@
-﻿#include "ResourceManager.h"
+#include "ResourceManager.h"
 #include <set>
 #include <functional>
 #include <algorithm>
 #include <array>
 #include <iostream>
-
+#include <fmod_errors.h>
 #include "LoadPng.h"
 
 // ============================================
@@ -76,6 +76,39 @@ GLuint ResourceManager::GetTexture(const std::string_view& name) const noexcept
 	std::string nameStr(name);
 	auto it = textureMap.find(nameStr);
 	return it != textureMap.end() ? it->second : 0;
+}
+
+bool ResourceManager::LoadSound(const std::string_view& name, const std::string_view& path, FMOD::System* system, bool is3D, bool loop)
+{
+	// 이미 로드된 사운드면 패스
+	if (soundMap.find(std::string(name)) != soundMap.end()) {
+		std::cout << "Sound '" << name << "' already loaded." << std::endl;
+		return true;
+	}
+
+	FMOD_MODE mode = FMOD_DEFAULT;
+	mode |= is3D ? FMOD_3D : FMOD_2D;
+	mode |= loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
+
+	FMOD::Sound* sound = nullptr;
+	FMOD_RESULT result = system->createSound(std::string(path).c_str(), mode, nullptr, &sound);
+
+	if (result != FMOD_OK) {
+		std::cerr << "Failed to load sound: " << path << std::endl;
+		return false;
+	}
+
+	soundMap[std::string(name)] = sound;
+
+	std::cout << "Sound '" << name << "' loaded successfully." << std::endl;
+	return true;
+}
+
+FMOD::Sound* ResourceManager::GetSound(const std::string& name)
+{
+	auto it = soundMap.find(name);
+	if (it != soundMap.end()) return it->second;
+	return nullptr;
 }
 
 // ============================================

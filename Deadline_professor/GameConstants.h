@@ -12,7 +12,7 @@ namespace GameConstants
 	constexpr float PLAYER_WIDTH = 0.5f;            // 플레이어 폭 (m)
 	constexpr float PLAYER_DEPTH = 0.5f;            // 플레이어 깊이 (m)
 	//constexpr float PLAYER_WALK_SPEED = 1.4f;       // 걷기 속도 (m/s) - 약 5 km/h
-	constexpr float PLAYER_WALK_SPEED = 14.0f;       // 걷기 속도 (m/s) - 약 5 km/h
+	constexpr float PLAYER_WALK_SPEED = 50.0f;       // 걷기 속도 (m/s) - 약 5 km/h
 	constexpr float PLAYER_RUN_SPEED = 5.0f;        // 뛰기 속도 (m/s) - 약 18 km/h
 	constexpr float PLAYER_EYE_HEIGHT = 1.5f;       // 플레이어 눈 높이 (m)
 

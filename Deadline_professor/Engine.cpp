@@ -1,4 +1,4 @@
-﻿#include "Engine.h"
+#include "Engine.h"
 #include "Window.h"
 #include "Renderer.h"
 #include "GameTimer.h"
@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "InputManager.h"
 #include "SceneManager.h"
+#include "SoundManager.h"
 #include "FBXAnimationPlayer.h"
 #include "CollisionManager.h"
 
@@ -40,10 +41,16 @@ void Engine::Initialize(int argc, char** argv)
 		std::cout << "GLEW Initialized\n";
 	}
 
+	// 사운드 매니저 초기화
+	soundManager = std::make_unique<SoundManager>();
+	soundManager->Init();
+
 	// 리소스 매니저 초기화 및 에셋 미리 로드
 	resourceManager = std::make_unique<ResourceManager>();
 	resourceManager->Active();
 	LoadAssets();
+
+	soundManager->SetResourceManager(resourceManager.get());
 
 	// 렌더러 초기화
 	r = std::make_unique<Renderer>(resourceManager.get());
@@ -292,12 +299,46 @@ void Engine::LoadAssets()
 		std::cout << "SUCCESS: rightHand.png loaded" << std::endl;
 	}
 
+	//사운드 로드 
+	if (!resourceManager->LoadSound("BGM", "Sound/backgroundSound.mp3", soundManager->GetSystem(), false, true)) {
+		std::cerr << "Warning: Failed to load backgroundSound.mp3" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: backgroundSound.mp3 loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadSound("WalkPlayer", "Sound/playerWalking.wav", soundManager->GetSystem(), false, true)) {
+		std::cerr << "Warning: Failed to load playerWalking.wav" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: playerWalking.wav loaded" << std::endl;
+	}
+
+	if (!resourceManager->LoadSound("RunLee", "Sound/RunLee.wav", soundManager->GetSystem(), false, true)) {
+		std::cerr << "Warning: Failed to load RunLee.wav" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: RunLee.wav loaded" << std::endl;
+	}
+	if (!resourceManager->LoadSound("RunSong", "Sound/RunSong.wav", soundManager->GetSystem(), false, true)) {
+		std::cerr << "Warning: Failed to load RunSong.wav" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: RunSong.wav loaded" << std::endl;
+	}
+	if (!resourceManager->LoadSound("RunDragon", "Sound/RunDragon.wav", soundManager->GetSystem(), false, true)) {
+		std::cerr << "Warning: Failed to load RunDragon.wav" << std::endl;
+	}
+	else {
+		std::cout << "SUCCESS: RunDragon.wav loaded" << std::endl;
+	}
+
 	std::cout << "=== Assets Loaded ===" << std::endl;
 }
 
 void Engine::Run()
 {
-	
+	soundManager->Play("BGM", 0.5f);
 	glutMainLoop();
 }
 
