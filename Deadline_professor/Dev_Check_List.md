@@ -27,16 +27,16 @@
 
 목표: NPC가 경로를 따라 이동하도록 구현
 
-- [ ] Waypoint 도달 판정
+- [X] Waypoint 도달 판정
   - 현재 waypoint와 NPC 위치 거리 계산
   - 도달 거리 임계값 설정 (예: 0.5m)
   - 다음 waypoint로 진행
 
-- [ ] 경로 완료 판정
+- [X] 경로 완료 판정
   - 마지막 waypoint 도달 시 완료 처리
   - hasReachedTarget = true 또는 IDLE로 전환
 
-- [ ] 실제 이동 적용
+- [X] 실제 이동 적용
   - GetNextMoveDirection()으로 이동 방향 구하기
   - PROFESSOR_MOVE_SPEED (5.5 m/s) 적용
   - NPC 위치 업데이트
@@ -45,15 +45,15 @@
 
 목표: 현재→다음 waypoint로 향하는 방향 벡터 반환
 
-- [ ] 현재 waypoint 조회
+- [X] 현재 waypoint 조회
   - Path.GetNextWaypoint() 사용
   - 경로가 없으면 vec3(0,0,0) 반환
 
-- [ ] 방향 벡터 계산
+- [X] 방향 벡터 계산
   - 다음 waypoint - 현재 위치
   - glm::normalize() 정규화
 
-- [ ] 속도 벡터 변환
+- [X] 속도 벡터 변환
   - 방향 × PROFESSOR_MOVE_SPEED
   - 또는 방향만 반환해서 외부에서 속도 곱하기 (권장)
 
@@ -61,17 +61,17 @@
 
 목표: 플레이어 위치를 목표로 설정하고 추격
 
-- [ ] 거리 계산
+- [X] 거리 계산
   - NPC 위치 → 플레이어 위치 거리
   - glm::distance() 사용
 
-- [ ] 감지 범위 체크
+- [X] 감지 범위 체크
   - 거리 ≤ PROFESSOR_DETECTION_RANGE (15m)
     → 목표 설정, CHASING 모드로 전환
   - 거리 > maxChaseDistance
     → 추격 포기, IDLE로 전환
 
-- [ ] 경로 계산
+- [X] 경로 계산
   - PathFinder::FindPath(현재위치, 플레이어위치) 호출
   - 경로 유효하면 currentPath 업데이트
   - 경로 없으면 STUCK 상태 (그냥 가만히 있음)
@@ -80,20 +80,20 @@
 
 목표: 경로가 여전히 유효한지 확인 (게임 중 맵 변경 대비)
 
-- [ ] 경로 유효성 확인
+- [X] 경로 유효성 확인
   - PathFinder::IsPathValid(currentPath) 호출
 
-- [ ] 경로 무효 시 재계산
+- [X] 경로 무효 시 재계산
   - 현재 위치와 목표 위치로 새 경로 계산
   - 새 경로가 없으면 STUCK 상태 유지
 
-- [ ] 호출 시기
+- [X] 호출 시기
   - 주기적 호출 (0.5초~1초마다) 추천
   - UpdateMovement 내부에 통합 가능
 
 #### 1-5. HasReachedTarget 메서드 구현 (간단)
 
-- [ ] Path 완료 여부 확인
+- [X] Path 완료 여부 확인
   - currentPath.IsComplete() 반환
 
 ---
