@@ -364,6 +364,8 @@ void TestScene::Enter()
 		inputMgr->ActionS = [camera, timer]() { camera->MoveBackward(timer->elapsedTime); };
 		inputMgr->ActionA = [camera, timer]() { camera->MoveLeft(timer->elapsedTime); };
 		inputMgr->ActionD = [camera, timer]() { camera->MoveRight(timer->elapsedTime); };
+		inputMgr->ActionSpace = [camera, timer]() { camera->MoveUp(timer->elapsedTime); };
+		inputMgr->ActionCtrl = [camera, timer]() { camera->MoveDown(timer->elapsedTime); };
 	}
 
 	// Professor 객체 생성 및 초기화
@@ -384,21 +386,22 @@ void TestScene::Enter()
 	Ground->SetResourceID("GroundPlane");
 
 	// Light 객체 생성 및 초기화
-	directionalLight = std::make_unique<Light>(LightType::DIRECTIONAL);
-	directionalLight->SetDirection(glm::vec3(0.0f, -1.0f, -0.5f));
-	directionalLight->SetAmbient(glm::vec3(0.2f, 0.2f, 0.2f));
-	directionalLight->SetDiffuse(glm::vec3(0.8f, 0.8f, 0.7f));
-	directionalLight->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
-	directionalLight->SetIntensity(0.8f);
-	directionalLight->SetEnabled(true);
-	renderer->AddLight(directionalLight.get());
-	std::cout << "Created directional light(Sun)" << std::endl;
+	// Directional Light (태양광)
+	//directionalLight = std::make_unique<Light>(LightType::DIRECTIONAL);
+	//directionalLight->SetDirection(glm::vec3(0.0f, -1.0f, -0.5f));
+	//directionalLight->SetAmbient(glm::vec3(0.2f, 0.2f, 0.2f));
+	//directionalLight->SetDiffuse(glm::vec3(0.8f, 0.8f, 0.7f));
+	//directionalLight->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+	//directionalLight->SetIntensity(0.8f);
+	//directionalLight->SetEnabled(true);
+	//renderer->AddLight(directionalLight.get());
+	//std::cout << "Created directional light(Sun)" << std::endl;
 
 	ceilingLight1 = std::make_unique<Light>(LightType::POINT);
 	ceilingLight1->SetPosition(glm::vec3(-5.0f, 1.0f, 0.0f));
 	ceilingLight1->SetAmbient(glm::vec3(0.1f, 0.1f, 0.1f));
 	ceilingLight1->SetDiffuse(glm::vec3(1.0f, 1.0f, 0.9f));
-	ceilingLight1->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+	ceilingLight1->SetSpecular(glm::vec3(0.2f, 0.2f, 0.2f));
 	ceilingLight1->SetAttenuation(1.0f, 0.09f, 0.032f);
 	ceilingLight1->SetIntensity(1.0f);
 	ceilingLight1->SetEnabled(true);
@@ -409,7 +412,7 @@ void TestScene::Enter()
 	ceilingLight2->SetPosition(glm::vec3(5.0f, 1.0f, 0.0f));
 	ceilingLight2->SetAmbient(glm::vec3(0.1f, 0.1f, 0.1f));
 	ceilingLight2->SetDiffuse(glm::vec3(1.0f, 1.0f, 0.9f));
-	ceilingLight2->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+	ceilingLight2->SetSpecular(glm::vec3(0.2f, 0.2f, 0.2f));
 	ceilingLight2->SetAttenuation(1.0f, 0.09f, 0.032f);
 	ceilingLight2->SetIntensity(1.0f);
 	ceilingLight2->SetEnabled(true);
@@ -421,7 +424,7 @@ void TestScene::Enter()
 	spotLight->SetDirection(glm::vec3(0.0f, -1.0f, -1.0f));
 	spotLight->SetAmbient(glm::vec3(0.05f, 0.05f, 0.15f));
 	spotLight->SetDiffuse(glm::vec3(0.5f, 0.5f, 0.8f));
-	spotLight->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+	spotLight->SetSpecular(glm::vec3(0.2f, 0.2f, 0.2f));
 	spotLight->SetCutOff(15.0f, 25.0f);
 	spotLight->SetAttenuation(1.0f, 0.09f, 0.032f);
 	spotLight->SetIntensity(0.5f);

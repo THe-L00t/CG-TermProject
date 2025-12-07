@@ -134,6 +134,7 @@ void Engine::Initialize(int argc, char** argv)
 	glutKeyboardFunc(InputManager::Keyboard);
 	glutKeyboardUpFunc(InputManager::KeyboardUp);
 	glutSpecialFunc(InputManager::SKeyboard);
+	glutSpecialUpFunc(InputManager::SKeyboardUp);
 	glutMouseFunc(InputManager::Mouse);
 	glutPassiveMotionFunc(InputManager::PassiveMotion);
 	glutMotionFunc(InputManager::PassiveMotion); // Also handle when buttons are pressed

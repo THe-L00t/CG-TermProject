@@ -54,6 +54,12 @@ void InputManager::UpdateKeyStates(float deltaTime)
 	if (onceInstance->keyStates['D'] || onceInstance->keyStates['d']) {
 		onceInstance->cmr->MoveRight(deltaTime);
 	}
+	if (onceInstance->keyStates[' ']) { // Space key
+		onceInstance->cmr->MoveUp(deltaTime);
+	}
+	if (onceInstance->ctrlPressed) { // Ctrl key
+		onceInstance->cmr->MoveDown(deltaTime);
+	}
 }
 
 void InputManager::Keyboard(unsigned char key, int x, int y)
@@ -75,6 +81,9 @@ void InputManager::Keyboard(unsigned char key, int x, int y)
 		break;
 	case'D':case'd':
 		if (onceInstance->ActionD) onceInstance->ActionD();
+		break;
+	case ' ':
+		if (onceInstance->ActionSpace) onceInstance->ActionSpace();
 		break;
 	case'0':
 		// Mouse Control Mode
@@ -115,10 +124,52 @@ void InputManager::KeyboardUp(unsigned char key, int x, int y)
 }
 
 
-void InputManager::SKeyboard(int, int, int)
+void InputManager::SKeyboard(int key, int x, int y)
 {
+	if (!onceInstance) return;
+
+	// 특수 키 누림 감지
+	// GLUT_KEY_CTRL_L = 114, GLUT_KEY_CTRL_R = 115
+	// GLUT_KEY_SHIFT_L = 112, GLUT_KEY_SHIFT_R = 113
+	// GLUT_KEY_ALT_L = 116, GLUT_KEY_ALT_R = 117
+
+	switch (key) {
+	case GLUT_KEY_CTRL_L:
+	case GLUT_KEY_CTRL_R:
+		onceInstance->ctrlPressed = true;
+		if (onceInstance->ActionCtrl) onceInstance->ActionCtrl();
+		break;
+	case GLUT_KEY_SHIFT_L:
+	case GLUT_KEY_SHIFT_R:
+		onceInstance->shiftPressed = true;
+		break;
+	case GLUT_KEY_ALT_L:
+	case GLUT_KEY_ALT_R:
+		onceInstance->altPressed = true;
+		break;
+	}
 }
 
+void InputManager::SKeyboardUp(int key, int x, int y)
+{
+	if (!onceInstance) return;
+
+	// 특수 키 릴리스 감지
+	switch (key) {
+	case GLUT_KEY_CTRL_L:
+	case GLUT_KEY_CTRL_R:
+		onceInstance->ctrlPressed = false;
+		break;
+	case GLUT_KEY_SHIFT_L:
+	case GLUT_KEY_SHIFT_R:
+		onceInstance->shiftPressed = false;
+		break;
+	case GLUT_KEY_ALT_L:
+	case GLUT_KEY_ALT_R:
+		onceInstance->altPressed = false;
+		break;
+	}
+}
 void InputManager::Mouse(int button, int state, int x, int y)
 {
 	if (!onceInstance) return;
