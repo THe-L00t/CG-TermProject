@@ -55,8 +55,8 @@ void Camera::MoveForward(float deltaTime)
 	direction += forward * moveSpd * deltaTime;
 	UpdateVectors();
 
-	std::cout << "DEBUG : Camera moved forward to position " 
-		<< position.x << ", " << position.y << ", " << position.z << std::endl;
+	//std::cout << "DEBUG : Camera moved forward to position " 
+	//	<< position.x << ", " << position.y << ", " << position.z << std::endl;
 }
 
 void Camera::MoveBackward(float deltaTime)
@@ -66,8 +66,8 @@ void Camera::MoveBackward(float deltaTime)
 	direction -= forward * moveSpd * deltaTime;
 	UpdateVectors();
 
-	std::cout << "DEBUG : Camera moved backward to position " 
-		<< position.x << ", " << position.y << ", " << position.z << std::endl;
+	//std::cout << "DEBUG : Camera moved backward to position " 
+	//	<< position.x << ", " << position.y << ", " << position.z << std::endl;
 }
 
 void Camera::MoveLeft(float deltaTime)
@@ -76,8 +76,8 @@ void Camera::MoveLeft(float deltaTime)
 	direction -= right * moveSpd * deltaTime;
 	UpdateVectors();
 
-	std::cout << "DEBUG : Camera moved left to position " 
-		<< position.x << ", " << position.y << ", " << position.z << std::endl;
+	//std::cout << "DEBUG : Camera moved left to position " 
+	//	<< position.x << ", " << position.y << ", " << position.z << std::endl;
 }
 
 void Camera::MoveRight(float deltaTime)
@@ -86,8 +86,8 @@ void Camera::MoveRight(float deltaTime)
 	direction += right * moveSpd * deltaTime;
 	UpdateVectors();
 
-	std::cout << "DEBUG : Camera moved right to position " 
-		<< position.x << ", " << position.y << ", " << position.z << std::endl;
+	//std::cout << "DEBUG : Camera moved right to position " 
+	//	<< position.x << ", " << position.y << ", " << position.z << std::endl;
 }
 
 void Camera::MoveUp(float deltaTime)
