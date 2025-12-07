@@ -144,6 +144,7 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="SoundManager.cpp" />
     <ClCompile Include="window.cpp" />
     <ClCompile Include="FBXAnimationPlayer.cpp" />
   </ItemGroup>
@@ -183,6 +184,7 @@
   <ItemGroup>
     <ClInclude Include="Player.h" />
     <ClInclude Include="Professor.h" />
+    <ClInclude Include="SoundManager.h" />
     <ClInclude Include="TotalHeader.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="LoadPng.h" />

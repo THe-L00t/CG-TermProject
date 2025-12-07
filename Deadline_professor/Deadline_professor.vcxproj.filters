@@ -22,6 +22,9 @@
     <Filter Include="소스 파일\Shader">
       <UniqueIdentifier>{5f86f23f-4d6b-4bd5-b602-e5c312ae2809}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\SoundManager">
+      <UniqueIdentifier>{93687fa8-07fb-4547-8e95-410acd67ea07}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -54,6 +57,9 @@
     <ClCompile Include="MapGenerator.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="SoundManager.cpp">
+      <Filter>소스 파일\SoundManager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TotalHeader.h">
@@ -85,6 +91,9 @@
     </ClInclude>
     <ClInclude Include="MapGenerator.h">
       <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SoundManager.h">
+      <Filter>소스 파일\SoundManager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
