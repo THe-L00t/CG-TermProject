@@ -81,6 +81,7 @@ private:
 	std::unique_ptr<class Plane> ceiling;
 	std::unique_ptr<Light> light;
 	std::vector<std::unique_ptr<Light>> lights;
+	std::vector<Light*> flickeringLights;
 	std::unique_ptr<class MapGenerator> mapGenerator;
 	std::vector<std::unique_ptr<class Wall>> walls;
 	
@@ -90,7 +91,7 @@ private:
 	std::unique_ptr<NavMesh> navMesh;
 
 	Light* flashlight{ nullptr };
-	std::vector<Light*> flickeringLights;
+	Light* professorLight = nullptr;
 };
 
 class Floor2Scene : public Scene
@@ -107,6 +108,7 @@ private:
 	std::unique_ptr<class Plane> ceiling;
 	std::unique_ptr<Light> light;
 	std::vector<std::unique_ptr<Light>> lights;
+	std::vector<Light*> flickeringLights;
 	std::unique_ptr<class MapGenerator> mapGenerator;
 	std::vector<std::unique_ptr<class Wall>> walls;
 
@@ -116,7 +118,7 @@ private:
 	std::unique_ptr<NavMesh> navMesh;
 
 	Light* flashlight{ nullptr };
-	std::vector<Light*> flickeringLights;
+	Light* professorLight = nullptr;
 };
 
 class Floor3Scene : public Scene
@@ -133,6 +135,7 @@ private:
 	std::unique_ptr<class Plane> ceiling;
 	std::unique_ptr<Light> light;
 	std::vector<std::unique_ptr<Light>> lights;
+	std::vector<Light*> flickeringLights;
 	std::unique_ptr<class MapGenerator> mapGenerator;
 	std::vector<std::unique_ptr<class Wall>> walls;
 
@@ -142,7 +145,7 @@ private:
 	std::unique_ptr<NavMesh> navMesh;
 
 	Light* flashlight{ nullptr };
-	std::vector<Light*> flickeringLights;
+	Light* professorLight = nullptr;
 };
 
 class TestScene : public Scene

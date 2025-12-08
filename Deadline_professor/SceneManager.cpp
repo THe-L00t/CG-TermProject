@@ -822,6 +822,50 @@ void Floor1Scene::Enter()
 	flickeringLights.push_back(debugFlickerLight.get());
 	lights.push_back(std::move(debugFlickerLight));
 
+	// ⭐⭐⭐ Professor 얼굴 조명 추가 (공포 효과!)
+	if (professor) {
+		auto professorLightPtr = std::make_unique<Light>(LightType::SPOT);
+
+		// Professor 위치 기준으로 초기 설정
+		glm::vec3 profPos = professor->GetPosition();
+		glm::vec3 lightPos = profPos;
+		lightPos.y += 1.2f;  // 가슴 높이
+		lightPos.z += 0.8f;  // ⭐⭐⭐ 수정: 뒤쪽으로 이동 (앞쪽 → 뒤쪽)
+
+		professorLightPtr->SetPosition(lightPos);
+
+		// ⭐⭐⭐ 수정: 얼굴을 향해 앞쪽으로 비추는 방향
+		glm::vec3 faceDirection = glm::vec3(0.0f, 0.8f, -0.3f);  // Z를 음수로 (앞쪽으로)
+		professorLightPtr->SetDirection(glm::normalize(faceDirection));
+
+		// 섬뜩한 색상: 차가운 청백색 또는 따뜻한 주황색
+		professorLightPtr->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));
+		professorLightPtr->SetDiffuse(glm::vec3(0.9f, 0.7f, 0.5f));  // 오래된 손전등 색
+		professorLightPtr->SetSpecular(glm::vec3(1.0f, 0.9f, 0.7f));
+
+		// ⭐⭐⭐ 수정: 강도 감소 (2.5 → 1.5)
+		professorLightPtr->SetIntensity(0.5f);
+
+		// 감쇠: 짧은 거리만 영향
+		professorLightPtr->SetAttenuation(1.0f, 0.35f, 0.44f);  // 약 5m 범위
+
+		// Spot 각도: 얼굴 크기만큼만
+		professorLightPtr->SetSpotAngle(
+			glm::cos(glm::radians(20.0f)),  // Inner: 20도
+			glm::cos(glm::radians(35.0f))   // Outer: 35도
+		);
+
+		professorLightPtr->SetEnabled(true);
+
+		professorLight = professorLightPtr.get();
+		lights.push_back(std::move(professorLightPtr));
+
+		std::cout << "\n[HORROR] Professor face light created!" << std::endl;
+		std::cout << "  Position: (" << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << ")" << std::endl;
+		std::cout << "  Direction: Forward to face (horror effect)" << std::endl;
+		std::cout << "  Intensity: 1.5 (reduced)" << std::endl;
+	}
+
 	// ⭐⭐⭐ 깜빡이는 조명 자동 배치 (모듈화!)
 	PlaceFlickeringLights(navMesh.get(), playerStartPos, lights, flickeringLights);
 
@@ -898,6 +942,7 @@ void Floor1Scene::Exit()
 	}
 
 	flashlight = nullptr;
+	professorLight = nullptr;
 
 	// 객체 정리
 	player.reset();
@@ -943,6 +988,32 @@ void Floor1Scene::Update(float deltaTime)
 			flashlight->SetPosition(flashlightPos);
 			flashlight->SetDirection(flashlightDir);
 		}
+	}
+
+	// ⭐⭐⭐ Professor 얼굴 조명 업데이트 (추가!)
+	if (professor && professorLight) {
+		glm::vec3 profPos = professor->GetPosition();
+		glm::vec3 profRotation = professor->GetRotation();  // Y축 회전 (Yaw)
+
+		// Professor가 바라보는 방향 계산
+		float yaw = glm::radians(profRotation.y);
+		glm::vec3 forward = glm::vec3(
+			sin(yaw),   // X
+			0.0f,       // Y (수평 방향만)
+			cos(yaw)    // Z
+		);
+
+		// ⭐⭐⭐ 수정: 조명 위치를 Professor 뒤쪽에 배치
+		glm::vec3 lightPos = profPos;
+		lightPos.y += 1.5f;              // 가슴 높이
+		lightPos -= forward * 0.6f;      // ⭐ 뒤로 0.6m (기존: 앞으로)
+
+		// ⭐⭐⭐ 수정: 조명 방향을 앞쪽으로 (얼굴을 향해)
+		glm::vec3 lightDir = forward * 0.3f + glm::vec3(0.0f, 0.8f, 0.0f);
+		lightDir = glm::normalize(lightDir);
+
+		professorLight->SetPosition(lightPos);
+		professorLight->SetDirection(lightDir);
 	}
 
 	// ⭐⭐⭐ 깜빡이는 조명들 업데이트
@@ -1606,6 +1677,50 @@ void Floor2Scene::Enter()
 	flickeringLights.push_back(debugFlickerLight.get());
 	lights.push_back(std::move(debugFlickerLight));
 
+	// ⭐⭐⭐ Professor 얼굴 조명 추가 (공포 효과!)
+	if (professor) {
+		auto professorLightPtr = std::make_unique<Light>(LightType::SPOT);
+
+		// Professor 위치 기준으로 초기 설정
+		glm::vec3 profPos = professor->GetPosition();
+		glm::vec3 lightPos = profPos;
+		lightPos.y += 1.2f;  // 가슴 높이
+		lightPos.z += 0.8f;  // ⭐⭐⭐ 수정: 뒤쪽으로 이동 (앞쪽 → 뒤쪽)
+
+		professorLightPtr->SetPosition(lightPos);
+
+		// ⭐⭐⭐ 수정: 얼굴을 향해 앞쪽으로 비추는 방향
+		glm::vec3 faceDirection = glm::vec3(0.0f, 0.8f, -0.3f);  // Z를 음수로 (앞쪽으로)
+		professorLightPtr->SetDirection(glm::normalize(faceDirection));
+
+		// 섬뜩한 색상: 차가운 청백색 또는 따뜻한 주황색
+		professorLightPtr->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));
+		professorLightPtr->SetDiffuse(glm::vec3(0.9f, 0.7f, 0.5f));  // 오래된 손전등 색
+		professorLightPtr->SetSpecular(glm::vec3(1.0f, 0.9f, 0.7f));
+
+		// ⭐⭐⭐ 수정: 강도 감소 (2.5 → 1.5)
+		professorLightPtr->SetIntensity(0.5f);
+
+		// 감쇠: 짧은 거리만 영향
+		professorLightPtr->SetAttenuation(1.0f, 0.35f, 0.44f);  // 약 5m 범위
+
+		// Spot 각도: 얼굴 크기만큼만
+		professorLightPtr->SetSpotAngle(
+			glm::cos(glm::radians(20.0f)),  // Inner: 20도
+			glm::cos(glm::radians(35.0f))   // Outer: 35도
+		);
+
+		professorLightPtr->SetEnabled(true);
+
+		professorLight = professorLightPtr.get();
+		lights.push_back(std::move(professorLightPtr));
+
+		std::cout << "\n[HORROR] Professor face light created!" << std::endl;
+		std::cout << "  Position: (" << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << ")" << std::endl;
+		std::cout << "  Direction: Forward to face (horror effect)" << std::endl;
+		std::cout << "  Intensity: 1.5 (reduced)" << std::endl;
+	}
+
 	// ⭐⭐⭐ 깜빡이는 조명 자동 배치 (모듈화!)
 	PlaceFlickeringLights(navMesh.get(), playerStartPos, lights, flickeringLights);
 
@@ -1713,6 +1828,32 @@ void Floor2Scene::Update(float deltaTime)
 			flashlight->SetPosition(flashlightPos);
 			flashlight->SetDirection(flashlightDir);
 		}
+	}
+
+	// ⭐⭐⭐ Professor 얼굴 조명 업데이트 (추가!)
+	if (professor && professorLight) {
+		glm::vec3 profPos = professor->GetPosition();
+		glm::vec3 profRotation = professor->GetRotation();  // Y축 회전 (Yaw)
+
+		// Professor가 바라보는 방향 계산
+		float yaw = glm::radians(profRotation.y);
+		glm::vec3 forward = glm::vec3(
+			sin(yaw),   // X
+			0.0f,       // Y (수평 방향만)
+			cos(yaw)    // Z
+		);
+
+		// ⭐⭐⭐ 수정: 조명 위치를 Professor 뒤쪽에 배치
+		glm::vec3 lightPos = profPos;
+		lightPos.y += 1.5f;              // 가슴 높이
+		lightPos -= forward * 0.6f;      // ⭐ 뒤로 0.6m (기존: 앞으로)
+
+		// ⭐⭐⭐ 수정: 조명 방향을 앞쪽으로 (얼굴을 향해)
+		glm::vec3 lightDir = forward * 0.3f + glm::vec3(0.0f, 0.8f, 0.0f);
+		lightDir = glm::normalize(lightDir);
+
+		professorLight->SetPosition(lightPos);
+		professorLight->SetDirection(lightDir);
 	}
 
 	// ⭐⭐⭐ 깜빡이는 조명들 업데이트 (누락!)
@@ -2305,6 +2446,50 @@ void Floor3Scene::Enter()
 	flickeringLights.push_back(debugFlickerLight.get());
 	lights.push_back(std::move(debugFlickerLight));
 
+	// ⭐⭐⭐ Professor 얼굴 조명 추가 (공포 효과!)
+	if (professor) {
+		auto professorLightPtr = std::make_unique<Light>(LightType::SPOT);
+
+		// Professor 위치 기준으로 초기 설정
+		glm::vec3 profPos = professor->GetPosition();
+		glm::vec3 lightPos = profPos;
+		lightPos.y += 1.2f;  // 가슴 높이
+		lightPos.z += 0.8f;  // ⭐⭐⭐ 수정: 뒤쪽으로 이동 (앞쪽 → 뒤쪽)
+
+		professorLightPtr->SetPosition(lightPos);
+
+		// ⭐⭐⭐ 수정: 얼굴을 향해 앞쪽으로 비추는 방향
+		glm::vec3 faceDirection = glm::vec3(0.0f, 0.8f, -0.3f);  // Z를 음수로 (앞쪽으로)
+		professorLightPtr->SetDirection(glm::normalize(faceDirection));
+
+		// 섬뜩한 색상: 차가운 청백색 또는 따뜻한 주황색
+		professorLightPtr->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));
+		professorLightPtr->SetDiffuse(glm::vec3(0.9f, 0.7f, 0.5f));  // 오래된 손전등 색
+		professorLightPtr->SetSpecular(glm::vec3(1.0f, 0.9f, 0.7f));
+
+		// ⭐⭐⭐ 수정: 강도 감소 (2.5 → 1.5)
+		professorLightPtr->SetIntensity(0.5f);
+
+		// 감쇠: 짧은 거리만 영향
+		professorLightPtr->SetAttenuation(1.0f, 0.35f, 0.44f);  // 약 5m 범위
+
+		// Spot 각도: 얼굴 크기만큼만
+		professorLightPtr->SetSpotAngle(
+			glm::cos(glm::radians(20.0f)),  // Inner: 20도
+			glm::cos(glm::radians(35.0f))   // Outer: 35도
+		);
+
+		professorLightPtr->SetEnabled(true);
+
+		professorLight = professorLightPtr.get();
+		lights.push_back(std::move(professorLightPtr));
+
+		std::cout << "\n[HORROR] Professor face light created!" << std::endl;
+		std::cout << "  Position: (" << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << ")" << std::endl;
+		std::cout << "  Direction: Forward to face (horror effect)" << std::endl;
+		std::cout << "  Intensity: 1.5 (reduced)" << std::endl;
+	}
+
 	// ⭐⭐⭐ 깜빡이는 조명 자동 배치 (모듈화!)
 	PlaceFlickeringLights(navMesh.get(), playerStartPos, lights, flickeringLights);
 
@@ -2412,6 +2597,32 @@ void Floor3Scene::Update(float deltaTime)
 			flashlight->SetPosition(flashlightPos);
 			flashlight->SetDirection(flashlightDir);
 		}
+	}
+
+	// ⭐⭐⭐ Professor 얼굴 조명 업데이트 (추가!)
+	if (professor && professorLight) {
+		glm::vec3 profPos = professor->GetPosition();
+		glm::vec3 profRotation = professor->GetRotation();  // Y축 회전 (Yaw)
+
+		// Professor가 바라보는 방향 계산
+		float yaw = glm::radians(profRotation.y);
+		glm::vec3 forward = glm::vec3(
+			sin(yaw),   // X
+			0.0f,       // Y (수평 방향만)
+			cos(yaw)    // Z
+		);
+
+		// ⭐⭐⭐ 수정: 조명 위치를 Professor 뒤쪽에 배치
+		glm::vec3 lightPos = profPos;
+		lightPos.y += 1.5f;              // 가슴 높이
+		lightPos -= forward * 0.6f;      // ⭐ 뒤로 0.6m (기존: 앞으로)
+
+		// ⭐⭐⭐ 수정: 조명 방향을 앞쪽으로 (얼굴을 향해)
+		glm::vec3 lightDir = forward * 0.3f + glm::vec3(0.0f, 0.8f, 0.0f);
+		lightDir = glm::normalize(lightDir);
+
+		professorLight->SetPosition(lightPos);
+		professorLight->SetDirection(lightDir);
 	}
 
 	// ⭐⭐⭐ 깜빡이는 조명들 업데이트 (누락!)
