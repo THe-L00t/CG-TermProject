@@ -16,6 +16,14 @@ namespace GameConstants
 	constexpr float PLAYER_RUN_SPEED = 5.0f;        // 뛰기 속도 (m/s) - 약 18 km/h
 	constexpr float PLAYER_EYE_HEIGHT = 1.5f;       // 플레이어 눈 높이 (m)
 
+	// ===== 손전등 조명 관련 ⭐⭐⭐ =====
+	constexpr float FLASHLIGHT_INTENSITY = 1.0f;           // 손전등 밝기
+	constexpr float FLASHLIGHT_INNER_CUTOFF = 8.0f;       // ⭐ 내부 각도
+	constexpr float FLASHLIGHT_OUTER_CUTOFF = 12.0f;      // ⭐ 외부 각도
+	constexpr float FLASHLIGHT_RANGE = 30.0f;             // 손전등 범위 (m)
+	constexpr float FLASHLIGHT_OFFSET_FORWARD = 0.2f;     // ⭐ 카메라에서 앞으로 오프셋 (0.3f → 0.2f)
+	constexpr float FLASHLIGHT_OFFSET_DOWN = 0.3f;        // ⭐ 카메라에서 아래로 오프셋 (0.15f → 0.3f, 손 높이)
+
 	// ===== 교수님 관련 =====
 	constexpr float PROFESSOR_MODEL_SCALE = 1.0f;   // FBX 모델 스케일 보정값 (모델이 작을 경우 이 값을 조정)
 	constexpr float PROFESSOR_MOVE_SPEED = 5.5f;    // 교수님 이동 속도 (m/s) - 플레이어보다 약간 빠름

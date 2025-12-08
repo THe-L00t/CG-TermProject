@@ -1,4 +1,4 @@
-#version 330 core
+﻿#version 330 core
 
 in vec3 FragPos;
 in vec2 TexCoord;
@@ -36,8 +36,8 @@ struct Light {
     float outerCutOff;
 };
 
-// 최대 8개 광원 지원
-const int MAX_LIGHTS = 8;
+// 최대 10개 광원 지원
+const int MAX_LIGHTS = 10;
 uniform Light lights[MAX_LIGHTS];
 uniform int uLightCount;
 

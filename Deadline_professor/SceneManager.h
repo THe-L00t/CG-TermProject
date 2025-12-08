@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "TotalHeader.h"
 #include "NavMesh.h"
 
@@ -81,6 +81,8 @@ private:
 	bool plaSoundPlaying{ false };
 
 	std::unique_ptr<NavMesh> navMesh;
+
+	Light* flashlight{ nullptr };
 };
 
 class Floor2Scene : public Scene
@@ -104,6 +106,8 @@ private:
 	bool plaSoundPlaying{ false };
 
 	std::unique_ptr<NavMesh> navMesh;
+
+	Light* flashlight{ nullptr };
 };
 
 class Floor3Scene : public Scene
@@ -127,6 +131,8 @@ private:
 	bool plaSoundPlaying{ false };
 
 	std::unique_ptr<NavMesh> navMesh;
+
+	Light* flashlight{ nullptr };
 };
 
 class TestScene : public Scene

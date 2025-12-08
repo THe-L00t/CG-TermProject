@@ -35,7 +35,7 @@ struct Light {
     float outerCutOff;
 };
 
-const int MAX_LIGHTS = 8;
+const int MAX_LIGHTS = 10;
 uniform Light lights[MAX_LIGHTS];
 uniform int uLightCount;
 

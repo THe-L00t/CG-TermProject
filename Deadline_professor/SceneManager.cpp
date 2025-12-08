@@ -534,6 +534,24 @@ void Floor1Scene::Enter()
 
 	// 테스트용 벽 생성 - 카메라 앞쪽 왼편에 배치
 
+	// 0. 플레이어 손전등 (Spotlight) - 최우선!
+	auto flashlightPtr = std::make_unique<Light>(LightType::SPOT);
+	flashlightPtr->SetPosition(playerStartPos + glm::vec3(0.0f, GameConstants::PLAYER_EYE_HEIGHT - 0.3f, 0.0f));
+	flashlightPtr->SetDirection(glm::vec3(0.0f, 0.05f, 1.0f));
+	flashlightPtr->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));
+	flashlightPtr->SetDiffuse(glm::vec3(1.0f, 0.95f, 0.85f));
+	flashlightPtr->SetSpecular(glm::vec3(1.0f, 1.0f, 1.0f));
+	flashlightPtr->SetIntensity(GameConstants::FLASHLIGHT_INTENSITY);
+	flashlightPtr->SetAttenuation(1.0f, 0.09f, 0.032f);
+	flashlightPtr->SetSpotAngle(
+		GameConstants::FLASHLIGHT_INNER_CUTOFF,
+		GameConstants::FLASHLIGHT_OUTER_CUTOFF
+	);
+	flashlightPtr->SetEnabled(true);
+
+	flashlight = flashlightPtr.get();
+	lights.push_back(std::move(flashlightPtr));
+
 	// 1. 방향성 조명 (Directional Light) - 태양광 같은 전역 조명
 	auto dirLight = std::make_unique<Light>(LightType::DIRECTIONAL);
 	dirLight->SetDirection(glm::vec3(-0.3f, -1.0f, -0.1f));  // 약간 왼쪽 위에서 아래로
@@ -700,6 +718,30 @@ void Floor1Scene::Update(float deltaTime)
 
 	if (player) {
 		player->Update(deltaTime);
+
+		// ⭐⭐⭐ 손전등 위치 및 방향 업데이트
+		if (flashlight && player->GetCamera()) {
+			Camera* camera = player->GetCamera();
+
+			glm::vec3 cameraPos = camera->GetPosition();
+			glm::vec3 cameraDir = camera->GetDirection();
+			glm::vec3 forward = glm::normalize(cameraDir - cameraPos);
+			glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+
+			// ⭐ 손전등 위치: 플레이어 손 위치 (가슴~배 높이, 약간 오른쪽)
+			glm::vec3 flashlightPos = cameraPos
+				+ forward * GameConstants::FLASHLIGHT_OFFSET_FORWARD
+				+ right * 0.1f
+				- glm::vec3(0.0f, GameConstants::FLASHLIGHT_OFFSET_DOWN, 0.0f);
+
+			// ⭐⭐⭐ 손전등 방향: 카메라가 바라보는 방향 (약간 아래)
+			glm::vec3 flashlightDir = forward;  // ⭐ 그대로 forward 사용 (반대 방향 아님)
+			flashlightDir.y -= 0.05f;
+			flashlightDir = glm::normalize(flashlightDir);
+
+			flashlight->SetPosition(flashlightPos);
+			flashlight->SetDirection(flashlightDir);
+		}
 	}
 
 	// ⭐⭐⭐ Professor 업데이트 및 충돌 체크
