@@ -20,6 +20,7 @@ namespace GameConstants
 	constexpr float PROFESSOR_MODEL_SCALE = 1.0f;   // FBX 모델 스케일 보정값 (모델이 작을 경우 이 값을 조정)
 	constexpr float PROFESSOR_MOVE_SPEED = 5.5f;    // 교수님 이동 속도 (m/s) - 플레이어보다 약간 빠름
 	constexpr float PROFESSOR_DETECTION_RANGE = 15.0f; // 교수님 감지 범위 (m)
+	constexpr float PROFESSOR_COLLISION_RADIUS = 1.5f; // 교수님과의 충돌 거리
 
 	// ===== 환경 관련 =====
 	constexpr float FLOOR_DEFAULT_WIDTH = 100.0f;    // 바닥 기본 너비 (m) - 2배 확장

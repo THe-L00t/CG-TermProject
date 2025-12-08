@@ -200,7 +200,7 @@ bool Player::TryMove(const glm::vec3& newPos)
 		CollisionManager* collisionMgr = g_engine->GetCollisionManager();
 		if (collisionMgr)
 		{
-			std::cout << "검사중" << std::endl;
+			//std::cout << "검사중" << std::endl;
 			// 충돌 검사 - 충돌이 없으면 이동
 			if (!collisionMgr->CheckCollisionAt(this, newPos))
 			{

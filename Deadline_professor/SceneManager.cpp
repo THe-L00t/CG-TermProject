@@ -702,6 +702,31 @@ void Floor1Scene::Update(float deltaTime)
 		player->Update(deltaTime);
 	}
 
+	// ⭐⭐⭐ Professor 업데이트 및 충돌 체크
+	if (professor) {
+		professor->Update(deltaTime);
+
+		// 충돌 반경 2.0m (교수와 플레이어가 가까이 있을 때)
+		if (professor->IsCollidingWithPlayer(2.0f)) {
+			std::cout << "\n========================================" << std::endl;
+			std::cout << "   🚨 PROFESSOR CAUGHT THE PLAYER! 🚨" << std::endl;
+			std::cout << "   Moving to Floor 2..." << std::endl;
+			std::cout << "========================================\n" << std::endl;
+
+			// 사운드 정지
+			if (sm->IsPlaying("RunSong")) {
+				sm->Stop("RunSong");
+			}
+
+			// 다음 스테이지로 전환
+			SceneManager* sceneMgr = g_engine->GetSceneManager();
+			if (sceneMgr) {
+				sceneMgr->ChangeScene("Floor2");
+			}
+			return;  // 씬 전환 후 즉시 종료
+		}
+	}
+
 	glm::vec3 plPos = player->GetPosition();
 	glm::vec3 prPos = professor->GetPosition();
 	float distance = glm::distance(plPos, prPos);
@@ -1337,6 +1362,29 @@ void Floor2Scene::Update(float deltaTime)
 		player->Update(deltaTime);
 	}
 
+	// ⭐⭐⭐ Professor 업데이트 및 충돌 체크
+	if (professor) {
+		professor->Update(deltaTime);
+
+		if (professor->IsCollidingWithPlayer(2.0f)) {
+			std::cout << "\n========================================" << std::endl;
+			std::cout << "   🚨 PROFESSOR CAUGHT THE PLAYER! 🚨" << std::endl;
+			std::cout << "   Moving to Floor 3..." << std::endl;
+			std::cout << "========================================\n" << std::endl;
+
+			if (sm->IsPlaying("RunLee")) {
+				sm->Stop("RunLee");
+			}
+
+			SceneManager* sceneMgr = g_engine->GetSceneManager();
+			if (sceneMgr) {
+				sceneMgr->ChangeScene("Floor3");
+			}
+			return;
+		}
+	}
+
+
 	glm::vec3 plPos = player->GetPosition();
 	glm::vec3 prPos = professor->GetPosition();
 	float distance = glm::distance(plPos, prPos);
@@ -1911,6 +1959,28 @@ void Floor3Scene::Update(float deltaTime)
 
 	if (player) {
 		player->Update(deltaTime);
+	}
+
+	// ⭐⭐⭐ Professor 업데이트 및 충돌 체크
+	if (professor) {
+		professor->Update(deltaTime);
+
+		if (professor->IsCollidingWithPlayer(2.0f)) {
+			std::cout << "\n========================================" << std::endl;
+			std::cout << "   🚨 PROFESSOR CAUGHT THE PLAYER! 🚨" << std::endl;
+			std::cout << "   Game Over! Returning to Title..." << std::endl;
+			std::cout << "========================================\n" << std::endl;
+
+			if (sm->IsPlaying("RunDragon")) {
+				sm->Stop("RunDragon");
+			}
+
+			SceneManager* sceneMgr = g_engine->GetSceneManager();
+			if (sceneMgr) {
+				sceneMgr->ChangeScene("Title");  // 게임 오버 → 타이틀로
+			}
+			return;
+		}
 	}
 
 	glm::vec3 plPos = player->GetPosition();

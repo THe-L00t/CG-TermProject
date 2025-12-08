@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Object.h"
 #include "AIController.h"
+#include "GameConstants.h"
 
 class PathFinder;
 
@@ -43,6 +44,9 @@ public:
 	// PathFinder 설정 (NavMesh 기반 경로 탐색)
 	void SetPathFinder(PathFinder* pathFinder);
 	PathFinder* GetPathFinder() const;
+
+	// ⭐⭐⭐ 충돌 감지 함수 추가
+	bool IsCollidingWithPlayer(float collisionRadius = GameConstants::PROFESSOR_COLLISION_RADIUS) const;
 
 private:
 	void FleeFromPlayer(float deltaTime);

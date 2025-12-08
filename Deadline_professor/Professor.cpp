@@ -1,4 +1,4 @@
-#include "Professor.h"
+﻿#include "Professor.h"
 #include "GameConstants.h"
 #include "PathFinder.h"
 #include "NavMesh.h"
@@ -392,6 +392,24 @@ glm::vec3 Professor::CalculateEscapeTarget(const glm::vec3& npcPos, const glm::v
 
 	// NavMesh가 없거나 모두 실패하면 이상적인 목표 반환
 	return idealTarget;
+}
+
+bool Professor::IsCollidingWithPlayer(float collisionRadius) const
+{
+	if (!playerRef) {
+		return false;
+	}
+
+	glm::vec3 professorPos = GetPosition();
+	glm::vec3 playerPos = playerRef->GetPosition();
+
+	// XZ 평면에서의 2D 거리 계산 (Y축 무시)
+	float dx = professorPos.x - playerPos.x;
+	float dz = professorPos.z - playerPos.z;
+	float distance = std::sqrt(dx * dx + dz * dz);
+
+	// 거리가 충돌 반경 이내면 충돌
+	return distance <= collisionRadius;
 }
 
 // 사용 예시
