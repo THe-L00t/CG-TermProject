@@ -41,7 +41,14 @@ public:
 	virtual void Update(float) = 0;
 	virtual void Draw() = 0;
 private:
-
+protected:
+	// ⭐⭐⭐ 깜빡이는 조명 자동 배치 헬퍼 함수
+	void PlaceFlickeringLights(
+		NavMesh* navMesh,
+		const glm::vec3& playerStartPos,
+		std::vector<std::unique_ptr<Light>>& lights,
+		std::vector<Light*>& flickeringLights
+	);
 };
 
 class TitleScene : public Scene
@@ -83,6 +90,7 @@ private:
 	std::unique_ptr<NavMesh> navMesh;
 
 	Light* flashlight{ nullptr };
+	std::vector<Light*> flickeringLights;
 };
 
 class Floor2Scene : public Scene

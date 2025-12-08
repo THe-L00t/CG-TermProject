@@ -36,8 +36,8 @@ struct Light {
     float outerCutOff;
 };
 
-// 최대 10개 광원 지원
-const int MAX_LIGHTS = 10;
+// 최대 30개 광원 지원
+const int MAX_LIGHTS = 30;
 uniform Light lights[MAX_LIGHTS];
 uniform int uLightCount;
 

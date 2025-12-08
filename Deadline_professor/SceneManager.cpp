@@ -20,6 +20,8 @@
 #include "NavMesh.h"
 #include "PathFinder.h"
 #include "SoundManager.h"
+#include <random>
+#include <algorithm>
 
 SceneManager::SceneManager()
 {
@@ -90,6 +92,131 @@ void Scene::Enter()
 
 void Scene::Exit()
 {
+}
+
+// ⭐⭐⭐ 깜빡이는 조명 자동 배치 헬퍼 함수
+void Scene::PlaceFlickeringLights(
+	NavMesh* navMesh,
+	const glm::vec3& playerStartPos,
+	std::vector<std::unique_ptr<Light>>& lights,
+	std::vector<Light*>& flickeringLights
+)
+{
+	if (!navMesh) {
+		std::cerr << "PlaceFlickeringLights: NavMesh is NULL!" << std::endl;
+		return;
+	}
+
+	std::cout << "\n===== FLICKERING LIGHTS PLACEMENT =====" << std::endl;
+
+	const auto& allNodes = navMesh->GetAllNodes();
+	std::vector<NavNode*> candidatePositions;
+
+	// 1. 이동 가능한 모든 노드를 후보로 수집
+	for (const auto& nodePtr : allNodes)
+	{
+		NavNode* node = nodePtr.get();
+		if (node && node->IsWalkable())
+		{
+			candidatePositions.push_back(node);
+		}
+	}
+
+	// 2. 후보 위치를 랜덤하게 섞기
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::shuffle(candidatePositions.begin(), candidatePositions.end(), gen);
+
+	// 3. 최소 간격을 유지하면서 조명 배치
+	int placedCount = 0;
+	const int minSpacingTiles = GameConstants::FLICKERING_LIGHT_MIN_SPACING;
+	const float minSpacingWorldUnits = minSpacingTiles * GameConstants::TILE_SIZE;
+
+	for (NavNode* candidate : candidatePositions)
+	{
+		if (placedCount >= GameConstants::FLICKERING_LIGHT_MAX_COUNT) {
+			break;
+		}
+
+		glm::vec3 candidatePos = candidate->GetWorldPosition();
+
+		// 다른 깜빡이는 조명과 최소 거리 체크
+		bool tooClose = false;
+		for (Light* existingLight : flickeringLights)
+		{
+			float distance = glm::distance(candidatePos, existingLight->GetPosition());
+			if (distance < minSpacingWorldUnits)
+			{
+				tooClose = true;
+				break;
+			}
+		}
+
+		// 플레이어 시작 위치와 너무 가까우면 제외 (10m 이상 떨어져야 함)
+		float distanceToPlayer = glm::distance(candidatePos, playerStartPos);
+		if (distanceToPlayer < 10.0f)
+		{
+			tooClose = true;
+		}
+
+		if (!tooClose)
+		{
+			// 조명 생성
+			auto flickerLight = std::make_unique<Light>(LightType::POINT);
+
+			// 위치 설정 (천장 아래)
+			glm::vec3 lightPos = candidatePos;
+			lightPos.y = GameConstants::FLICKERING_LIGHT_HEIGHT;
+			flickerLight->SetPosition(lightPos);
+
+			// 색상 랜덤 선택 (오래된 전구 색상)
+			int colorVariant = rand() % 3;
+			switch (colorVariant)
+			{
+			case 0:  // 따뜻한 노란색
+				flickerLight->SetDiffuse(glm::vec3(0.9f, 0.7f, 0.4f));
+				break;
+			case 1:  // 차가운 파란색
+				flickerLight->SetDiffuse(glm::vec3(0.4f, 0.6f, 0.8f));
+				break;
+			case 2:  // 녹색 기운
+				flickerLight->SetDiffuse(glm::vec3(0.5f, 0.8f, 0.5f));
+				break;
+			}
+
+			flickerLight->SetAmbient(glm::vec3(0.01f, 0.01f, 0.01f));
+			flickerLight->SetSpecular(glm::vec3(0.3f, 0.3f, 0.3f));
+			flickerLight->SetIntensity(GameConstants::FLICKERING_LIGHT_INTENSITY);
+			flickerLight->SetAttenuation(1.0f, 0.14f, 0.07f);
+
+			// 깜빡임 패턴 랜덤 설정
+			int patternChoice = rand() % 4;
+			FlickerPattern pattern;
+			switch (patternChoice)
+			{
+			case 0: pattern = FlickerPattern::SLOW; break;
+			case 1: pattern = FlickerPattern::FAST; break;
+			case 2: pattern = FlickerPattern::RANDOM; break;
+			case 3: pattern = FlickerPattern::DYING; break;
+			default: pattern = FlickerPattern::SLOW; break;
+			}
+			flickerLight->SetFlickerPattern(pattern);
+			flickerLight->SetEnabled(true);
+
+			std::cout << "Flickering light #" << (placedCount + 1)
+				<< " placed at (" << lightPos.x << ", " << lightPos.y << ", " << lightPos.z
+				<< ") - Pattern: " << patternChoice << std::endl;
+
+			// 포인터 저장 (Update에서 사용)
+			flickeringLights.push_back(flickerLight.get());
+			lights.push_back(std::move(flickerLight));
+
+			placedCount++;
+		}
+	}
+
+	std::cout << "Total flickering lights placed: " << placedCount << std::endl;
+	std::cout << "========================================\n" << std::endl;
 }
 
 //-----------------------------------------------------------------TitleScene
@@ -552,102 +679,124 @@ void Floor1Scene::Enter()
 	flashlight = flashlightPtr.get();
 	lights.push_back(std::move(flashlightPtr));
 
-	// 1. 방향성 조명 (Directional Light) - 태양광 같은 전역 조명
-	auto dirLight = std::make_unique<Light>(LightType::DIRECTIONAL);
-	dirLight->SetDirection(glm::vec3(-0.3f, -1.0f, -0.1f));  // 약간 왼쪽 위에서 아래로
-	dirLight->SetAmbient(glm::vec3(0.02f, 0.02f, 0.02f));    // 아주 약한 붉은 Ambient
-	dirLight->SetDiffuse(glm::vec3(0.15f, 0.12f, 0.12f));    // 약한 빛 (밤 + 혈흔 느낌)
-	dirLight->SetSpecular(glm::vec3(0.05f, 0.05f, 0.05f));   // 거의 없는 하이라이트
-	dirLight->SetIntensity(0.3f);                             // 전체는 어둡게
-	dirLight->SetEnabled(true);                               // 활성화
-	lights.push_back(std::move(dirLight));
+	//// 1. 방향성 조명 (Directional Light) - 태양광 같은 전역 조명
+	//auto dirLight = std::make_unique<Light>(LightType::DIRECTIONAL);
+	//dirLight->SetDirection(glm::vec3(-0.3f, -1.0f, -0.1f));  // 약간 왼쪽 위에서 아래로
+	//dirLight->SetAmbient(glm::vec3(0.02f, 0.02f, 0.02f));    // 아주 약한 붉은 Ambient
+	//dirLight->SetDiffuse(glm::vec3(0.15f, 0.12f, 0.12f));    // 약한 빛 (밤 + 혈흔 느낌)
+	//dirLight->SetSpecular(glm::vec3(0.05f, 0.05f, 0.05f));   // 거의 없는 하이라이트
+	//dirLight->SetIntensity(0.3f);                             // 전체는 어둡게
+	//dirLight->SetEnabled(true);                               // 활성화
+	//lights.push_back(std::move(dirLight));
 
-	// 2. 포인트 조명 1 (Point Light) - 맵 중앙 위쪽의 메인 조명
-	auto pointLight1 = std::make_unique<Light>(LightType::POINT);
-	pointLight1->SetPosition(glm::vec3(0.0f, 7.0f, 0.0f));
-	pointLight1->SetAmbient(glm::vec3(0.02f, 0.02f, 0.02f));
-	pointLight1->SetDiffuse(glm::vec3(0.9f, 0.8f, 0.6f));     // 오래된 전구 느낌
-	pointLight1->SetSpecular(glm::vec3(0.8f, 0.8f, 0.7f));
-	pointLight1->SetIntensity(0.7f);
-	pointLight1->SetAttenuation(1.0f, 0.22f, 0.20f);          // 약 20m 범위
-	pointLight1->SetEnabled(true);
-	lights.push_back(std::move(pointLight1));
+	//// 2. 포인트 조명 1 (Point Light) - 맵 중앙 위쪽의 메인 조명
+	//auto pointLight1 = std::make_unique<Light>(LightType::POINT);
+	//pointLight1->SetPosition(glm::vec3(0.0f, 7.0f, 0.0f));
+	//pointLight1->SetAmbient(glm::vec3(0.02f, 0.02f, 0.02f));
+	//pointLight1->SetDiffuse(glm::vec3(0.9f, 0.8f, 0.6f));     // 오래된 전구 느낌
+	//pointLight1->SetSpecular(glm::vec3(0.8f, 0.8f, 0.7f));
+	//pointLight1->SetIntensity(0.7f);
+	//pointLight1->SetAttenuation(1.0f, 0.22f, 0.20f);          // 약 20m 범위
+	//pointLight1->SetEnabled(true);
+	//lights.push_back(std::move(pointLight1));
 
-	// 3. 포인트 조명 2 (Point Light) - 맵 왼쪽 위의 보조 조명
-	auto pointLight2 = std::make_unique<Light>(LightType::POINT);
-	pointLight2->SetPosition(glm::vec3(-20.0f, 6.0f, -5.0f));
-	pointLight2->SetAmbient(glm::vec3(0.01f, 0.01f, 0.01f));
-	pointLight2->SetDiffuse(glm::vec3(0.85f, 0.5f, 0.3f));    // 주황빛
-	pointLight2->SetSpecular(glm::vec3(1.0f, 0.6f, 0.5f));
-	pointLight2->SetIntensity(0.9f);
-	pointLight2->SetAttenuation(1.0f, 0.22f, 0.20f);
-	pointLight2->SetEnabled(true);
-	lights.push_back(std::move(pointLight2));
+	//// 3. 포인트 조명 2 (Point Light) - 맵 왼쪽 위의 보조 조명
+	//auto pointLight2 = std::make_unique<Light>(LightType::POINT);
+	//pointLight2->SetPosition(glm::vec3(-20.0f, 6.0f, -5.0f));
+	//pointLight2->SetAmbient(glm::vec3(0.01f, 0.01f, 0.01f));
+	//pointLight2->SetDiffuse(glm::vec3(0.85f, 0.5f, 0.3f));    // 주황빛
+	//pointLight2->SetSpecular(glm::vec3(1.0f, 0.6f, 0.5f));
+	//pointLight2->SetIntensity(0.9f);
+	//pointLight2->SetAttenuation(1.0f, 0.22f, 0.20f);
+	//pointLight2->SetEnabled(true);
+	//lights.push_back(std::move(pointLight2));
 
-	// 4. 포인트 조명 3 (Point Light) - 맵 오른쪽 아래의 청록색 조명
-	auto pointLight3 = std::make_unique<Light>(LightType::POINT);
-	pointLight3->SetPosition(glm::vec3(20.0f, 6.0f, 10.0f));
-	pointLight3->SetAmbient(glm::vec3(0.0f, 0.03f, 0.03f));
-	pointLight3->SetDiffuse(glm::vec3(0.25f, 0.9f, 0.9f));    // 네온 느낌
-	pointLight3->SetSpecular(glm::vec3(0.5f, 1.0f, 1.0f));
-	pointLight3->SetIntensity(0.9f);
-	pointLight3->SetAttenuation(1.0f, 0.22f, 0.20f);
-	pointLight3->SetEnabled(true);
-	lights.push_back(std::move(pointLight3));
+	//// 4. 포인트 조명 3 (Point Light) - 맵 오른쪽 아래의 청록색 조명
+	//auto pointLight3 = std::make_unique<Light>(LightType::POINT);
+	//pointLight3->SetPosition(glm::vec3(20.0f, 6.0f, 10.0f));
+	//pointLight3->SetAmbient(glm::vec3(0.0f, 0.03f, 0.03f));
+	//pointLight3->SetDiffuse(glm::vec3(0.25f, 0.9f, 0.9f));    // 네온 느낌
+	//pointLight3->SetSpecular(glm::vec3(0.5f, 1.0f, 1.0f));
+	//pointLight3->SetIntensity(0.9f);
+	//pointLight3->SetAttenuation(1.0f, 0.22f, 0.20f);
+	//pointLight3->SetEnabled(true);
+	//lights.push_back(std::move(pointLight3));
 
-	// 5. 스팟 조명 1 (Spot Light) - 플레이어를 따라가는 손전등
-	auto spotLight1 = std::make_unique<Light>(LightType::SPOT);
-	spotLight1->SetPosition(playerStartPos + glm::vec3(0.0f, 1.9f, 0.0f));
-	spotLight1->SetDirection(glm::vec3(0.0f, -0.7f, 1.0f));     // 플레이어 전방
-	spotLight1->SetAmbient(glm::vec3(0.0f));
-	spotLight1->SetDiffuse(glm::vec3(1.0f, 0.95f, 0.85f));      // 따뜻한 손전등 색
-	spotLight1->SetSpecular(glm::vec3(1.0f));
-	spotLight1->SetIntensity(1.0f);                              // 매우 밝음
-	spotLight1->SetAttenuation(1.0f, 0.09f, 0.032f);             // 약 50m
-	spotLight1->SetSpotAngle(
-		glm::cos(glm::radians(12.5f)),
-		glm::cos(glm::radians(18.0f))
-	);
-	spotLight1->SetEnabled(true);
-	lights.push_back(std::move(spotLight1));
+	//// 5. 스팟 조명 1 (Spot Light) - 플레이어를 따라가는 손전등
+	//auto spotLight1 = std::make_unique<Light>(LightType::SPOT);
+	//spotLight1->SetPosition(playerStartPos + glm::vec3(0.0f, 1.9f, 0.0f));
+	//spotLight1->SetDirection(glm::vec3(0.0f, -0.7f, 1.0f));     // 플레이어 전방
+	//spotLight1->SetAmbient(glm::vec3(0.0f));
+	//spotLight1->SetDiffuse(glm::vec3(1.0f, 0.95f, 0.85f));      // 따뜻한 손전등 색
+	//spotLight1->SetSpecular(glm::vec3(1.0f));
+	//spotLight1->SetIntensity(1.0f);                              // 매우 밝음
+	//spotLight1->SetAttenuation(1.0f, 0.09f, 0.032f);             // 약 50m
+	//spotLight1->SetSpotAngle(
+	//	glm::cos(glm::radians(12.5f)),
+	//	glm::cos(glm::radians(18.0f))
+	//);
+	//spotLight1->SetEnabled(true);
+	//lights.push_back(std::move(spotLight1));
 
-	// 6. 스팟 조명 2 (Spot Light) - 고정된 무대 조명 (빨간색)
-	auto spotLight2 = std::make_unique<Light>(LightType::SPOT);
-	spotLight2->SetPosition(glm::vec3(-15.0f, 10.0f, 15.0f));
-	spotLight2->SetDirection(glm::vec3(0.2f, -1.0f, -0.1f));
-	spotLight2->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));
-	spotLight2->SetDiffuse(glm::vec3(1.0f, 0.1f, 0.1f));         // 경고등
-	spotLight2->SetSpecular(glm::vec3(1.0f, 0.5f, 0.5f));
-	spotLight2->SetIntensity(1.3f);
-	spotLight2->SetAttenuation(1.0f, 0.14f, 0.07f);              // 짧은 범위
-	spotLight2->SetSpotAngle(
-		glm::cos(glm::radians(18.0f)),
-		glm::cos(glm::radians(25.0f))
-	);
-	spotLight2->SetEnabled(true);
-	lights.push_back(std::move(spotLight2));
+	//// 6. 스팟 조명 2 (Spot Light) - 고정된 무대 조명 (빨간색)
+	//auto spotLight2 = std::make_unique<Light>(LightType::SPOT);
+	//spotLight2->SetPosition(glm::vec3(-15.0f, 10.0f, 15.0f));
+	//spotLight2->SetDirection(glm::vec3(0.2f, -1.0f, -0.1f));
+	//spotLight2->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));
+	//spotLight2->SetDiffuse(glm::vec3(1.0f, 0.1f, 0.1f));         // 경고등
+	//spotLight2->SetSpecular(glm::vec3(1.0f, 0.5f, 0.5f));
+	//spotLight2->SetIntensity(1.3f);
+	//spotLight2->SetAttenuation(1.0f, 0.14f, 0.07f);              // 짧은 범위
+	//spotLight2->SetSpotAngle(
+	//	glm::cos(glm::radians(18.0f)),
+	//	glm::cos(glm::radians(25.0f))
+	//);
+	//spotLight2->SetEnabled(true);
+	//lights.push_back(std::move(spotLight2));
 
-	// 7. 포인트 조명 4 (Point Light) - 맵 앞쪽의 보라색 액센트 조명
-	auto pointLight4 = std::make_unique<Light>(LightType::POINT);
-	pointLight4->SetPosition(glm::vec3(5.0f, 5.0f, -25.0f));
-	pointLight4->SetAmbient(glm::vec3(0.03f, 0.0f, 0.03f));
-	pointLight4->SetDiffuse(glm::vec3(0.5f, 0.2f, 0.8f));        // 보라색
-	pointLight4->SetSpecular(glm::vec3(0.8f, 0.5f, 1.0f));
-	pointLight4->SetIntensity(0.9f);
-	pointLight4->SetAttenuation(1.0f, 0.14f, 0.07f);
-	pointLight4->SetEnabled(true);
-	lights.push_back(std::move(pointLight4));
+	//// 7. 포인트 조명 4 (Point Light) - 맵 앞쪽의 보라색 액센트 조명
+	//auto pointLight4 = std::make_unique<Light>(LightType::POINT);
+	//pointLight4->SetPosition(glm::vec3(5.0f, 5.0f, -25.0f));
+	//pointLight4->SetAmbient(glm::vec3(0.03f, 0.0f, 0.03f));
+	//pointLight4->SetDiffuse(glm::vec3(0.5f, 0.2f, 0.8f));        // 보라색
+	//pointLight4->SetSpecular(glm::vec3(0.8f, 0.5f, 1.0f));
+	//pointLight4->SetIntensity(0.9f);
+	//pointLight4->SetAttenuation(1.0f, 0.14f, 0.07f);
+	//pointLight4->SetEnabled(true);
+	//lights.push_back(std::move(pointLight4));
 
-	// 8. 포인트 조명 5 (Point Light) - 맵 뒤쪽의 녹색 조명
-	auto pointLight5 = std::make_unique<Light>(LightType::POINT);
-	pointLight5->SetPosition(glm::vec3(0.0f, 4.0f, 25.0f));
-	pointLight5->SetAmbient(glm::vec3(0.0f, 0.03f, 0.0f));       // 초록 기운
-	pointLight5->SetDiffuse(glm::vec3(0.3f, 1.0f, 0.3f));        // 출구 표시등 색
-	pointLight5->SetSpecular(glm::vec3(0.5f, 1.0f, 0.5f));
-	pointLight5->SetIntensity(0.7f);
-	pointLight5->SetAttenuation(1.0f, 0.22f, 0.20f);             // 매우 짧은 범위
-	pointLight5->SetEnabled(true);
-	lights.push_back(std::move(pointLight5));
+	//// 8. 포인트 조명 5 (Point Light) - 맵 뒤쪽의 녹색 조명
+	//auto pointLight5 = std::make_unique<Light>(LightType::POINT);
+	//pointLight5->SetPosition(glm::vec3(0.0f, 4.0f, 25.0f));
+	//pointLight5->SetAmbient(glm::vec3(0.0f, 0.03f, 0.0f));       // 초록 기운
+	//pointLight5->SetDiffuse(glm::vec3(0.3f, 1.0f, 0.3f));        // 출구 표시등 색
+	//pointLight5->SetSpecular(glm::vec3(0.5f, 1.0f, 0.5f));
+	//pointLight5->SetIntensity(0.7f);
+	//pointLight5->SetAttenuation(1.0f, 0.22f, 0.20f);             // 매우 짧은 범위
+	//pointLight5->SetEnabled(true);
+	//lights.push_back(std::move(pointLight5));
+
+	// ⭐⭐⭐ 디버그: 플레이어 앞 5m에 깜빡이는 조명 배치
+	auto debugFlickerLight = std::make_unique<Light>(LightType::POINT);
+	debugFlickerLight->SetPosition(playerStartPos + glm::vec3(0.0f, 2.0f, 0.0f));  // 플레이어 앞 5m, 높이 2m
+	debugFlickerLight->SetAmbient(glm::vec3(0.05f, 0.05f, 0.05f));
+	debugFlickerLight->SetDiffuse(glm::vec3(0.1f, 0.3f, 0.3f));
+	debugFlickerLight->SetSpecular(glm::vec3(1.0f, 0.5f, 0.3f));
+	debugFlickerLight->SetIntensity(0.5f);  // ⭐ 매우 밝게!
+	debugFlickerLight->SetAttenuation(1.0f, 0.09f, 0.032f);  // 50m 범위
+	debugFlickerLight->SetFlickerPattern(FlickerPattern::FAST);  // 빠른 깜빡임
+	debugFlickerLight->SetEnabled(true);
+
+	std::cout << "\n[DEBUG] Test Flickering Light placed at player front!" << std::endl;
+	std::cout << "  Position: (" << (playerStartPos.x) << ", " << (playerStartPos.y + 2.0f) << ", " << (playerStartPos.z - 5.0f) << ")" << std::endl;
+	std::cout << "  Intensity: 5.0 (VERY BRIGHT)" << std::endl;
+	std::cout << "  Pattern: FAST FLICKER" << std::endl;
+
+	flickeringLights.push_back(debugFlickerLight.get());
+	lights.push_back(std::move(debugFlickerLight));
+
+	// ⭐⭐⭐ 깜빡이는 조명 자동 배치 (모듈화!)
+	PlaceFlickeringLights(navMesh.get(), playerStartPos, lights, flickeringLights);
 
 	if (g_engine) {
 		Renderer* renderer = g_engine->GetRenderer();
@@ -666,6 +815,18 @@ void Floor1Scene::Enter()
 			std::cout << "  - 5 Point Lights (Various colors)" << std::endl;
 			std::cout << "  - 2 Spot Lights (Focused beams)" << std::endl;
 			std::cout << "==========================================\n" << std::endl;
+		
+			// ⭐⭐⭐ 깜빡이는 조명 위치 출력 (디버그)
+			std::cout << "\n[DEBUG] Flickering Lights Registered:" << std::endl;
+			for (size_t i = 0; i < flickeringLights.size(); ++i) {
+				Light* light = flickeringLights[i];
+				if (light) {
+					glm::vec3 pos = light->GetPosition();
+					std::cout << "  [" << i << "] Position: (" << pos.x << ", " << pos.y << ", " << pos.z
+						<< "), Intensity: " << light->GetIntensity()
+						<< ", Enabled: " << (light->IsEnabled() ? "YES" : "NO") << std::endl;
+				}
+			}
 		}
 	}
 
@@ -709,6 +870,7 @@ void Floor1Scene::Exit()
 	mapGenerator.reset();
 	navMesh.reset();
 	lights.clear();
+	flickeringLights.clear();
 }
 
 void Floor1Scene::Update(float deltaTime)
@@ -741,6 +903,26 @@ void Floor1Scene::Update(float deltaTime)
 
 			flashlight->SetPosition(flashlightPos);
 			flashlight->SetDirection(flashlightDir);
+		}
+	}
+
+	// ⭐⭐⭐ 깜빡이는 조명들 업데이트
+	for (size_t i = 0; i < flickeringLights.size(); ++i)
+	{
+		Light* flickerLight = flickeringLights[i];
+		if (flickerLight) {
+			flickerLight->UpdateFlicker(deltaTime);
+
+			// 디버그: 첫 번째 조명만 매 프레임 출력 (플레이어 앞 테스트 조명)
+			if (i == 0) {
+				static int frameCounter = 0;
+				if (++frameCounter % 60 == 0) {  // 1초마다 (60fps 기준)
+					std::cout << "[DEBUG] Test Light [0] - Intensity: " << flickerLight->GetIntensity()
+						<< ", Position: (" << flickerLight->GetPosition().x << ", "
+						<< flickerLight->GetPosition().y << ", "
+						<< flickerLight->GetPosition().z << ")" << std::endl;
+				}
+			}
 		}
 	}
 

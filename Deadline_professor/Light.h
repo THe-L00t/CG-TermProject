@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "TotalHeader.h"
 #include "Object.h"
 
@@ -7,6 +7,16 @@ enum class LightType
 	DIRECTIONAL,
 	POINT,
 	SPOT
+};
+
+// ⭐⭐⭐ 깜빡임 패턴 종류
+enum class FlickerPattern
+{
+	NONE,           // 깜빡이지 않음
+	SLOW,           // 느린 깜빡임 (0.5~1초 간격)
+	FAST,           // 빠른 깜빡임 (0.1~0.3초 간격)
+	RANDOM,         // 랜덤 깜빡임
+	DYING           // 꺼져가는 전구 (점점 어두워짐)
 };
 
 class Light : public Object
@@ -46,6 +56,11 @@ public:
 
 	void ApplyToShader(GLuint shaderProgram, int lightIndex) const;
 
+	// ⭐⭐⭐ 깜빡임 관련 함수
+	void SetFlickerPattern(FlickerPattern pattern);
+	FlickerPattern GetFlickerPattern() const;
+	void UpdateFlicker(float deltaTime);  // 매 프레임마다 호출
+
 private:
 	LightType type;
 	bool enabled;
@@ -64,4 +79,12 @@ private:
 	float outerCutOff;
 
 	float intensity;
+
+	// ⭐⭐⭐ 깜빡임 관련 멤버 변수
+	FlickerPattern flickerPattern{ FlickerPattern::NONE };
+	float baseIntensity{ 1.0f };           // 원래 밝기
+	float flickerTimer{ 0.0f };            // 깜빡임 타이머
+	float flickerInterval{ 0.0f };         // 다음 깜빡임까지 시간
+	bool flickerOn{ true };                // 현재 켜져있는지 여부
+
 };

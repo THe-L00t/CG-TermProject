@@ -188,3 +188,87 @@ void Light::ApplyToShader(GLuint shaderProgram, int lightIndex) const
 	}
 	}
 }
+
+void Light::SetFlickerPattern(FlickerPattern pattern)
+{
+	flickerPattern = pattern;
+	baseIntensity = intensity;  // 현재 밝기를 기본값으로 저장
+	flickerTimer = 0.0f;
+	flickerOn = true;
+
+	// 패턴에 따라 초기 간격 설정
+	switch (pattern)
+	{
+	case FlickerPattern::SLOW:
+		flickerInterval = 0.5f + (rand() % 500) / 1000.0f;  // 0.5~1.0초
+		break;
+	case FlickerPattern::FAST:
+		flickerInterval = 0.1f + (rand() % 200) / 1000.0f;  // 0.1~0.3초
+		break;
+	case FlickerPattern::RANDOM:
+		flickerInterval = (rand() % 1000) / 1000.0f;  // 0~1초
+		break;
+	case FlickerPattern::DYING:
+		flickerInterval = 0.2f + (rand() % 300) / 1000.0f;  // 0.2~0.5초
+		break;
+	default:
+		flickerInterval = 0.0f;
+		break;
+	}
+}
+
+FlickerPattern Light::GetFlickerPattern() const
+{
+	return flickerPattern;
+}
+
+void Light::UpdateFlicker(float deltaTime)
+{
+	if (flickerPattern == FlickerPattern::NONE) {
+		return;
+	}
+
+	flickerTimer += deltaTime;
+
+	if (flickerTimer >= flickerInterval)
+	{
+		flickerTimer = 0.0f;
+
+		switch (flickerPattern)
+		{
+		case FlickerPattern::SLOW:
+		{
+			// 느린 깜빡임: 완전히 켜짐/꺼짐
+			flickerOn = !flickerOn;
+			intensity = flickerOn ? baseIntensity : 0.0f;
+			flickerInterval = 0.5f + (rand() % 500) / 1000.0f;
+			break;
+		}
+		case FlickerPattern::FAST:
+		{
+			// 빠른 깜빡임: 50% 확률로 켜짐/꺼짐
+			flickerOn = (rand() % 2 == 0);
+			intensity = flickerOn ? baseIntensity : 0.0f;
+			flickerInterval = 0.1f + (rand() % 200) / 1000.0f;
+			break;
+		}
+		case FlickerPattern::RANDOM:
+		{
+			// 랜덤 깜빡임: 밝기도 랜덤하게
+			float randomBrightness = (rand() % 100) / 100.0f;  // 0.0~1.0
+			intensity = baseIntensity * randomBrightness;
+			flickerInterval = (rand() % 1000) / 1000.0f;
+			break;
+		}
+		case FlickerPattern::DYING:
+		{
+			// 꺼져가는 전구: 점점 어두워짐
+			intensity = baseIntensity * (0.1f + (rand() % 40) / 100.0f);  // 10~50% 밝기
+			flickerInterval = 0.2f + (rand() % 300) / 1000.0f;
+			break;
+		}
+		default:
+			break;
+		}
+	}
+}
