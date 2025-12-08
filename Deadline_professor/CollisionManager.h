@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "TotalHeader.h"
 #include <vector>
 #include <memory>

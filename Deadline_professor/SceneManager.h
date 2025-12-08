@@ -149,4 +149,5 @@ private:
 
 	// ⭐ NavMesh 추가 (소유권을 TestScene이 가짐)
 	std::unique_ptr<NavMesh> navMesh;
+
 };

@@ -737,7 +737,7 @@ void Floor1Scene::Draw()
 	if (light) {
 		renderer->SetLight(light.get());
 	}
-
+	renderer->SelectFBO();
 	// 카메라 디버그 출력 (한 번만)
 	static bool cameraDebugPrinted = false;
 	if (!cameraDebugPrinted && camera) {
@@ -854,7 +854,8 @@ void Floor1Scene::Draw()
 			renderer->RenderFBX("RunSong", "RunSong", professorMatrix);
 		}
 	}
-
+	renderer->SelectScreen();
+	renderer->RenderFinal();
 	// Player 렌더링 (나중에 모델 추가 시)
 	// if (player && player->IsActive()) {
 	//     glm::mat4 playerMatrix = player->GetModelMat();
@@ -1343,7 +1344,7 @@ void Floor2Scene::Draw()
 	if (light) {
 		renderer->SetLight(light.get());
 	}
-
+	renderer->SelectFBO();
 	// 바닥 렌더링 (백페이스 컬링 비활성화)
 	if (floor && floor->IsActive()) {
 		glDisable(GL_CULL_FACE);  // Plane은 양면 렌더링 필요
@@ -1406,6 +1407,9 @@ void Floor2Scene::Draw()
 			renderer->RenderFBX("RunLee", "RunLee", professorMatrix);
 		}
 	}
+
+	renderer->SelectScreen();
+	renderer->RenderFinal();
 }
 
 //---------------------------------------------------------------Floor3Scene
@@ -2238,6 +2242,8 @@ void TestScene::Enter()
 	ceiling->SetTextureID("CeilingTexture"); // 천장 텍스처 설정
 	ceiling->SetTextureTiling(glm::vec2(GameConstants::CEILING_TEXTURE_TILE_X, GameConstants::CEILING_TEXTURE_TILE_Y)); // 타일링 설정
 	ceiling->SetColor(glm::vec3(0.7f, 0.7f, 0.7f)); // 밝은 회색 (천장)
+
+	
 
 	// 천장 제거 (맵을 위에서 볼 수 있도록)
 	// ceiling은 생성하지 않음
