@@ -456,25 +456,25 @@ void Floor1Scene::Enter()
 			inputMgr->ActionA = [this, timer]() { if (player) player->MoveLeft(timer->elapsedTime); };
 			inputMgr->ActionD = [this, timer]() { if (player) player->MoveRight(timer->elapsedTime); };
 
-			// ⭐⭐⭐ Space/Shift: 플레이어 + 카메라 즉시 이동
-			inputMgr->ActionSpace = [this, timer]() {
-				if (player && player->GetCamera()) {
-					glm::vec3 pos = player->GetPosition();
-					pos.y += 50.0f * timer->elapsedTime;
-					player->SetPosition(pos);
+			//// ⭐⭐⭐ Space/Shift: 플레이어 + 카메라 즉시 이동
+			//inputMgr->ActionSpace = [this, timer]() {
+			//	if (player && player->GetCamera()) {
+			//		glm::vec3 pos = player->GetPosition();
+			//		pos.y += 50.0f * timer->elapsedTime;
+			//		player->SetPosition(pos);
 
-					// ⭐ 카메라도 즉시 이동
-					Camera* camera = player->GetCamera();
-					glm::vec3 camPos = camera->GetPosition();
-					camPos.y += 50.0f * timer->elapsedTime;
+			//		// ⭐ 카메라도 즉시 이동
+			//		Camera* camera = player->GetCamera();
+			//		glm::vec3 camPos = camera->GetPosition();
+			//		camPos.y += 50.0f * timer->elapsedTime;
 
-					// 스무스 모드 임시 비활성화 → 즉시 이동 → 다시 활성화
-					bool wasSmooth = camera->IsSmoothMode();  // 현재 상태 저장
-					camera->SetSmoothMode(false);
-					camera->SetPosition(camPos);
-					camera->SetSmoothMode(wasSmooth);  // 복원
-				}
-				};
+			//		// 스무스 모드 임시 비활성화 → 즉시 이동 → 다시 활성화
+			//		bool wasSmooth = camera->IsSmoothMode();  // 현재 상태 저장
+			//		camera->SetSmoothMode(false);
+			//		camera->SetPosition(camPos);
+			//		camera->SetSmoothMode(wasSmooth);  // 복원
+			//	}
+			//	};
 
 			inputMgr->ActionShift = [this, timer]() {
 				if (player && player->GetCamera()) {
@@ -1323,32 +1323,32 @@ void Floor2Scene::Enter()
 			inputMgr->ActionA = [this, timer]() { if (player) player->MoveLeft(timer->elapsedTime); };
 			inputMgr->ActionD = [this, timer]() { if (player) player->MoveRight(timer->elapsedTime); };
 
-			// ⭐⭐⭐ Camera의 MoveUp/MoveDown 사용
-			inputMgr->ActionSpace = [this, timer]() {
-				if (player && player->GetCamera()) {
-					Camera* camera = player->GetCamera();
-					camera->MoveUp(timer->elapsedTime);  // ⭐ 배율이 적용된 이동
+			//// ⭐⭐⭐ Camera의 MoveUp/MoveDown 사용
+			//inputMgr->ActionSpace = [this, timer]() {
+			//	if (player && player->GetCamera()) {
+			//		Camera* camera = player->GetCamera();
+			//		camera->MoveUp(timer->elapsedTime);  // ⭐ 배율이 적용된 이동
 
-					// 플레이어 위치도 카메라에 맞춰 업데이트
-					glm::vec3 camPos = camera->GetPosition();
-					glm::vec3 playerPos = player->GetPosition();
-					playerPos.y = camPos.y - GameConstants::PLAYER_EYE_HEIGHT;
-					player->SetPosition(playerPos);
-				}
-				};
+			//		// 플레이어 위치도 카메라에 맞춰 업데이트
+			//		glm::vec3 camPos = camera->GetPosition();
+			//		glm::vec3 playerPos = player->GetPosition();
+			//		playerPos.y = camPos.y - GameConstants::PLAYER_EYE_HEIGHT;
+			//		player->SetPosition(playerPos);
+			//	}
+			//	};
 
-			inputMgr->ActionShift = [this, timer]() {
-				if (player && player->GetCamera()) {
-					Camera* camera = player->GetCamera();
-					camera->MoveDown(timer->elapsedTime);  // ⭐ 배율이 적용된 이동
+			//inputMgr->ActionShift = [this, timer]() {
+			//	if (player && player->GetCamera()) {
+			//		Camera* camera = player->GetCamera();
+			//		camera->MoveDown(timer->elapsedTime);  // ⭐ 배율이 적용된 이동
 
-					// 플레이어 위치도 카메라에 맞춰 업데이트
-					glm::vec3 camPos = camera->GetPosition();
-					glm::vec3 playerPos = player->GetPosition();
-					playerPos.y = camPos.y - GameConstants::PLAYER_EYE_HEIGHT;
-					player->SetPosition(playerPos);
-				}
-				};
+			//		// 플레이어 위치도 카메라에 맞춰 업데이트
+			//		glm::vec3 camPos = camera->GetPosition();
+			//		glm::vec3 playerPos = player->GetPosition();
+			//		playerPos.y = camPos.y - GameConstants::PLAYER_EYE_HEIGHT;
+			//		player->SetPosition(playerPos);
+			//	}
+			//	};
 		}
 
 		// ============================================
@@ -2091,32 +2091,32 @@ void Floor3Scene::Enter()
 			inputMgr->ActionA = [this, timer]() { if (player) player->MoveLeft(timer->elapsedTime); };
 			inputMgr->ActionD = [this, timer]() { if (player) player->MoveRight(timer->elapsedTime); };
 
-			// ⭐⭐⭐ Camera의 MoveUp/MoveDown 사용
-			inputMgr->ActionSpace = [this, timer]() {
-				if (player && player->GetCamera()) {
-					Camera* camera = player->GetCamera();
-					camera->MoveUp(timer->elapsedTime);  // ⭐ 배율이 적용된 이동
+			//// ⭐⭐⭐ Camera의 MoveUp/MoveDown 사용
+			//inputMgr->ActionSpace = [this, timer]() {
+			//	if (player && player->GetCamera()) {
+			//		Camera* camera = player->GetCamera();
+			//		camera->MoveUp(timer->elapsedTime);  // ⭐ 배율이 적용된 이동
 
-					// 플레이어 위치도 카메라에 맞춰 업데이트
-					glm::vec3 camPos = camera->GetPosition();
-					glm::vec3 playerPos = player->GetPosition();
-					playerPos.y = camPos.y - GameConstants::PLAYER_EYE_HEIGHT;
-					player->SetPosition(playerPos);
-				}
-				};
+			//		// 플레이어 위치도 카메라에 맞춰 업데이트
+			//		glm::vec3 camPos = camera->GetPosition();
+			//		glm::vec3 playerPos = player->GetPosition();
+			//		playerPos.y = camPos.y - GameConstants::PLAYER_EYE_HEIGHT;
+			//		player->SetPosition(playerPos);
+			//	}
+			//	};
 
-			inputMgr->ActionShift = [this, timer]() {
-				if (player && player->GetCamera()) {
-					Camera* camera = player->GetCamera();
-					camera->MoveDown(timer->elapsedTime);  // ⭐ 배율이 적용된 이동
+			//inputMgr->ActionShift = [this, timer]() {
+			//	if (player && player->GetCamera()) {
+			//		Camera* camera = player->GetCamera();
+			//		camera->MoveDown(timer->elapsedTime);  // ⭐ 배율이 적용된 이동
 
-					// 플레이어 위치도 카메라에 맞춰 업데이트
-					glm::vec3 camPos = camera->GetPosition();
-					glm::vec3 playerPos = player->GetPosition();
-					playerPos.y = camPos.y - GameConstants::PLAYER_EYE_HEIGHT;
-					player->SetPosition(playerPos);
-				}
-				};
+			//		// 플레이어 위치도 카메라에 맞춰 업데이트
+			//		glm::vec3 camPos = camera->GetPosition();
+			//		glm::vec3 playerPos = player->GetPosition();
+			//		playerPos.y = camPos.y - GameConstants::PLAYER_EYE_HEIGHT;
+			//		player->SetPosition(playerPos);
+			//	}
+			//	};
 		}
 
 		// ============================================
