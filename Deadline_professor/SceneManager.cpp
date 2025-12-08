@@ -2851,14 +2851,14 @@ void TestScene::Enter()
 		if (camera) {
 			camera->SetPosition(initialCameraPos);
 			camera->SetDirection(initialCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
-			camera->SetMoveSpeed(20.0f);
+			camera->SetMoveSpeed(10.0f);
 		}
 
 		player = std::make_unique<Player>();
 		player->Init(camera);
 		player->SetPosition(playerStartPos);
 		player->SetResourceID("PlayerModel");
-		player->SetMoveSpeed(50.0f);
+		player->SetMoveSpeed(10.0f);
 
 		// InputManager 액션 설정
 		if (inputMgr && timer) {
@@ -2965,61 +2965,61 @@ void TestScene::Enter()
 		}
 
 		// ⭐ AIController 초기화 - NavMesh 연동
-		if (navMesh && !navMesh->GetAllNodes().empty()) {  // ⭐ tempNavMesh → navMesh
-			// PathFinder 생성 (NavMesh 포인터 전달)
-			PathFinder* pathFinder = new PathFinder(navMesh.get());  // ⭐ .get() 사용
-			lee->SetPathFinder(pathFinder);
+		//if (navMesh && !navMesh->GetAllNodes().empty()) {  // ⭐ tempNavMesh → navMesh
+		//	// PathFinder 생성 (NavMesh 포인터 전달)
+		//	PathFinder* pathFinder = new PathFinder(navMesh.get());  // ⭐ .get() 사용
+		//	lee->SetPathFinder(pathFinder);
 
-			// AIController 생성
-			AIController* aiController = new AIController(pathFinder);
-			aiController->SetCurrentPosition(professorPos);
-			lee->SetAIController(aiController);
+		//	// AIController 생성
+		//	AIController* aiController = new AIController(pathFinder);
+		//	aiController->SetCurrentPosition(professorPos);
+		//	lee->SetAIController(aiController);
 
-			// 도망칠 목표 지점 설정
-			glm::vec3 escapeTarget = professorPos;
+		//	// 도망칠 목표 지점 설정
+		//	glm::vec3 escapeTarget = professorPos;
 
-			// ⭐ Professor 주변 가까운 곳에서 목표 지점 찾기 (5~8 타일 거리)
-			bool foundEscapeTarget = false;
-			for (int offsetZ = -8; offsetZ <= 8 && !foundEscapeTarget; ++offsetZ) {
-				for (int offsetX = -8; offsetX <= 8 && !foundEscapeTarget; ++offsetX) {
-					// 거리 확인 (최소 5 타일 이상 떨어진 곳)
-					if (std::abs(offsetX) < 5 || std::abs(offsetZ) < 5) {
-						continue;
-					}
+		//	// ⭐ Professor 주변 가까운 곳에서 목표 지점 찾기 (5~8 타일 거리)
+		//	bool foundEscapeTarget = false;
+		//	for (int offsetZ = -8; offsetZ <= 8 && !foundEscapeTarget; ++offsetZ) {
+		//		for (int offsetX = -8; offsetX <= 8 && !foundEscapeTarget; ++offsetX) {
+		//			// 거리 확인 (최소 5 타일 이상 떨어진 곳)
+		//			if (std::abs(offsetX) < 5 || std::abs(offsetZ) < 5) {
+		//				continue;
+		//			}
 
-					// ⭐ 월드 좌표 계산 (TILE_SIZE 사용!)
-					float testX = professorPos.x + (offsetX * GameConstants::TILE_SIZE);
-					float testZ = professorPos.z + (offsetZ * GameConstants::TILE_SIZE);
-					glm::vec3 testPos(testX, 0.0f, testZ);
+		//			// ⭐ 월드 좌표 계산 (TILE_SIZE 사용!)
+		//			float testX = professorPos.x + (offsetX * GameConstants::TILE_SIZE);
+		//			float testZ = professorPos.z + (offsetZ * GameConstants::TILE_SIZE);
+		//			glm::vec3 testPos(testX, 0.0f, testZ);
 
-					NavNode* testNode = navMesh->GetNodeFromWorldPos(testPos);
-					if (testNode && testNode->IsWalkable()) {
-						escapeTarget = testNode->GetWorldPosition();
-						foundEscapeTarget = true;
-						std::cout << "[V] Found escape target at: ("
-							<< escapeTarget.x << ", " << escapeTarget.y << ", " << escapeTarget.z << ")" << std::endl;
-					}
-				}
-			}
+		//			NavNode* testNode = navMesh->GetNodeFromWorldPos(testPos);
+		//			if (testNode && testNode->IsWalkable()) {
+		//				escapeTarget = testNode->GetWorldPosition();
+		//				foundEscapeTarget = true;
+		//				std::cout << "[V] Found escape target at: ("
+		//					<< escapeTarget.x << ", " << escapeTarget.y << ", " << escapeTarget.z << ")" << std::endl;
+		//			}
+		//		}
+		//	}
 
-			if (!foundEscapeTarget) {
-				std::cerr << "[!!] WARNING: Could not find escape target! Using random direction." << std::endl;
-				// 최후의 수단: Professor에서 임의 방향으로 20m
-				escapeTarget = professorPos + glm::vec3(20.0f, 0.0f, 20.0f);
-			}
+		//	if (!foundEscapeTarget) {
+		//		std::cerr << "[!!] WARNING: Could not find escape target! Using random direction." << std::endl;
+		//		// 최후의 수단: Professor에서 임의 방향으로 20m
+		//		escapeTarget = professorPos + glm::vec3(20.0f, 0.0f, 20.0f);
+		//	}
 
-			lee->SetPatrolTarget(escapeTarget);
+		//	lee->SetPatrolTarget(escapeTarget);
 
-			std::cout << "[V] AIController initialized" << std::endl;
-			std::cout << "[V] PathFinder initialized with NavMesh" << std::endl;
-			std::cout << "[V] NavMesh: " << navMesh->GetAllNodes().size() << " nodes" << std::endl;
-			std::cout << "[V] Professor position: (" << professorPos.x << ", " << professorPos.y << ", " << professorPos.z << ")" << std::endl;
-			std::cout << "[V] AIController position: (" << aiController->GetCurrentPosition().x << ", " << aiController->GetCurrentPosition().y << ", " << aiController->GetCurrentPosition().z << ")" << std::endl;
-			std::cout << "[V] Patrol target set to: (" << escapeTarget.x << ", " << escapeTarget.y << ", " << escapeTarget.z << ")" << std::endl;
-		}
-		else {
-			std::cerr << "[X] WARNING: NavMesh is empty! AI pathfinding disabled" << std::endl;
-		}
+		//	std::cout << "[V] AIController initialized" << std::endl;
+		//	std::cout << "[V] PathFinder initialized with NavMesh" << std::endl;
+		//	std::cout << "[V] NavMesh: " << navMesh->GetAllNodes().size() << " nodes" << std::endl;
+		//	std::cout << "[V] Professor position: (" << professorPos.x << ", " << professorPos.y << ", " << professorPos.z << ")" << std::endl;
+		//	std::cout << "[V] AIController position: (" << aiController->GetCurrentPosition().x << ", " << aiController->GetCurrentPosition().y << ", " << aiController->GetCurrentPosition().z << ")" << std::endl;
+		//	std::cout << "[V] Patrol target set to: (" << escapeTarget.x << ", " << escapeTarget.y << ", " << escapeTarget.z << ")" << std::endl;
+		//}
+		//else {
+		//	std::cerr << "[X] WARNING: NavMesh is empty! AI pathfinding disabled" << std::endl;
+		//}
 
 		std::cout << "===================================\n" << std::endl;
 
@@ -3168,6 +3168,51 @@ void TestScene::Enter()
 	pointLight5->SetAttenuation(1.0f, 0.22f, 0.20f);             // 매우 짧은 범위
 	pointLight5->SetEnabled(true);
 	lights.push_back(std::move(pointLight5));
+
+	// ⭐⭐⭐ Professor 얼굴 조명 추가 (공포 효과!)
+	auto* professor = lee.get();
+	if (professor) {
+		auto professorLightPtr = std::make_unique<Light>(LightType::SPOT);
+
+		// Professor 위치 기준으로 초기 설정
+		glm::vec3 profPos = professor->GetPosition();
+		glm::vec3 lightPos = profPos;
+		lightPos.y += 1.2f;  // 가슴 높이
+		lightPos.z += 0.8f;  // ⭐⭐⭐ 수정: 뒤쪽으로 이동 (앞쪽 → 뒤쪽)
+
+		professorLightPtr->SetPosition(lightPos);
+
+		// ⭐⭐⭐ 수정: 얼굴을 향해 앞쪽으로 비추는 방향
+		glm::vec3 faceDirection = glm::vec3(0.0f, 0.8f, -0.3f);  // Z를 음수로 (앞쪽으로)
+		professorLightPtr->SetDirection(glm::normalize(faceDirection));
+
+		// 섬뜩한 색상: 차가운 청백색 또는 따뜻한 주황색
+		professorLightPtr->SetAmbient(glm::vec3(0.0f, 0.0f, 0.0f));
+		professorLightPtr->SetDiffuse(glm::vec3(0.9f, 0.7f, 0.5f));  // 오래된 손전등 색
+		professorLightPtr->SetSpecular(glm::vec3(1.0f, 0.9f, 0.7f));
+
+		// ⭐⭐⭐ 수정: 강도 감소 (2.5 → 1.5)
+		professorLightPtr->SetIntensity(0.5f);
+
+		// 감쇠: 짧은 거리만 영향
+		professorLightPtr->SetAttenuation(1.0f, 0.35f, 0.44f);  // 약 5m 범위
+
+		// Spot 각도: 얼굴 크기만큼만
+		professorLightPtr->SetSpotAngle(
+			glm::cos(glm::radians(20.0f)),  // Inner: 20도
+			glm::cos(glm::radians(35.0f))   // Outer: 35도
+		);
+
+		professorLightPtr->SetEnabled(true);
+
+		professorLight = professorLightPtr.get();
+		lights.push_back(std::move(professorLightPtr));
+
+		std::cout << "\n[HORROR] Professor face light created!" << std::endl;
+		std::cout << "  Position: (" << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << ")" << std::endl;
+		std::cout << "  Direction: Forward to face (horror effect)" << std::endl;
+		std::cout << "  Intensity: 1.5 (reduced)" << std::endl;
+	}
 
 	// Renderer에 모든 조명 등록
 	if (g_engine) {
