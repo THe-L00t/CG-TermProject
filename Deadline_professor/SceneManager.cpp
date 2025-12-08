@@ -1874,6 +1874,11 @@ void Floor3Scene::Update(float deltaTime)
 	if (ceiling) {
 		ceiling->Update(deltaTime);
 	}
+	for (auto& wall : walls) {
+		if (wall) {
+			wall->Update(deltaTime);
+		}
+	}
 }
 
 void Floor3Scene::Draw()
@@ -1885,13 +1890,13 @@ void Floor3Scene::Draw()
 	Camera* camera = g_engine->GetCamera();
 	if (!renderer) return;
 
-	renderer->InitPostQuad();
+	
 
 	// Light를 Renderer에 설정
 	if (light) {
 		renderer->SetLight(light.get());
 	}
-	//renderer->SelectFBO();
+	renderer->SelectFBO();
 	// 바닥 렌더링 (백페이스 컬링 비활성화)
 	if (floor && floor->IsActive()) {
 		glDisable(GL_CULL_FACE);  // Plane은 양면 렌더링 필요

@@ -72,7 +72,7 @@ void Renderer::Init()
 
 	glGenFramebuffers(1, &activeInstance->postFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, activeInstance->postFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, activeInstance->postTexture, 0);
+	
 
 
 	glGenTextures(1, &activeInstance->postTexture);
@@ -84,7 +84,7 @@ void Renderer::Init()
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, activeInstance->postTexture, 0);
 	GLuint depthBuffer;
 	glGenRenderbuffers(1, &depthBuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
@@ -619,13 +619,13 @@ void Renderer::InitPostQuad()
 {
 	float quadVertices[] = {
 		// pos     // uv
-		-1.f, -1.f, 0.0f, 1.0f,
-		 1.f, -1.f, 1.0f, 1.0f,
-		 1.f,  1.f, 1.0f, 0.0f,
+		-1.f, -1.f, 0.0f, 0.0f,
+		 1.f, -1.f, 1.0f, 0.0f,
+		 1.f,  1.f, 1.0f, 1.0f,
 
-		-1.f, -1.f, 0.0f, 1.0f,
-		 1.f, 1.f, 1.0f, 0.0f,
-		-1.f,  1.f, 0.0f, 0.0f
+		-1.f, -1.f, 0.0f, 0.0f,
+		 1.f, 1.f, 1.0f, 1.0f,
+		-1.f,  1.f, 0.0f, 1.0f
 	};
 
 	glGenVertexArrays(1, &postVAO);
@@ -656,8 +656,9 @@ void Renderer::RenderFinal()
 		if (!shader) return;
 	}
 
-	shader->Use();
 
+	shader->Use();
+	glDisable(GL_DEPTH_TEST);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, activeInstance->postTexture);
 	shader->setUniform("u_SceneTex", 0);
@@ -671,14 +672,15 @@ void Renderer::RenderFinal()
 
 void Renderer::SelectFBO()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, postFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, activeInstance->postFBO);
 	glViewport(0, 0, 1920, 1080);
-	glClear(GL_COLOR_BUFFER_BIT);
-	//glEnable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer::SelectScreen()
 {
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, 1920, 1080);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
