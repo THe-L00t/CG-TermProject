@@ -36,6 +36,8 @@ public:
 	float GetAspect() const { return aspect; }
 	float GetNearPlane() const { return n; }
 	float GetFarPlane() const { return f; }
+	glm::vec3 GetTargetPosition() const { return targetPosition; }
+	glm::vec3 GetTargetDirection() const { return targetDirection; }
 
 	// Setters
 	void SetMoveSpeed(float speed) { moveSpd = speed; }

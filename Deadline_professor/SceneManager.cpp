@@ -309,26 +309,36 @@ void Floor1Scene::Enter()
 		InputManager* inputMgr = g_engine->GetInputManager();
 		GameTimer* timer = g_engine->GetGameTimer();
 
-		glm::vec3 initialCameraPos = playerStartPos;
-		initialCameraPos.y = GameConstants::PLAYER_EYE_HEIGHT;
-
 		if (camera) {
-			camera->SetPosition(initialCameraPos);
-			camera->SetDirection(initialCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
-			camera->SetMoveSpeed(50.0f);
-
-			// ⭐⭐⭐ 스무스 모드 활성화 (이동만 부드럽게)
+			// ⭐ 먼저 스무스 모드 활성화
 			camera->SetSmoothMode(true);
-			camera->SetLerpSpeed(10.0f);  // 부드러움 정도 (높을수록 빠르게 도달)
-
-			std::cout << "Camera: Smooth mode enabled (lerp speed: 10.0)" << std::endl;
+			camera->SetLerpSpeed(10.0f);
+			camera->SetMoveSpeed(50.0f);
 		}
 
 		player = std::make_unique<Player>();
 		player->Init(camera);
 		player->SetPosition(playerStartPos);
 		player->SetResourceID("PlayerModel");
-		//player->SetMoveSpeed(50.0f);
+
+		// ⭐⭐⭐ 씬 진입 시 즉시 동기화!
+		if (player && camera) {
+			// 스무스 모드 임시 비활성화 (즉시 이동을 위해)
+			camera->SetSmoothMode(false);
+
+			// 플레이어 위치로 카메라 즉시 이동
+			glm::vec3 syncedCameraPos = playerStartPos;
+			syncedCameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
+			camera->SetPosition(syncedCameraPos);
+			camera->SetDirection(syncedCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
+
+			// 스무스 모드 다시 활성화
+			camera->SetSmoothMode(true);
+
+			std::cout << "\n⭐ CAMERA-PLAYER SYNC COMPLETE ⭐" << std::endl;
+			std::cout << "Camera: (" << syncedCameraPos.x << ", " << syncedCameraPos.y << ", " << syncedCameraPos.z << ")" << std::endl;
+			std::cout << "Player: (" << playerStartPos.x << ", " << playerStartPos.y << ", " << playerStartPos.z << ")\n" << std::endl;
+		}
 
 		// InputManager 액션 설정
 		if (inputMgr && timer) {
@@ -934,26 +944,36 @@ void Floor2Scene::Enter()
 		InputManager* inputMgr = g_engine->GetInputManager();
 		GameTimer* timer = g_engine->GetGameTimer();
 
-		glm::vec3 initialCameraPos = playerStartPos;
-		initialCameraPos.y = GameConstants::PLAYER_EYE_HEIGHT;
-
 		if (camera) {
-			camera->SetPosition(initialCameraPos);
-			camera->SetDirection(initialCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
-			camera->SetMoveSpeed(50.0f);
-
-			// ⭐⭐⭐ 스무스 모드 활성화 (이동만 부드럽게)
+			// ⭐ 먼저 스무스 모드 활성화
 			camera->SetSmoothMode(true);
-			camera->SetLerpSpeed(10.0f);  // 부드러움 정도 (높을수록 빠르게 도달)
-
-			std::cout << "Camera: Smooth mode enabled (lerp speed: 10.0)" << std::endl;
+			camera->SetLerpSpeed(10.0f);
+			camera->SetMoveSpeed(50.0f);
 		}
 
 		player = std::make_unique<Player>();
 		player->Init(camera);
 		player->SetPosition(playerStartPos);
 		player->SetResourceID("PlayerModel");
-		//player->SetMoveSpeed(50.0f);
+
+		// ⭐⭐⭐ 씬 진입 시 즉시 동기화!
+		if (player && camera) {
+			// 스무스 모드 임시 비활성화 (즉시 이동을 위해)
+			camera->SetSmoothMode(false);
+
+			// 플레이어 위치로 카메라 즉시 이동
+			glm::vec3 syncedCameraPos = playerStartPos;
+			syncedCameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
+			camera->SetPosition(syncedCameraPos);
+			camera->SetDirection(syncedCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
+
+			// 스무스 모드 다시 활성화
+			camera->SetSmoothMode(true);
+
+			std::cout << "\n⭐ CAMERA-PLAYER SYNC COMPLETE ⭐" << std::endl;
+			std::cout << "Camera: (" << syncedCameraPos.x << ", " << syncedCameraPos.y << ", " << syncedCameraPos.z << ")" << std::endl;
+			std::cout << "Player: (" << playerStartPos.x << ", " << playerStartPos.y << ", " << playerStartPos.z << ")\n" << std::endl;
+		}
 
 		// InputManager 액션 설정
 		if (inputMgr && timer) {
@@ -1500,26 +1520,36 @@ void Floor3Scene::Enter()
 		InputManager* inputMgr = g_engine->GetInputManager();
 		GameTimer* timer = g_engine->GetGameTimer();
 
-		glm::vec3 initialCameraPos = playerStartPos;
-		initialCameraPos.y = GameConstants::PLAYER_EYE_HEIGHT;
-
 		if (camera) {
-			camera->SetPosition(initialCameraPos);
-			camera->SetDirection(initialCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
-			camera->SetMoveSpeed(50.0f);
-
-			// ⭐⭐⭐ 스무스 모드 활성화 (이동만 부드럽게)
+			// ⭐ 먼저 스무스 모드 활성화
 			camera->SetSmoothMode(true);
-			camera->SetLerpSpeed(10.0f);  // 부드러움 정도 (높을수록 빠르게 도달)
-
-			std::cout << "Camera: Smooth mode enabled (lerp speed: 10.0)" << std::endl;
+			camera->SetLerpSpeed(10.0f);
+			camera->SetMoveSpeed(50.0f);
 		}
 
 		player = std::make_unique<Player>();
 		player->Init(camera);
 		player->SetPosition(playerStartPos);
 		player->SetResourceID("PlayerModel");
-		//player->SetMoveSpeed(50.0f);
+
+		// ⭐⭐⭐ 씬 진입 시 즉시 동기화!
+		if (player && camera) {
+			// 스무스 모드 임시 비활성화 (즉시 이동을 위해)
+			camera->SetSmoothMode(false);
+
+			// 플레이어 위치로 카메라 즉시 이동
+			glm::vec3 syncedCameraPos = playerStartPos;
+			syncedCameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
+			camera->SetPosition(syncedCameraPos);
+			camera->SetDirection(syncedCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
+
+			// 스무스 모드 다시 활성화
+			camera->SetSmoothMode(true);
+
+			std::cout << "\n⭐ CAMERA-PLAYER SYNC COMPLETE ⭐" << std::endl;
+			std::cout << "Camera: (" << syncedCameraPos.x << ", " << syncedCameraPos.y << ", " << syncedCameraPos.z << ")" << std::endl;
+			std::cout << "Player: (" << playerStartPos.x << ", " << playerStartPos.y << ", " << playerStartPos.z << ")\n" << std::endl;
+		}
 
 		// InputManager 액션 설정
 		if (inputMgr && timer) {

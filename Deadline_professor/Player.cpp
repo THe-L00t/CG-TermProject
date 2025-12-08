@@ -125,25 +125,22 @@ void Player::SyncCameraPosition()
 		return;
 	}
 
-	// ⭐ 현재 카메라의 상태 가져오기
+	// ⭐⭐⭐ 현재 카메라의 절대 좌표에서 바라보는 방향 계산
 	glm::vec3 currentCameraPos = camera->GetPosition();
 	glm::vec3 currentDirection = camera->GetDirection();
 
-	// ⭐ 카메라가 바라보는 방향 벡터 (정규화되지 않은 상대 벡터)
-	glm::vec3 viewVector = currentDirection - currentCameraPos;
-	float viewDistance = glm::length(viewVector);  // 거리 저장
-	glm::vec3 viewDir = glm::vec3(0.0f, 0.0f, -5.0f);  // 기본 방향
-
-	if (viewDistance > 0.01f) {
-		viewDir = viewVector;  // 기존 방향 유지
-	}
+	// ⭐ 월드 좌표계 기준 바라보는 방향 벡터 (절대 방향!)
+	glm::vec3 absoluteViewVector = currentDirection - currentCameraPos;
 
 	// ⭐ 새로운 카메라 위치 계산 (플레이어 눈 높이)
 	glm::vec3 newCameraPos = position;
 	newCameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
 
-	// ⭐ 새로운 direction 계산 (상대적 방향 벡터 유지)
-	glm::vec3 newDirection = newCameraPos + viewDir;
+	// ⭐⭐⭐ 중요: 이동 시 바라보는 방향은 그대로 유지! (평행 이동)
+	// position이 (10, 0, 10) → (11, 0, 10)으로 이동하면
+	// direction도 (10, 1.5, 5) → (11, 1.5, 5)로 이동 (방향은 동일!)
+	glm::vec3 positionDelta = newCameraPos - currentCameraPos;
+	glm::vec3 newDirection = currentDirection + positionDelta;
 
 	// ⭐ 스무스 모드: 목표값만 업데이트
 	if (camera->IsSmoothMode()) {
