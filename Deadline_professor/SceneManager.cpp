@@ -447,25 +447,7 @@ void Floor1Scene::Enter()
 		player->Init(camera);
 		player->SetPosition(playerStartPos);
 		player->SetResourceID("PlayerModel");
-
-		// ⭐⭐⭐ 씬 진입 시 즉시 동기화!
-		if (player && camera) {
-			// 스무스 모드 임시 비활성화 (즉시 이동을 위해)
-			camera->SetSmoothMode(false);
-
-			// 플레이어 위치로 카메라 즉시 이동
-			glm::vec3 syncedCameraPos = playerStartPos;
-			syncedCameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
-			camera->SetPosition(syncedCameraPos);
-			camera->SetDirection(syncedCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
-
-			// 스무스 모드 다시 활성화
-			camera->SetSmoothMode(true);
-
-			std::cout << "\n⭐ CAMERA-PLAYER SYNC COMPLETE ⭐" << std::endl;
-			std::cout << "Camera: (" << syncedCameraPos.x << ", " << syncedCameraPos.y << ", " << syncedCameraPos.z << ")" << std::endl;
-			std::cout << "Player: (" << playerStartPos.x << ", " << playerStartPos.y << ", " << playerStartPos.z << ")\n" << std::endl;
-		}
+		player->SetMoveSpeed(GameConstants::PLAYER_WALK_SPEED);
 
 		// InputManager 액션 설정
 		if (inputMgr && timer) {
@@ -547,11 +529,11 @@ void Floor1Scene::Enter()
 		if (navMesh) {  // ⭐ tempNavMesh → navMesh로 변경!
 			bool foundWalkableTile = false;
 
-			// ⭐ 플레이어 바로 옆 (반경 2 타일 이내)에서 이동 가능한 타일 찾기
-			for (int offsetZ = -2; offsetZ <= 2 && !foundWalkableTile; ++offsetZ) {
-				for (int offsetX = -2; offsetX <= 2 && !foundWalkableTile; ++offsetX) {
-					// 플레이어와 최소 1타일은 떨어지도록 (너무 가까우면 겹침)
-					if (std::abs(offsetX) < 1 && std::abs(offsetZ) < 1) {
+			// ⭐ 플레이어 근처 타일에서 생성
+			for (int offsetZ = -4; offsetZ <= 4 && !foundWalkableTile; ++offsetZ) {
+				for (int offsetX = -4; offsetX <= 4 && !foundWalkableTile; ++offsetX) {
+					// 플레이어와 2타일보다 가까우면 제외 (너무 가까움)
+					if (std::abs(offsetX) <= 2 && std::abs(offsetZ) <= 2) {
 						continue;
 					}
 
@@ -581,6 +563,27 @@ void Floor1Scene::Enter()
 
 		professor->SetPosition(professorPos);
 		professor->SetPlayerReference(player.get());
+		professor->SetMoveSpeed(GameConstants::PROFESSOR_MOVE_SPEED);
+
+		// Professor를 향하도록 카메라 설정
+		if (player && camera) {
+			camera->SetSmoothMode(false);
+
+			glm::vec3 cameraPos = playerStartPos;
+			cameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
+			camera->SetPosition(cameraPos);
+
+			// Professor의 중심(가슴 높이)을 바라봄
+			glm::vec3 professorEyePos = professorPos;
+			professorEyePos.y += 1.5f;
+			camera->SetDirection(professorEyePos);
+
+			camera->SetSmoothMode(true);
+
+			std::cout << "\n⭐ CAMERA LOOKING AT PROFESSOR ⭐" << std::endl;
+			std::cout << "Camera: (" << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
+			std::cout << "Looking at: (" << professorEyePos.x << ", " << professorEyePos.y << ", " << professorEyePos.z << ")" << std::endl;
+		}
 
 		// FBXAnimationPlayer 초기화
 		FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
@@ -1240,25 +1243,7 @@ void Floor2Scene::Enter()
 		player->Init(camera);
 		player->SetPosition(playerStartPos);
 		player->SetResourceID("PlayerModel");
-
-		// ⭐⭐⭐ 씬 진입 시 즉시 동기화!
-		if (player && camera) {
-			// 스무스 모드 임시 비활성화 (즉시 이동을 위해)
-			camera->SetSmoothMode(false);
-
-			// 플레이어 위치로 카메라 즉시 이동
-			glm::vec3 syncedCameraPos = playerStartPos;
-			syncedCameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
-			camera->SetPosition(syncedCameraPos);
-			camera->SetDirection(syncedCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
-
-			// 스무스 모드 다시 활성화
-			camera->SetSmoothMode(true);
-
-			std::cout << "\n⭐ CAMERA-PLAYER SYNC COMPLETE ⭐" << std::endl;
-			std::cout << "Camera: (" << syncedCameraPos.x << ", " << syncedCameraPos.y << ", " << syncedCameraPos.z << ")" << std::endl;
-			std::cout << "Player: (" << playerStartPos.x << ", " << playerStartPos.y << ", " << playerStartPos.z << ")\n" << std::endl;
-		}
+		player->SetMoveSpeed(GameConstants::PLAYER_WALK_SPEED);
 
 		// InputManager 액션 설정
 		if (inputMgr && timer) {
@@ -1329,11 +1314,11 @@ void Floor2Scene::Enter()
 		if (navMesh) {  // ⭐ tempNavMesh → navMesh로 변경!
 			bool foundWalkableTile = false;
 
-			// ⭐ 플레이어 바로 옆 (반경 2 타일 이내)에서 이동 가능한 타일 찾기
-			for (int offsetZ = -2; offsetZ <= 2 && !foundWalkableTile; ++offsetZ) {
-				for (int offsetX = -2; offsetX <= 2 && !foundWalkableTile; ++offsetX) {
-					// 플레이어와 최소 1타일은 떨어지도록 (너무 가까우면 겹침)
-					if (std::abs(offsetX) < 1 && std::abs(offsetZ) < 1) {
+			// ⭐ 플레이어 근처 타일에서 생성
+			for (int offsetZ = -4; offsetZ <= 4 && !foundWalkableTile; ++offsetZ) {
+				for (int offsetX = -4; offsetX <= 4 && !foundWalkableTile; ++offsetX) {
+					// 플레이어와 2타일보다 가까우면 제외 (너무 가까움)
+					if (std::abs(offsetX) <= 2 && std::abs(offsetZ) <= 2) {
 						continue;
 					}
 
@@ -1363,6 +1348,27 @@ void Floor2Scene::Enter()
 
 		professor->SetPosition(professorPos);
 		professor->SetPlayerReference(player.get());
+		professor->SetMoveSpeed(GameConstants::PROFESSOR_MOVE_SPEED);
+
+		// Professor를 향하도록 카메라 설정
+		if (player && camera) {
+			camera->SetSmoothMode(false);
+
+			glm::vec3 cameraPos = playerStartPos;
+			cameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
+			camera->SetPosition(cameraPos);
+
+			// Professor의 중심(가슴 높이)을 바라봄
+			glm::vec3 professorEyePos = professorPos;
+			professorEyePos.y += 1.5f;
+			camera->SetDirection(professorEyePos);
+
+			camera->SetSmoothMode(true);
+
+			std::cout << "\n⭐ CAMERA LOOKING AT PROFESSOR ⭐" << std::endl;
+			std::cout << "Camera: (" << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
+			std::cout << "Looking at: (" << professorEyePos.x << ", " << professorEyePos.y << ", " << professorEyePos.z << ")" << std::endl;
+		}
 
 		// FBXAnimationPlayer 초기화
 		FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
@@ -1935,25 +1941,7 @@ void Floor3Scene::Enter()
 		player->Init(camera);
 		player->SetPosition(playerStartPos);
 		player->SetResourceID("PlayerModel");
-
-		// ⭐⭐⭐ 씬 진입 시 즉시 동기화!
-		if (player && camera) {
-			// 스무스 모드 임시 비활성화 (즉시 이동을 위해)
-			camera->SetSmoothMode(false);
-
-			// 플레이어 위치로 카메라 즉시 이동
-			glm::vec3 syncedCameraPos = playerStartPos;
-			syncedCameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
-			camera->SetPosition(syncedCameraPos);
-			camera->SetDirection(syncedCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
-
-			// 스무스 모드 다시 활성화
-			camera->SetSmoothMode(true);
-
-			std::cout << "\n⭐ CAMERA-PLAYER SYNC COMPLETE ⭐" << std::endl;
-			std::cout << "Camera: (" << syncedCameraPos.x << ", " << syncedCameraPos.y << ", " << syncedCameraPos.z << ")" << std::endl;
-			std::cout << "Player: (" << playerStartPos.x << ", " << playerStartPos.y << ", " << playerStartPos.z << ")\n" << std::endl;
-		}
+		player->SetMoveSpeed(GameConstants::PLAYER_WALK_SPEED);
 
 		// InputManager 액션 설정
 		if (inputMgr && timer) {
@@ -2024,11 +2012,11 @@ void Floor3Scene::Enter()
 		if (navMesh) {  // ⭐ tempNavMesh → navMesh로 변경!
 			bool foundWalkableTile = false;
 
-			// ⭐ 플레이어 바로 옆 (반경 2 타일 이내)에서 이동 가능한 타일 찾기
-			for (int offsetZ = -2; offsetZ <= 2 && !foundWalkableTile; ++offsetZ) {
-				for (int offsetX = -2; offsetX <= 2 && !foundWalkableTile; ++offsetX) {
-					// 플레이어와 최소 1타일은 떨어지도록 (너무 가까우면 겹침)
-					if (std::abs(offsetX) < 1 && std::abs(offsetZ) < 1) {
+			// ⭐ 플레이어 근처 타일에서 생성
+			for (int offsetZ = -4; offsetZ <= 4 && !foundWalkableTile; ++offsetZ) {
+				for (int offsetX = -4; offsetX <= 4 && !foundWalkableTile; ++offsetX) {
+					// 플레이어와 2타일보다 가까우면 제외 (너무 가까움)
+					if (std::abs(offsetX) <= 2 && std::abs(offsetZ) <= 2) {
 						continue;
 					}
 
@@ -2058,6 +2046,27 @@ void Floor3Scene::Enter()
 
 		professor->SetPosition(professorPos);
 		professor->SetPlayerReference(player.get());
+		professor->SetMoveSpeed(GameConstants::PROFESSOR_MOVE_SPEED);
+
+		// Professor를 향하도록 카메라 설정
+		if (player && camera) {
+			camera->SetSmoothMode(false);
+
+			glm::vec3 cameraPos = playerStartPos;
+			cameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
+			camera->SetPosition(cameraPos);
+
+			// Professor의 중심(가슴 높이)을 바라봄
+			glm::vec3 professorEyePos = professorPos;
+			professorEyePos.y += 1.5f;
+			camera->SetDirection(professorEyePos);
+
+			camera->SetSmoothMode(true);
+
+			std::cout << "\n⭐ CAMERA LOOKING AT PROFESSOR ⭐" << std::endl;
+			std::cout << "Camera: (" << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
+			std::cout << "Looking at: (" << professorEyePos.x << ", " << professorEyePos.y << ", " << professorEyePos.z << ")" << std::endl;
+		}
 
 		// FBXAnimationPlayer 초기화
 		FBXAnimationPlayer* animPlayer = g_engine->GetAnimationPlayer();
