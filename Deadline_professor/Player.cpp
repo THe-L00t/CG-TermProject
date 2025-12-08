@@ -42,9 +42,12 @@ void Player::MoveForward(float deltaTime)
 {
 	if (!camera) return;
 
-	// 카메라가 바라보는 방향으로 이동
-	glm::vec3 forward = glm::normalize(camera->GetDirection() - camera->GetPosition());
-	forward.y = 0.0f; // Y축 이동 방지 (평면 이동만)
+	// ⭐ 스무스 모드에서는 target 기준으로 방향 계산!
+	glm::vec3 camPos = camera->IsSmoothMode() ? camera->GetTargetPosition() : camera->GetPosition();
+	glm::vec3 camDir = camera->IsSmoothMode() ? camera->GetTargetDirection() : camera->GetDirection();
+
+	glm::vec3 forward = glm::normalize(camDir - camPos);
+	forward.y = 0.0f;
 	if (glm::length(forward) > 0.001f) {
 		forward = glm::normalize(forward);
 	}
@@ -57,7 +60,10 @@ void Player::MoveBackward(float deltaTime)
 {
 	if (!camera) return;
 
-	glm::vec3 forward = glm::normalize(camera->GetDirection() - camera->GetPosition());
+	glm::vec3 camPos = camera->IsSmoothMode() ? camera->GetTargetPosition() : camera->GetPosition();
+	glm::vec3 camDir = camera->IsSmoothMode() ? camera->GetTargetDirection() : camera->GetDirection();
+
+	glm::vec3 forward = glm::normalize(camDir - camPos);
 	forward.y = 0.0f;
 	if (glm::length(forward) > 0.001f) {
 		forward = glm::normalize(forward);
@@ -71,7 +77,10 @@ void Player::MoveLeft(float deltaTime)
 {
 	if (!camera) return;
 
-	glm::vec3 forward = glm::normalize(camera->GetDirection() - camera->GetPosition());
+	glm::vec3 camPos = camera->IsSmoothMode() ? camera->GetTargetPosition() : camera->GetPosition();
+	glm::vec3 camDir = camera->IsSmoothMode() ? camera->GetTargetDirection() : camera->GetDirection();
+
+	glm::vec3 forward = glm::normalize(camDir - camPos);
 	forward.y = 0.0f;
 	if (glm::length(forward) > 0.001f) {
 		forward = glm::normalize(forward);
@@ -86,7 +95,10 @@ void Player::MoveRight(float deltaTime)
 {
 	if (!camera) return;
 
-	glm::vec3 forward = glm::normalize(camera->GetDirection() - camera->GetPosition());
+	glm::vec3 camPos = camera->IsSmoothMode() ? camera->GetTargetPosition() : camera->GetPosition();
+	glm::vec3 camDir = camera->IsSmoothMode() ? camera->GetTargetDirection() : camera->GetDirection();
+
+	glm::vec3 forward = glm::normalize(camDir - camPos);
 	forward.y = 0.0f;
 	if (glm::length(forward) > 0.001f) {
 		forward = glm::normalize(forward);
@@ -125,30 +137,38 @@ void Player::SyncCameraPosition()
 		return;
 	}
 
-	// ⭐⭐⭐ 현재 카메라의 절대 좌표에서 바라보는 방향 계산
-	glm::vec3 currentCameraPos = camera->GetPosition();
-	glm::vec3 currentDirection = camera->GetDirection();
+	// ⭐⭐⭐ 스무스 모드에서는 target 값 기준으로 계산!
+	glm::vec3 currentCameraPos;
+	glm::vec3 currentDirection;
 
-	// ⭐ 월드 좌표계 기준 바라보는 방향 벡터 (절대 방향!)
-	glm::vec3 absoluteViewVector = currentDirection - currentCameraPos;
+	if (camera->IsSmoothMode()) {
+		// 목표값 기준
+		currentCameraPos = camera->GetTargetPosition();
+		currentDirection = camera->GetTargetDirection();
+	}
+	else {
+		// 즉시 이동 모드
+		currentCameraPos = camera->GetPosition();
+		currentDirection = camera->GetDirection();
+	}
 
-	// ⭐ 새로운 카메라 위치 계산 (플레이어 눈 높이)
+	// ⭐⭐⭐ 핵심: 카메라 로컬 공간의 상대 방향 벡터 계산
+	glm::vec3 viewVector = currentDirection - currentCameraPos;
+
+	// ⭐ 새로운 카메라 위치 (플레이어 눈 높이)
 	glm::vec3 newCameraPos = position;
 	newCameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
 
-	// ⭐⭐⭐ 중요: 이동 시 바라보는 방향은 그대로 유지! (평행 이동)
-	// position이 (10, 0, 10) → (11, 0, 10)으로 이동하면
-	// direction도 (10, 1.5, 5) → (11, 1.5, 5)로 이동 (방향은 동일!)
-	glm::vec3 positionDelta = newCameraPos - currentCameraPos;
-	glm::vec3 newDirection = currentDirection + positionDelta;
+	// ⭐⭐⭐ 새로운 direction = 새 위치 + 상대 방향 벡터
+	// 이렇게 하면 "플레이어 기준으로 항상 같은 방향"을 바라봄!
+	glm::vec3 newDirection = newCameraPos + viewVector;
 
-	// ⭐ 스무스 모드: 목표값만 업데이트
+	// 목표값 업데이트
 	if (camera->IsSmoothMode()) {
 		camera->SetTargetPosition(newCameraPos);
 		camera->SetTargetDirection(newDirection);
 	}
 	else {
-		// 즉시 이동 모드
 		camera->SetPosition(newCameraPos);
 		camera->SetDirection(newDirection);
 	}

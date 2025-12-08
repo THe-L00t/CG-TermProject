@@ -63,18 +63,12 @@ void Camera::Update(float deltaTime)
 			return;
 		}
 
-		// lerp 계수 계산 (0~1 사이 값)
+		// lerp 계수 계산
 		float t = glm::clamp(lerpSpeed * deltaTime, 0.0f, 1.0f);
 
-		// ⭐ position만 lerp하고, direction은 상대적으로 계산
-		glm::vec3 oldViewVector = direction - position;
-		glm::vec3 targetViewVector = targetDirection - targetPosition;
-
+		// ⭐⭐⭐ position과 direction을 독립적으로 lerp
 		position = Lerp(position, targetPosition, t);
-
-		// ⭐ 방향 벡터도 lerp
-		glm::vec3 newViewVector = Lerp(oldViewVector, targetViewVector, t);
-		direction = position + newViewVector;
+		direction = Lerp(direction, targetDirection, t);
 
 		UpdateVectors();
 	}
@@ -166,9 +160,9 @@ void Camera::MoveDown(float deltaTime)
 
 void Camera::Rotate(float yawDelta, float pitchDelta)
 {
-	// ⭐ 현재 실제 위치 기준으로 회전 (targetPosition 아님!)
-	glm::vec3 currentPos = position;
-	glm::vec3 currentDir = direction;
+	// ⭐ 스무스 모드에서는 target 기준으로 회전!
+	glm::vec3 currentPos = smoothMode ? targetPosition : position;
+	glm::vec3 currentDir = smoothMode ? targetDirection : direction;
 
 	// Get current forward direction
 	glm::vec3 forward = glm::normalize(currentDir - currentPos);
@@ -181,12 +175,20 @@ void Camera::Rotate(float yawDelta, float pitchDelta)
 	glm::mat4 pitchRotation = glm::rotate(glm::mat4(1.0f), pitchDelta * dirSpd, right);
 	forward = glm::vec3(pitchRotation * glm::vec4(forward, 0.0f));
 
-	// Update direction to maintain distance from position
+	// Update direction to maintain distance
 	float distance = glm::length(currentDir - currentPos);
 
-	// ⭐ 회전은 즉시 반영 (부드럽게 하지 않음)
-	direction = position + forward * distance;
-	targetDirection = direction;  // ⭐ 목표값도 함께 업데이트
+	if (smoothMode) {
+		// ⭐ 스무스 모드: target만 업데이트
+		targetDirection = targetPosition + forward * distance;
+		// ⭐ 회전은 즉시 반영 (responsiveness 유지)
+		direction = position + forward * distance;
+	}
+	else {
+		// 즉시 반영
+		direction = position + forward * distance;
+		targetDirection = direction;
+	}
 
 	UpdateVectors();
 }
