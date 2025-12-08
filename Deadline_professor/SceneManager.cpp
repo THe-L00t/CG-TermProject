@@ -1,4 +1,4 @@
-#include "SceneManager.h"
+﻿#include "SceneManager.h"
 #include "Engine.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
@@ -316,6 +316,12 @@ void Floor1Scene::Enter()
 			camera->SetPosition(initialCameraPos);
 			camera->SetDirection(initialCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
 			camera->SetMoveSpeed(50.0f);
+
+			// ⭐⭐⭐ 스무스 모드 활성화 (이동만 부드럽게)
+			camera->SetSmoothMode(true);
+			camera->SetLerpSpeed(10.0f);  // 부드러움 정도 (높을수록 빠르게 도달)
+
+			std::cout << "Camera: Smooth mode enabled (lerp speed: 10.0)" << std::endl;
 		}
 
 		player = std::make_unique<Player>();
@@ -682,6 +688,10 @@ void Floor1Scene::Update(float deltaTime)
 	extern Engine* g_engine;
 	SoundManager* sm = g_engine->GetSoundManager();
 
+	if (player) {
+		player->Update(deltaTime);
+	}
+
 	glm::vec3 plPos = player->GetPosition();
 	glm::vec3 prPos = professor->GetPosition();
 	float distance = glm::distance(plPos, prPos);
@@ -704,9 +714,6 @@ void Floor1Scene::Update(float deltaTime)
 		}
 	}
 
-	if (player) {
-		player->Update(deltaTime);
-	}
 	if (professor) {
 		professor->Update(deltaTime);
 	}
@@ -934,6 +941,12 @@ void Floor2Scene::Enter()
 			camera->SetPosition(initialCameraPos);
 			camera->SetDirection(initialCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
 			camera->SetMoveSpeed(50.0f);
+
+			// ⭐⭐⭐ 스무스 모드 활성화 (이동만 부드럽게)
+			camera->SetSmoothMode(true);
+			camera->SetLerpSpeed(10.0f);  // 부드러움 정도 (높을수록 빠르게 도달)
+
+			std::cout << "Camera: Smooth mode enabled (lerp speed: 10.0)" << std::endl;
 		}
 
 		player = std::make_unique<Player>();
@@ -1297,7 +1310,12 @@ void Floor2Scene::Exit()
 
 void Floor2Scene::Update(float deltaTime)
 {
+	extern Engine* g_engine;
 	SoundManager* sm = g_engine->GetSoundManager();
+
+	if (player) {
+		player->Update(deltaTime);
+	}
 
 	glm::vec3 plPos = player->GetPosition();
 	glm::vec3 prPos = professor->GetPosition();
@@ -1320,6 +1338,7 @@ void Floor2Scene::Update(float deltaTime)
 			sm->Stop("RunLee");
 		}
 	}
+
 	if (professor) {
 		professor->Update(deltaTime);
 	}
@@ -1328,6 +1347,11 @@ void Floor2Scene::Update(float deltaTime)
 	}
 	if (ceiling) {
 		ceiling->Update(deltaTime);
+	}
+	for (auto& wall : walls) {
+		if (wall) {
+			wall->Update(deltaTime);
+		}
 	}
 }
 
@@ -1483,6 +1507,12 @@ void Floor3Scene::Enter()
 			camera->SetPosition(initialCameraPos);
 			camera->SetDirection(initialCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
 			camera->SetMoveSpeed(50.0f);
+
+			// ⭐⭐⭐ 스무스 모드 활성화 (이동만 부드럽게)
+			camera->SetSmoothMode(true);
+			camera->SetLerpSpeed(10.0f);  // 부드러움 정도 (높을수록 빠르게 도달)
+
+			std::cout << "Camera: Smooth mode enabled (lerp speed: 10.0)" << std::endl;
 		}
 
 		player = std::make_unique<Player>();
@@ -1846,7 +1876,12 @@ void Floor3Scene::Exit()
 
 void Floor3Scene::Update(float deltaTime)
 {
+	extern Engine* g_engine;
 	SoundManager* sm = g_engine->GetSoundManager();
+
+	if (player) {
+		player->Update(deltaTime);
+	}
 
 	glm::vec3 plPos = player->GetPosition();
 	glm::vec3 prPos = professor->GetPosition();
@@ -1869,6 +1904,7 @@ void Floor3Scene::Update(float deltaTime)
 			sm->Stop("RunDragon");
 		}
 	}
+
 	if (professor) {
 		professor->Update(deltaTime);
 	}

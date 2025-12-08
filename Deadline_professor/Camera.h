@@ -1,13 +1,14 @@
 ﻿#pragma once
 #include "TotalHeader.h"
+
 class Camera
 {
 public:
 	Camera(glm::vec3 pos = glm::vec3(0.0f, 1.5f, 3.0f),  // 기본 높이: 플레이어 눈 높이 (1.5m)
-		   glm::vec3 target = glm::vec3(0.0f, 1.5f, 0.0f),
-		   glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f),
-		   float fov = 60.0f,  // GameConstants::CAMERA_FOV 사용
-		   float aspect = 16.0f / 9.0f);
+		glm::vec3 target = glm::vec3(0.0f, 1.5f, 0.0f),
+		glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f),
+		float fov = 60.0f,  // GameConstants::CAMERA_FOV 사용
+		float aspect = 16.0f / 9.0f);
 
 	glm::mat4 GetViewMat() const;
 	glm::mat4 GetProjMat() const;
@@ -23,6 +24,9 @@ public:
 	void Rotate(float yaw, float pitch); // 각도 단위: 라디안
 	void Zoom(float delta);
 
+	// ⭐ 새로 추가: 부드러운 이동을 위한 업데이트
+	void Update(float deltaTime);
+
 	// Getters
 	glm::vec3 GetPosition() const { return position; }
 	glm::vec3 GetDirection() const { return direction; }
@@ -36,14 +40,34 @@ public:
 	// Setters
 	void SetMoveSpeed(float speed) { moveSpd = speed; }
 	void SetRotateSpeed(float speed) { dirSpd = speed; }
-	void SetPosition(const glm::vec3& pos) { position = pos; UpdateVectors(); }
-	void SetDirection(const glm::vec3& dir) { direction = dir; UpdateVectors(); }
+	void SetPosition(const glm::vec3& pos) {
+		position = pos;
+		targetPosition = pos;  // ⭐ 목표 위치도 함께 업데이트
+		UpdateVectors();
+	}
+
+	void SetDirection(const glm::vec3& dir) {
+		direction = dir;
+		targetDirection = dir;  // ⭐ 목표 방향도 함께 업데이트
+		UpdateVectors();
+	}
+	void SetTargetPosition(const glm::vec3& pos) { targetPosition = pos; }
+	void SetTargetDirection(const glm::vec3& dir) { targetDirection = dir; }
+
+	// ⭐ 스무스 모드 설정
+	void SetSmoothMode(bool enabled) { smoothMode = enabled; }
+	bool IsSmoothMode() const { return smoothMode; }
+	void SetLerpSpeed(float speed) { lerpSpeed = speed; }
 
 	// Frustum Culling
 	bool IsBoxInFrustum(const glm::vec3& minBound, const glm::vec3& maxBound) const;
 
 private:
 	void UpdateVectors();
+
+	// ⭐ lerp 함수 (선형 보간)
+	glm::vec3 Lerp(const glm::vec3& start, const glm::vec3& end, float t) const;
+
 	// LookAt 용
 	glm::vec3 position{};
 	glm::vec3 direction{};
@@ -53,17 +77,22 @@ private:
 	glm::vec3 right;
 	glm::vec3 worldUp;
 
+	// ⭐ 부드러운 이동을 위한 목표 위치/방향
+	glm::vec3 targetPosition{};
+	glm::vec3 targetDirection{};
+
+	// ⭐ 부드러운 이동 설정
+	bool smoothMode = true;        // 스무스 모드 활성화 여부
+	float lerpSpeed = 10.0f;        // lerp 속도 (클수록 빠르게 도달)
+
 	// Perspective 용
-	float fov{60.f};      // 기본값: 시야각 60도 - GameConstants::CAMERA_FOV 사용
-	float aspect{16.f/9.f};
-	float n{0.1f};        // 기본값: Near plane - GameConstants::CAMERA_NEAR_PLANE 사용
-	float f{100.f};       // 기본값: Far plane - GameConstants::CAMERA_FAR_PLANE 사용
+	float fov{ 60.f };      // 기본값: 시야각 60도 - GameConstants::CAMERA_FOV 사용
+	float aspect{ 16.f / 9.f };
+	float n{ 0.1f };        // 기본값: Near plane - GameConstants::CAMERA_NEAR_PLANE 사용
+	float f{ 100.f };       // 기본값: Far plane - GameConstants::CAMERA_FAR_PLANE 사용
 
 	// 속도 관련
 	float moveSpd;
 	float dirSpd;
 	float zoomSpd;
-
-
 };
-
