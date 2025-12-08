@@ -56,6 +56,11 @@ public:
 
 	void InituiQuad(const glm::vec2& RT, const glm::vec2& LB);
 	void Renderui(const std::string_view& textureName, float deltatime);
+
+	void InitPostQuad();
+	void RenderFinal();
+	void SelectFBO();
+	void SelectScreen();
 private:
 	// OBJ 렌더링 헬퍼 함수
 	void ConfigureSharedVAOForOBJ(const ObjData* objData) const;
@@ -74,5 +79,11 @@ private:
 
 	GLuint uiVAO{};
 	GLuint uiVBO{};
+
+	// 후처리용
+	GLuint postVAO{};
+	GLuint postVBO{};
+	GLuint postFBO{};
+	GLuint postTexture{};
 };
 

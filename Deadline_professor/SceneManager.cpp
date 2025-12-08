@@ -218,9 +218,9 @@ void TitleScene::Draw()
 		renderer->SetLight(light.get());
 	}
 
-	renderer->InitScreenQuad(glm::vec2(1, 1), glm::vec2(-1, -1));
+	//renderer->InitScreenQuad(glm::vec2(1, 1), glm::vec2(-1, -1));
 	renderer->RenderTextrue("Title");
-	renderer->InituiQuad(glm::vec2(0.4, -0.5), glm::vec2(-0.4, -0.8));
+	//renderer->InituiQuad(glm::vec2(0.4, -0.5), glm::vec2(-0.4, -0.8));
 	renderer->Renderui("Press", fadeTimer);
 	// 간단한 Plane을 렌더링해서 뭔가 보이는지 확인
 	//if (titlePlane && titlePlane->IsActive()) {
@@ -521,7 +521,7 @@ void Floor1Scene::Enter()
 	// 1. 방향성 조명 (Directional Light) - 태양광 같은 전역 조명
 	auto dirLight = std::make_unique<Light>(LightType::DIRECTIONAL);
 	dirLight->SetDirection(glm::vec3(-0.3f, -1.0f, -0.1f));  // 약간 왼쪽 위에서 아래로
-	dirLight->SetAmbient(glm::vec3(0.03f, 0.02f, 0.02f));    // 아주 약한 붉은 Ambient
+	dirLight->SetAmbient(glm::vec3(0.02f, 0.02f, 0.02f));    // 아주 약한 붉은 Ambient
 	dirLight->SetDiffuse(glm::vec3(0.15f, 0.12f, 0.12f));    // 약한 빛 (밤 + 혈흔 느낌)
 	dirLight->SetSpecular(glm::vec3(0.05f, 0.05f, 0.05f));   // 거의 없는 하이라이트
 	dirLight->SetIntensity(0.3f);                             // 전체는 어둡게
@@ -1885,11 +1885,13 @@ void Floor3Scene::Draw()
 	Camera* camera = g_engine->GetCamera();
 	if (!renderer) return;
 
+	renderer->InitPostQuad();
+
 	// Light를 Renderer에 설정
 	if (light) {
 		renderer->SetLight(light.get());
 	}
-
+	//renderer->SelectFBO();
 	// 바닥 렌더링 (백페이스 컬링 비활성화)
 	if (floor && floor->IsActive()) {
 		glDisable(GL_CULL_FACE);  // Plane은 양면 렌더링 필요
@@ -1952,6 +1954,9 @@ void Floor3Scene::Draw()
 			renderer->RenderFBX("RunDragon", "RunDragon", professorMatrix);
 		}
 	}
+
+	renderer->SelectScreen();
+	renderer->RenderFinal();
 }
 
 //-----------------------------------------------------------------TestScene

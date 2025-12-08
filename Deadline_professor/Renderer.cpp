@@ -61,7 +61,45 @@ void Renderer::Init()
 		std::cout << "Renderer: Shader 'screen' loaded successfully" << std::endl;
 	}
 
+	if (!LoadShader("post", ".\\Shaders\\post.vert", ".\\Shaders\\post.frag")) {
+		std::cerr << "ERROR: Failed to load shader 'post'" << std::endl;
+	}
+	else {
+		std::cout << "Renderer: Shader 'post' loaded successfully" << std::endl;
+	}
+
 	std::cout << "Renderer: Initialization completed" << std::endl;
+
+	glGenFramebuffers(1, &activeInstance->postFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, activeInstance->postFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, activeInstance->postTexture, 0);
+
+
+	glGenTextures(1, &activeInstance->postTexture);
+	glBindTexture(GL_TEXTURE_2D, activeInstance->postTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1920, 1080, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+
+	GLuint depthBuffer;
+	glGenRenderbuffers(1, &depthBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1920, 1080);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) not_eq GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "FBO ERROR" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	activeInstance->InitPostQuad();
+	activeInstance->InitScreenQuad(glm::vec2(1, 1), glm::vec2(-1, -1));
+	activeInstance->InituiQuad(glm::vec2(0.4, -0.5), glm::vec2(-0.4, -0.8));
 }
 
 void Renderer::Active()
@@ -575,6 +613,76 @@ void Renderer::Renderui(const std::string_view& textureName, float deltatime)
 	glBindVertexArray(0);
 
 	shader->Unuse();
+}
+
+void Renderer::InitPostQuad()
+{
+	float quadVertices[] = {
+		// pos     // uv
+		-1.f, -1.f, 0.0f, 1.0f,
+		 1.f, -1.f, 1.0f, 1.0f,
+		 1.f,  1.f, 1.0f, 0.0f,
+
+		-1.f, -1.f, 0.0f, 1.0f,
+		 1.f, 1.f, 1.0f, 0.0f,
+		-1.f,  1.f, 0.0f, 0.0f
+	};
+
+	glGenVertexArrays(1, &postVAO);
+	glGenBuffers(1, &postVBO);
+
+	glBindVertexArray(postVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, postVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+	// layout(location = 0) → position
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+	// layout(location = 1) → UV
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	glBindVertexArray(0);
+}
+
+void Renderer::RenderFinal()
+{
+	Shader* shader = GetShader("post");
+	if (!shader) {
+		std::cerr << "post shader not found, falling back to basic" << std::endl;
+		shader = GetShader("basic");
+		if (!shader) return;
+	}
+
+	shader->Use();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, activeInstance->postTexture);
+	shader->setUniform("u_SceneTex", 0);
+
+	glBindVertexArray(activeInstance->postVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+
+	shader->Unuse();
+}
+
+void Renderer::SelectFBO()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, postFBO);
+	glViewport(0, 0, 1920, 1080);
+	glClear(GL_COLOR_BUFFER_BIT);
+	//glEnable(GL_DEPTH_TEST);
+}
+
+void Renderer::SelectScreen()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, 1920, 1080);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
 }
 
 // ============================================
