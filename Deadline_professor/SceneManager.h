@@ -116,6 +116,7 @@ private:
 	std::unique_ptr<NavMesh> navMesh;
 
 	Light* flashlight{ nullptr };
+	std::vector<Light*> flickeringLights;
 };
 
 class Floor3Scene : public Scene
@@ -141,6 +142,7 @@ private:
 	std::unique_ptr<NavMesh> navMesh;
 
 	Light* flashlight{ nullptr };
+	std::vector<Light*> flickeringLights;
 };
 
 class TestScene : public Scene

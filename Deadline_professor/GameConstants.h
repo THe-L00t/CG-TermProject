@@ -60,7 +60,7 @@ namespace GameConstants
 	// ===== 깜빡이는 조명 관련 ⭐⭐⭐ =====
 	constexpr float FLICKERING_LIGHT_HEIGHT = 2.3f;      // 천장보다 약간 아래 (천장 2.5m)
 	constexpr int FLICKERING_LIGHT_MIN_SPACING = 8;      // 최소 간격 (타일 단위) - 32m
-	constexpr float FLICKERING_LIGHT_INTENSITY = 3.0f;   // 기본 밝기
+	constexpr float FLICKERING_LIGHT_INTENSITY = 2.5f;   // 기본 밝기
 	constexpr int FLICKERING_LIGHT_MAX_COUNT = 20;       // 맵당 최대 개수
 
 }
