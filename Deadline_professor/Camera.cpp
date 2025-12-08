@@ -135,12 +135,12 @@ void Camera::MoveRight(float deltaTime)
 void Camera::MoveUp(float deltaTime)
 {
 	if (smoothMode) {
-		targetPosition += worldUp * moveSpd * deltaTime;
-		targetDirection += worldUp * moveSpd * deltaTime;
+		targetPosition += worldUp * moveSpd * deltaTime * GameConstants::CAMERA_VERTICAL_SPEED_MULTIPLIER;
+		targetDirection += worldUp * moveSpd * deltaTime * GameConstants::CAMERA_VERTICAL_SPEED_MULTIPLIER;
 	}
 	else {
-		position += worldUp * moveSpd * deltaTime;
-		direction += worldUp * moveSpd * deltaTime;
+		position += worldUp * moveSpd * deltaTime * GameConstants::CAMERA_VERTICAL_SPEED_MULTIPLIER;
+		direction += worldUp * moveSpd * deltaTime * GameConstants::CAMERA_VERTICAL_SPEED_MULTIPLIER;
 		UpdateVectors();
 	}
 }
@@ -148,12 +148,12 @@ void Camera::MoveUp(float deltaTime)
 void Camera::MoveDown(float deltaTime)
 {
 	if (smoothMode) {
-		targetPosition -= worldUp * moveSpd * deltaTime;
-		targetDirection -= worldUp * moveSpd * deltaTime;
+		targetPosition -= worldUp * moveSpd * deltaTime * GameConstants::CAMERA_VERTICAL_SPEED_MULTIPLIER;
+		targetDirection -= worldUp * moveSpd * deltaTime * GameConstants::CAMERA_VERTICAL_SPEED_MULTIPLIER;
 	}
 	else {
-		position -= worldUp * moveSpd * deltaTime;
-		direction -= worldUp * moveSpd * deltaTime;
+		position -= worldUp * moveSpd * deltaTime * GameConstants::CAMERA_VERTICAL_SPEED_MULTIPLIER;
+		direction -= worldUp * moveSpd * deltaTime * GameConstants::CAMERA_VERTICAL_SPEED_MULTIPLIER;
 		UpdateVectors();
 	}
 }

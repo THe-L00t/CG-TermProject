@@ -52,6 +52,7 @@ namespace GameConstants
 	constexpr float CAMERA_NEAR_PLANE = 0.1f;       // Near plane (m)
 	constexpr float CAMERA_FAR_PLANE = 100.0f;      // Far plane (m)
 	constexpr float CAMERA_SENSITIVITY = 0.1f;      // 마우스 감도
+	constexpr float CAMERA_VERTICAL_SPEED_MULTIPLIER = 0.3f;	// 수직 이동 속도 보정값
 
 	// ===== 물리 관련 =====
 	constexpr float GRAVITY = 9.81f;                // 중력 가속도 (m/s²)
