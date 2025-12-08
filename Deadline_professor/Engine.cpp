@@ -1,4 +1,4 @@
-#include "Engine.h"
+﻿#include "Engine.h"
 #include "Window.h"
 #include "Renderer.h"
 #include "GameTimer.h"
@@ -69,8 +69,12 @@ void Engine::Initialize(int argc, char** argv)
 		45.0f,
 		(float)w->GetWidth() / (float)w->GetHeight()
 	);
+
+	// ⭐ 카메라 스무스 모드 기본 설정
+	camera->SetSmoothMode(false);  // 일단 비활성화 (씬에서 활성화)
+
 	r->SetCamera(camera.get());
-	std::cout << "Camera: Initialized" << std::endl;
+	std::cout << "Camera: Initialized (smooth mode OFF)" << std::endl;
 
 	// InputManager 초기화
 	inputManager = std::make_unique<InputManager>();
@@ -349,7 +353,7 @@ void Engine::Update()
 	gameTimer->Update();
 	float deltaTime = gameTimer->elapsedTime;
 
-	// 키 상태 업데이트 및 카메라 이동
+	// ⭐⭐⭐ 매 프레임 키 상태 업데이트 (멀티 키 지원)
 	inputManager->UpdateKeyStates(deltaTime);
 
 	// AnimationPlayer 업데이트
@@ -360,6 +364,11 @@ void Engine::Update()
 	// SceneManager 업데이트
 	if (sceneManager) {
 		sceneManager->update(deltaTime);
+	}
+
+	// 카메라 업데이트
+	if (camera) {
+		camera->Update(deltaTime);
 	}
 
 	glutPostRedisplay();

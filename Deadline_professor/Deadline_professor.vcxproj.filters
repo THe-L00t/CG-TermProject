@@ -25,6 +25,15 @@
     <Filter Include="소스 파일\SoundManager">
       <UniqueIdentifier>{93687fa8-07fb-4547-8e95-410acd67ea07}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\AI">
+      <UniqueIdentifier>{99d14129-001f-4553-8f34-b863ef945028}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\AI\Navigation">
+      <UniqueIdentifier>{3c15d1ab-7c95-404f-be67-9c0dabe0e3c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\AI\PathFinder">
+      <UniqueIdentifier>{c92d26b3-bae9-4fce-b3b4-a7191f28f2f5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -60,6 +69,21 @@
     <ClCompile Include="SoundManager.cpp">
       <Filter>소스 파일\SoundManager</Filter>
     </ClCompile>
+    <ClCompile Include="AiController.cpp">
+      <Filter>소스 파일\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="AStar.cpp">
+      <Filter>소스 파일\AI\PathFinder</Filter>
+    </ClCompile>
+    <ClCompile Include="NavMesh.cpp">
+      <Filter>소스 파일\AI\Navigation</Filter>
+    </ClCompile>
+    <ClCompile Include="NavMeshBuilder.cpp">
+      <Filter>소스 파일\AI\Navigation</Filter>
+    </ClCompile>
+    <ClCompile Include="PathFinder.cpp">
+      <Filter>소스 파일\AI\PathFinder</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TotalHeader.h">
@@ -94,6 +118,21 @@
     </ClInclude>
     <ClInclude Include="SoundManager.h">
       <Filter>소스 파일\SoundManager</Filter>
+    </ClInclude>
+    <ClInclude Include="AiController.h">
+      <Filter>소스 파일\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="AStar.h">
+      <Filter>소스 파일\AI\PathFinder</Filter>
+    </ClInclude>
+    <ClInclude Include="NavMesh.h">
+      <Filter>소스 파일\AI\Navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="NavMeshBuilder.h">
+      <Filter>소스 파일\AI\Navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="PathFinder.h">
+      <Filter>소스 파일\AI\PathFinder</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -268,5 +307,9 @@
     <None Include="Shaders\screen.vert" />
     <None Include="Shaders\ui.frag" />
     <None Include="Shaders\ui.vert" />
+    <None Include="Dev_Check_List.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="Resources\Plane.obj" />
   </ItemGroup>
 </Project>

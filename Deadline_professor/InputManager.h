@@ -32,7 +32,6 @@ public:
 	std::function<void()> ActionShift;  // 아래로 이동 (자유 비행)
 	std::function<void()> ActionWheelUp;
 	std::function<void()> ActionWheelDown;
-	std::function<void()> ActionSpace;
 	std::function<void()> ActionCtrl;
 
 	// 디버깅용 씬 전환 함수 객체

@@ -1,4 +1,4 @@
-#include "Player.h"
+﻿#include "Player.h"
 #include "Camera.h"
 #include "GameConstants.h"
 #include "Engine.h"
@@ -35,7 +35,7 @@ void Player::Init(Camera* cam)
 void Player::Update(float deltaTime)
 {
 	Object::Update(deltaTime);
-	SyncCameraPosition();
+	//SyncCameraPosition();
 }
 
 void Player::MoveForward(float deltaTime)
@@ -120,29 +120,40 @@ Camera* Player::GetCamera() const
 
 void Player::SyncCameraPosition()
 {
-	if (camera)
-	{
-		// 이전 카메라 위치와 direction 저장 (방향 유지를 위해)
-		glm::vec3 oldCameraPos = camera->GetPosition();
-		glm::vec3 oldDirection = camera->GetDirection();
-		glm::vec3 viewVector = oldDirection - oldCameraPos; // 바라보는 방향 벡터
+	if (!camera) {
+		std::cerr << "[ERROR] Player::SyncCameraPosition() - camera is nullptr!" << std::endl;
+		return;
+	}
 
-		// 카메라 위치를 플레이어 눈 높이로 설정
-		glm::vec3 newCameraPos = position;
-		newCameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
+	// ⭐ 현재 카메라의 상태 가져오기
+	glm::vec3 currentCameraPos = camera->GetPosition();
+	glm::vec3 currentDirection = camera->GetDirection();
+
+	// ⭐ 카메라가 바라보는 방향 벡터 (정규화되지 않은 상대 벡터)
+	glm::vec3 viewVector = currentDirection - currentCameraPos;
+	float viewDistance = glm::length(viewVector);  // 거리 저장
+	glm::vec3 viewDir = glm::vec3(0.0f, 0.0f, -5.0f);  // 기본 방향
+
+	if (viewDistance > 0.01f) {
+		viewDir = viewVector;  // 기존 방향 유지
+	}
+
+	// ⭐ 새로운 카메라 위치 계산 (플레이어 눈 높이)
+	glm::vec3 newCameraPos = position;
+	newCameraPos.y += GameConstants::PLAYER_EYE_HEIGHT;
+
+	// ⭐ 새로운 direction 계산 (상대적 방향 벡터 유지)
+	glm::vec3 newDirection = newCameraPos + viewDir;
+
+	// ⭐ 스무스 모드: 목표값만 업데이트
+	if (camera->IsSmoothMode()) {
+		camera->SetTargetPosition(newCameraPos);
+		camera->SetTargetDirection(newDirection);
+	}
+	else {
+		// 즉시 이동 모드
 		camera->SetPosition(newCameraPos);
-
-		// 카메라가 바라보는 방향 유지 (1인칭 시점)
-		// 이동 전 바라보던 방향 벡터를 유지하면서 새 위치에서의 direction 계산
-		if (glm::length(viewVector) > 0.01f) {
-			// 이전 방향 벡터를 유지
-			glm::vec3 newDirection = newCameraPos + viewVector;
-			camera->SetDirection(newDirection);
-		}
-		else {
-			// 방향이 설정되지 않았으면 앞쪽(-Z)을 바라보도록 설정
-			camera->SetDirection(newCameraPos + glm::vec3(0.0f, 0.0f, -5.0f));
-		}
+		camera->SetDirection(newDirection);
 	}
 }
 

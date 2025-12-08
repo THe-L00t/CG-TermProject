@@ -39,26 +39,34 @@ void InputManager::SetMouseControlActive(bool active)
 
 void InputManager::UpdateKeyStates(float deltaTime)
 {
-	if (!onceInstance || !onceInstance->cmr) return;
+	// ⭐ 매 프레임 호출되어 현재 누르고 있는 모든 키를 처리!
+	if (!onceInstance) return;
 
-	// 현재 누르고 있는 키들에 따라 카메라 이동
+	// ⭐⭐⭐ 누르고 있는 키들을 체크해서 ActionW, ActionA 등 호출
 	if (onceInstance->keyStates['W'] || onceInstance->keyStates['w']) {
-		onceInstance->cmr->MoveForward(deltaTime);
+		if (onceInstance->ActionW) onceInstance->ActionW();
 	}
 	if (onceInstance->keyStates['A'] || onceInstance->keyStates['a']) {
-		onceInstance->cmr->MoveLeft(deltaTime);
+		if (onceInstance->ActionA) onceInstance->ActionA();
 	}
 	if (onceInstance->keyStates['S'] || onceInstance->keyStates['s']) {
-		onceInstance->cmr->MoveBackward(deltaTime);
+		if (onceInstance->ActionS) onceInstance->ActionS();
 	}
 	if (onceInstance->keyStates['D'] || onceInstance->keyStates['d']) {
-		onceInstance->cmr->MoveRight(deltaTime);
+		if (onceInstance->ActionD) onceInstance->ActionD();
 	}
-	if (onceInstance->keyStates[' ']) { // Space key
-		onceInstance->cmr->MoveUp(deltaTime);
+	if (onceInstance->keyStates[' ']) {
+		if (onceInstance->ActionSpace) onceInstance->ActionSpace();
 	}
-	if (onceInstance->ctrlPressed) { // Ctrl key
-		onceInstance->cmr->MoveDown(deltaTime);
+
+	// ⭐ Shift 키 (왼쪽/오른쪽 모두 지원)
+	if (onceInstance->shiftPressed) {
+		if (onceInstance->ActionShift) onceInstance->ActionShift();
+	}
+
+	// ⭐ Ctrl 키 (왼쪽/오른쪽 모두 지원)
+	if (onceInstance->ctrlPressed) {
+		if (onceInstance->ActionCtrl) onceInstance->ActionCtrl();
 	}
 }
 
@@ -70,43 +78,28 @@ void InputManager::Keyboard(unsigned char key, int x, int y)
 	onceInstance->keyStates[key] = true;
 
 	switch (key) {
-	case'W':case'w':
-		if (onceInstance->ActionW) onceInstance->ActionW();
-		break;
-	case'A':case'a':
-		if (onceInstance->ActionA) onceInstance->ActionA();
-		break;
-	case'S':case's':
-		if (onceInstance->ActionS) onceInstance->ActionS();
-		break;
-	case'D':case'd':
-		if (onceInstance->ActionD) onceInstance->ActionD();
-		break;
-	case ' ':
-		if (onceInstance->ActionSpace) onceInstance->ActionSpace();
-		break;
 	case'0':
-		// Mouse Control Mode
+		// Mouse Control Mode (토글)
 		if (onceInstance->Action0) onceInstance->Action0();
 		break;
 	case'1':
-		// Title Mode
+		// Title Mode (씬 전환)
 		if (onceInstance->Action1) onceInstance->Action1();
 		break;
 	case'2':
-		// Floor 1
+		// Floor 1 (씬 전환)
 		if (onceInstance->Action2) onceInstance->Action2();
 		break;
 	case'3':
-		// Floor 2
+		// Floor 2 (씬 전환)
 		if (onceInstance->Action3) onceInstance->Action3();
 		break;
 	case'4':
-		// Floor 3
+		// Floor 3 (씬 전환)
 		if (onceInstance->Action4) onceInstance->Action4();
 		break;
 	case'5':
-		// Test
+		// Test (씬 전환)
 		if (onceInstance->Action5) onceInstance->Action5();
 		break;
 	case 27: // ESC key
@@ -123,21 +116,15 @@ void InputManager::KeyboardUp(unsigned char key, int x, int y)
 	onceInstance->keyStates[key] = false;
 }
 
-
 void InputManager::SKeyboard(int key, int x, int y)
 {
 	if (!onceInstance) return;
 
-	// 특수 키 누림 감지
-	// GLUT_KEY_CTRL_L = 114, GLUT_KEY_CTRL_R = 115
-	// GLUT_KEY_SHIFT_L = 112, GLUT_KEY_SHIFT_R = 113
-	// GLUT_KEY_ALT_L = 116, GLUT_KEY_ALT_R = 117
-
+	// 특수 키 눌림 감지
 	switch (key) {
 	case GLUT_KEY_CTRL_L:
 	case GLUT_KEY_CTRL_R:
 		onceInstance->ctrlPressed = true;
-		if (onceInstance->ActionCtrl) onceInstance->ActionCtrl();
 		break;
 	case GLUT_KEY_SHIFT_L:
 	case GLUT_KEY_SHIFT_R:
@@ -170,6 +157,7 @@ void InputManager::SKeyboardUp(int key, int x, int y)
 		break;
 	}
 }
+
 void InputManager::Mouse(int button, int state, int x, int y)
 {
 	if (!onceInstance) return;
@@ -201,11 +189,11 @@ void InputManager::PassiveMotion(int x, int y)
 	}
 
 	// Calculate mouse movement delta
-	float xOffset = static_cast<float>(centerX - x); // Reversed for inverted control
-	float yOffset = static_cast<float>(centerY - y); // Reversed: y-coordinates go from bottom to top
+	float xOffset = static_cast<float>(centerX - x);
+	float yOffset = static_cast<float>(centerY - y);
 
-	// Rotate camera based on mouse movement
-	onceInstance->cmr->Rotate(xOffset * 0.01f, yOffset * 0.01f);
+	// 감도 조정
+	onceInstance->cmr->Rotate(xOffset * 0.002f, yOffset * 0.002f);
 
 	// Reset cursor to center
 	glutWarpPointer(centerX, centerY);
